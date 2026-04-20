@@ -1,0 +1,22 @@
+# 1. CMake 构建目录与缓存文件
+build/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+
+# 2. 编译产生的中间文件与二进制程序
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+*.so
+OSC_Simulator
+
+# 3. 编辑器或操作系统的缓存 (视你使用的工具而定)
+.vscode/
+.idea/
+.DS_Store
+.cursor/

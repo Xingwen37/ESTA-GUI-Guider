@@ -1,18 +1,18 @@
 #ifndef __OSC_LIB
 #define __OSC_LIB
 
-
 /* INCLUDE */
-
+#include <stddef.h>  
+#include <stdint.h>  
+#include <stdbool.h> 
 // 支持硬件抽象层
-// 如果你需要移植自己的屏幕，就将这段宏注释掉
-// 然后在下面添加自己的屏幕函数
-#define SCREEN_USE_ILI9341
+// 取消注释以使用对应的底层驱动
+// #define SCREEN_USE_ILI9341
+#define SCREEN_USE_SDL2 
 
-#ifdef   SCREEN_USE_ILI9341
+#ifdef SCREEN_USE_ILI9341
 #include "main.h"
 #include "ili9341_driver.h"
-
 
 // (x1, y1)起始点 (x2, y2)终止点
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
@@ -21,17 +21,30 @@
             ILI9341_draw_rectangle(x1, y1, x2, y2, COLOR)
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR) \
             ILI9341_fill(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_NUM(x, y, num, len,COLOR) \
-            ILI9341_draw_num(x, y, num, len,COLOR)
+#define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
+            ILI9341_draw_num(x, y, num, len, COLOR)
 
-#else /* SCREEN_USE_ILI9341 */
+#elif defined(SCREEN_USE_SDL2)
+// 引入 SDL2 移植层的头文件
+#include "osc_port_sdl2.h"
+
+#define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
+            OSC_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
+#define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR) \
+            OSC_SDL2_DrawRectangle(x1, y1, x2, y2, COLOR)
+#define SCREEN_FILL(x1, y1, x2, y2, COLOR) \
+            OSC_SDL2_Fill(x1, y1, x2, y2, COLOR)
+#define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
+            OSC_SDL2_DrawNum(x, y, num, len, COLOR)
+
+#else /* 你的自定义屏幕或其他 */
 // 在这里包含你自己的屏幕库
 // 并在宏后写你自己的屏幕函数
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR)
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_NUM(x, y, num, len,COLOR)
-#endif /* SCREEN_USE_ILI9341 */
+#define SCREEN_DRAW_NUM(x, y, num, len, COLOR)
+#endif
 
 
 /* GLOBAL MARCO */
