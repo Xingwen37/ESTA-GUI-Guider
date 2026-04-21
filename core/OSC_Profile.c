@@ -28,14 +28,14 @@ static const OSC_ProfileSet_TypeDef g_default_profiles = {
             .is_auto_clear = true
         },
         {
-            .x_origin = 0,
+            .x_origin = 29,
             .y_origin = 120,
             .x_width = 200,
             .y_width = 120,
             .display_num_min = 0,
             .display_num_max = 4095,
             .channel_num = 4,
-            .channel_mask = CH0 | CH1 | CH2 | CH3,
+            .channel_mask = CH0 | CH2 | CH3,
             .is_display_ruler_y = true,
             .ruler_y = {1000, 2000, 3000, 4000, 0},
             .ruler_count_y = 4,

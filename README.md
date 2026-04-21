@@ -42,6 +42,38 @@ cmake --build build
 rm -rf build/
 ```
 
+### 4. 移植方式（基于 `OSC_Profile`）
+**步骤**
+1. 在目标工程中保留 `core/OSC.c`、`core/OSC.h`、`core/OSC_Profile.c`、`core/OSC_Profile.h`。  
+2. 在 `OSC.h` 中适配 4 个底层绘图宏：`SCREEN_DRAW_LINE`、`SCREEN_DRAW_RECTANGLE`、`SCREEN_FILL`、`SCREEN_DRAW_NUM`。  
+3. 调用 `OSC_Profile_GetDefault()` 读取配置，使用 `OSC_Profile_Apply()` 初始化实例。  
+4. 主循环中持续调用 `OSC_CurveDraw()` 输入采样数据，并按需调用 `OSC_ReDraw()`。  
+
+**最小 `main.c` 示例（可裁剪）**
+```c
+#include "OSC.h"
+#include "OSC_Profile.h"
+
+int main(void) {
+    /* 平台初始化：时钟/屏幕/端口 */
+    Platform_Init();
+
+    const OSC_ProfileSet_TypeDef *profiles = OSC_Profile_GetDefault();
+    if (profiles == NULL) return -1;
+
+    for (int i = 0; i < profiles->osc_count; ++i) {
+        if (OSC_Profile_Apply(OSC_INST(i), &profiles->profiles[i]) != OSC_OK) return -1;
+        if (OSC_ReDraw(OSC_INST(i)) != OSC_OK) return -1;
+    }
+
+    while (1) {
+        uint16_t ch_data[MAX_OSC_CHANNEL] = {0};
+        AcquireSignal(ch_data);                 /* 用户实现：采样或读取缓存 */
+        OSC_CurveDraw(OSC_INST(0), ch_data);   /* 可扩展到多实例 */
+    }
+}
+```
+
 ---
 
 <h2 id="english-version">English Version</h2>
