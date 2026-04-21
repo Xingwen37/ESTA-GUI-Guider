@@ -1,0 +1,85 @@
+#include "OSC_Profile.h"
+
+#include <string.h>
+
+static const OSC_ProfileSet_TypeDef g_default_profiles = {
+    .osc_count = OSC_PROFILE_MAX_INST,
+    .profiles = {
+        {
+            .x_origin = 10,
+            .y_origin = 0,
+            .x_width = 200,
+            .y_width = 120,
+            .display_num_min = 0,
+            .display_num_max = 4095,
+            .channel_num = 4,
+            .channel_mask = CH0 | CH1 | CH2 | CH3,
+            .is_display_ruler_y = true,
+            .ruler_y = {1000, 2000, 3000, 4000, 0},
+            .ruler_count_y = 4,
+            .ruler_num_digits_y = 4,
+            .is_display_ruler_x = true,
+            .ruler_x = {30, 50, 90, 0, 0},
+            .ruler_count_x = 3,
+            .ruler_zero_value_x = 0,
+            .ruler_full_value_x = 100,
+            .ruler_num_digits_x = 8,
+            .theme_type = OSC_THEME_DEFAULT,
+            .is_auto_clear = true
+        },
+        {
+            .x_origin = 0,
+            .y_origin = 120,
+            .x_width = 200,
+            .y_width = 120,
+            .display_num_min = 0,
+            .display_num_max = 4095,
+            .channel_num = 4,
+            .channel_mask = CH0 | CH1 | CH2 | CH3,
+            .is_display_ruler_y = true,
+            .ruler_y = {1000, 2000, 3000, 4000, 0},
+            .ruler_count_y = 4,
+            .ruler_num_digits_y = 4,
+            .is_display_ruler_x = true,
+            .ruler_x = {30, 50, 90, 0, 0},
+            .ruler_count_x = 3,
+            .ruler_zero_value_x = 0,
+            .ruler_full_value_x = 100,
+            .ruler_num_digits_x = 8,
+            .theme_type = OSC_THEME_LIGHT,
+            .is_auto_clear = true
+        }
+    }
+};
+
+const OSC_ProfileSet_TypeDef *OSC_Profile_GetDefault(void) {
+    return &g_default_profiles;
+}
+
+bool OSC_Profile_ToConfig(const OSC_Profile_TypeDef *profile, OSC_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    OSC_ConfigSetPositionAndSize(out_config, profile->x_origin, profile->y_origin,
+                                 profile->x_width, profile->y_width);
+    OSC_ConfigSetDisplayRange(out_config, profile->display_num_min, profile->display_num_max);
+    OSC_ConfigSetChannelNum(out_config, profile->channel_num);
+    OSC_ConfigSetChannelEnabled(out_config, profile->channel_mask);
+    OSC_ConfigSetRulerY(out_config, profile->is_display_ruler_y, (uint16_t *)profile->ruler_y,
+                        profile->ruler_count_y, profile->ruler_num_digits_y);
+    OSC_ConfigSetRulerX(out_config, profile->is_display_ruler_x, (uint16_t *)profile->ruler_x,
+                        profile->ruler_count_x, profile->ruler_zero_value_x,
+                        profile->ruler_full_value_x, profile->ruler_num_digits_x);
+    OSC_ConfigSetTheme(out_config, profile->theme_type);
+    OSC_ConfigSetAutoClear(out_config, profile->is_auto_clear);
+
+    return true;
+}
+
+OSC_StatusTypeDef OSC_Profile_Apply(int osc_idx, const OSC_Profile_TypeDef *profile) {
+    OSC_Config_TypeDef config;
+    if (!OSC_Profile_ToConfig(profile, &config)) {
+        return OSC_ERROR;
+    }
+    return OSC_Init(osc_idx, &config);
+}

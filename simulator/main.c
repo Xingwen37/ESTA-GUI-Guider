@@ -13,7 +13,15 @@
   #include "OSC.h"
   #include "sim_scenario.h"
   #include "osc_port_sdl2.h"
-  
+
+  #ifndef USE_OSC_PROFILE_ENV
+  #define USE_OSC_PROFILE_ENV 1
+  #endif
+
+  #if USE_OSC_PROFILE_ENV
+  #include "OSC_Profile.h"
+  #endif
+
   /**
     * @brief  The PC application entry point.
     * @note   SDL2 要求 main 函数带有 argc 和 argv 参数
@@ -32,23 +40,42 @@
           return 1;
       }
 
-      int osc_count = SIM_SCENARIO_OSC_COUNT;
+      int osc_count = 0;
+  #if USE_OSC_PROFILE_ENV
+      const OSC_ProfileSet_TypeDef *profiles = OSC_Profile_GetDefault();
+      if (profiles == NULL) {
+          printf("OSC_Profile_GetDefault failed.\n");
+          OSC_SDL2_Quit();
+          return 1;
+      }
+
+      osc_count = profiles->osc_count;
+      if (osc_count > SIM_SCENARIO_OSC_COUNT) {
+          osc_count = SIM_SCENARIO_OSC_COUNT;
+      }
       if (osc_count > MAX_OSC_NUM) {
           osc_count = MAX_OSC_NUM;
       }
 
       for (int i = 0; i < osc_count; i++) {
-          OSC_Config_TypeDef osc_config;
-          if (!SimScenario_FillOscConfig(&scenario, i, &osc_config)) {
-              printf("SimScenario_FillOscConfig failed at osc=%d.\n", i);
+          if (OSC_Profile_Apply(OSC_INST(i), &profiles->profiles[i]) != OSC_OK) {
+              printf("OSC_Profile_Apply failed at osc=%d.\n", i);
               OSC_SDL2_Quit();
               return 1;
           }
-          if (OSC_Init(OSC_INST(i), &osc_config) != OSC_OK) {
-              printf("OSC_Init failed at osc=%d.\n", i);
+  #else
+      osc_count = SIM_SCENARIO_OSC_COUNT;
+      if (osc_count > MAX_OSC_NUM) {
+          osc_count = MAX_OSC_NUM;
+      }
+
+      for (int i = 0; i < osc_count; i++) {
+          if (SimScenario_ApplyDefaultProfile(i) != OSC_OK) {
+              printf("SimScenario_ApplyDefaultProfile failed at osc=%d.\n", i);
               OSC_SDL2_Quit();
               return 1;
           }
+  #endif
           if (OSC_ReDraw(OSC_INST(i)) != OSC_OK) {
               printf("OSC_ReDraw failed at osc=%d.\n", i);
               OSC_SDL2_Quit();
