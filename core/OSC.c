@@ -51,6 +51,16 @@ void OSC_ConfigSetChannelNum(OSC_Config_TypeDef *config, uint16_t channel_num) {
     config->channel_num = channel_num;
 }
 
+void OSC_ConfigSetChannelEnabled(OSC_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return;
+    config->channel_mask |= channel_mask;
+}
+
+void OSC_ConfigSetChannelDisabled(OSC_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return;
+    config->channel_mask &= ~channel_mask;
+}
+
 void OSC_ConfigSetRulerY(OSC_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y) {
@@ -156,6 +166,7 @@ OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init) {
     if(OSC_Init->display_num_min >= OSC_Init->display_num_max) return OSC_ERROR;
     OSC_WRITE_CONFIG_INIT(OSCx, display_num_min);
     OSC_WRITE_CONFIG_INIT(OSCx, display_num_max);
+    OSC_WRITE_CONFIG_INIT(OSCx, channel_mask);
 
     // 初始化Y轴标尺
     if(OSC_Init->is_display_ruler_y){
@@ -453,6 +464,8 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) 
     uint16_t channel_num             = OSC_CONFIG_MEMBER(OSCx, channel_num);
     uint16_t theme_type              = OSC_CONFIG_MEMBER(OSCx, theme_type);
     volatile bool is_auto_clear      = OSC_CONFIG_MEMBER(OSCx, is_auto_clear);
+    uint8_t channel_mask             = OSC_CONFIG_MEMBER(OSCx, channel_mask);
+
     uint16_t wave_CH0_color = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH0_INDEX);
     uint16_t wave_CH1_color = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH1_INDEX);
 
@@ -478,21 +491,21 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) 
     }
 
     uint16_t display_range = display_num_max - display_num_min;
-
-    if(is_out_of_bound(display_num_max, display_num_min, data_CH0)) return OSC_ERROR;
-    uint16_t y_displayValue_CH0 = my_limit(display_num_max, display_num_min, data_CH0);
     uint16_t x_coor = x_origin + last_index;
-    uint16_t y_coor_CH0 = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, y_displayValue_CH0);
-    if(last_index > 0) {
-        SCREEN_DRAW_LINE(x_coor, y_coor_CH0, 
-            x_coor_last, y_coor_last_CH0, wave_CH0_color);
-    }
-    OSC_PRIVATE_MEMBER(OSCx, x_coor_last) = x_coor;
-    OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH0) = y_coor_CH0;
 
+    if(is_channel_enabled(channel_mask, CH0)) {
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH0)) return OSC_ERROR;
+        uint16_t y_displayValue_CH0 = my_limit(display_num_max, display_num_min, data_CH0);
+        uint16_t y_coor_CH0 = y_origin + y_frame_width - 
+                coor_normal(y_frame_width, display_range, y_displayValue_CH0);
+        if(last_index > 0) {
+            SCREEN_DRAW_LINE(x_coor, y_coor_CH0, 
+                x_coor_last, y_coor_last_CH0, wave_CH0_color);
+        }
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH0) = y_coor_CH0;
+    }
     //CH1 通道
-    if(channel_num == 2) {
+    if(is_channel_enabled(channel_mask, CH1)) {
         if(is_out_of_bound(display_num_max, display_num_min, data_CH1)) return OSC_ERROR;
         uint16_t y_displayValue_CH1 = my_limit(display_num_max, display_num_min, data_CH1);
         uint16_t y_coor_CH1 = y_origin + y_frame_width - 
@@ -503,6 +516,7 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) 
         }
         OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH1) = y_coor_CH1;
     }
+    OSC_PRIVATE_MEMBER(OSCx, x_coor_last) = x_coor;
     last_index++;
     OSC_PRIVATE_MEMBER(OSCx, last_index)  = last_index;
 

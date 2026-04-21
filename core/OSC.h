@@ -58,14 +58,14 @@
 #define MAX_OSC_CHANNEL     2
 
 /* 通道掩码常量（独热码） */
-#define CH1_MASK  (1U << 0)  /* 0b00000001 */
-#define CH2_MASK  (1U << 1)  /* 0b00000010 */
-#define CH3_MASK  (1U << 2)  /* 0b00000100 */
-#define CH4_MASK  (1U << 3)  /* 0b00001000 */
-#define CH5_MASK  (1U << 4)  /* 0b00010000 */
-#define CH6_MASK  (1U << 5)  /* 0b00100000 */
-#define CH7_MASK  (1U << 6)  /* 0b01000000 */
-#define CH8_MASK  (1U << 7)  /* 0b10000000 */
+#define CH0  (1U << 0)  /* 0b00000001 */
+#define CH1  (1U << 1)  /* 0b00000010 */
+#define CH2  (1U << 2)  /* 0b00000100 */
+#define CH3  (1U << 3)  /* 0b00001000 */
+#define CH4  (1U << 4)  /* 0b00010000 */
+#define CH5  (1U << 5)  /* 0b00100000 */
+#define CH6  (1U << 6)  /* 0b01000000 */
+#define CH7  (1U << 7)  /* 0b10000000 */
 
 #define ALL_CHANNELS_MASK (CH1_MASK | CH2_MASK | CH3_MASK | CH4_MASK | \
     CH5_MASK | CH6_MASK | CH7_MASK | CH8_MASK)
@@ -173,6 +173,8 @@ typedef struct {
     uint16_t       display_num_max;
     /* 示波器通道数量（至多两个） */
     uint16_t       channel_num;
+    /* 示波器通道掩码 */
+    uint8_t        channel_mask;
     /* 标尺设置 */
     // TODO: 标尺显示负数,小数的情况
     // TODO: 非线性标尺（如dB）
@@ -221,6 +223,8 @@ void OSC_ConfigSetPositionAndSize(OSC_Config_TypeDef *config,
 void OSC_ConfigSetDisplayRange(OSC_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max);
 void OSC_ConfigSetChannelNum(OSC_Config_TypeDef *config, uint16_t channel_num);
+void OSC_ConfigSetChannelEnabled(OSC_Config_TypeDef *config, uint8_t channel_mask);
+void OSC_ConfigSetChannelDisabled(OSC_Config_TypeDef *config, uint8_t channel_mask);
 void OSC_ConfigSetRulerY(OSC_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y);

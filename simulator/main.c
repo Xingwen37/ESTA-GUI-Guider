@@ -41,6 +41,8 @@
       OSC_ConfigSetPositionAndSize(&OSC_Config, 10, 0, 200, 120);
       OSC_ConfigSetDisplayRange(&OSC_Config, 0, 4095);
       OSC_ConfigSetChannelNum(&OSC_Config, 2);
+      OSC_ConfigSetChannelEnabled(&OSC_Config, CH0);
+      OSC_ConfigSetChannelEnabled(&OSC_Config, CH1);
       OSC_ConfigSetRulerY(&OSC_Config, true, &ruler_y[0], 4, 4);
       OSC_ConfigSetRulerX(&OSC_Config, true, &ruler_x[0], 3, 0, 100, 8);
       OSC_ConfigSetTheme(&OSC_Config, OSC_THEME_DEFAULT);

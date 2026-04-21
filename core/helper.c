@@ -20,9 +20,9 @@ inline uint8_t channel_to_mask(int channel) {
  * @param mask 指向当前掩码的指针
  * @param channel 要开启的通道号 (1~8)
  */
-inline void enable_channel(uint8_t *mask, int channel) {
-    if (mask && channel >= 1 && channel <= 8) {
-        *mask |= (uint8_t)(1U << (channel - 1));
+inline void enable_channel(uint8_t *mask, uint8_t channel_mask) {
+    if (mask && channel_mask != 0) {
+        *mask |= channel_mask;
     }
 }
 
@@ -31,9 +31,9 @@ inline void enable_channel(uint8_t *mask, int channel) {
  * @param mask 指向当前掩码的指针
  * @param channel 要关闭的通道号 (1~8)
  */
-inline void disable_channel(uint8_t *mask, int channel) {
-    if (mask && channel >= 1 && channel <= 8) {
-        *mask &= (uint8_t)~(1U << (channel - 1));
+inline void disable_channel(uint8_t *mask, uint8_t channel_mask) {
+    if (mask && channel_mask != 0) {
+        *mask &= ~channel_mask;
     }
 }
 
@@ -45,11 +45,11 @@ inline void disable_channel(uint8_t *mask, int channel) {
  * @param channel 通道号 (1~8)
  * @return true 表示通道开启，false 表示关闭或通道号无效
  */
-inline bool is_channel_enabled(uint8_t mask, int channel) {
-    if (channel < 1 || channel > 8) {
+inline bool is_channel_enabled(uint8_t mask, uint8_t channel_mask) {
+    if (channel_mask == 0) {
         return false;
     }
-    return (mask & (1U << (channel - 1))) != 0;
+    return (mask & channel_mask) != 0;
 }
 
 /* ---------- 译码函数：将掩码转换为可读的通道列表 ---------- */
