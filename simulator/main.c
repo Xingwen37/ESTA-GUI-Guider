@@ -40,7 +40,7 @@
   
       OSC_ConfigSetPositionAndSize(&OSC_Config, 10, 0, 200, 120);
       OSC_ConfigSetDisplayRange(&OSC_Config, 0, 4095);
-      OSC_ConfigSetChannelNum(&OSC_Config, 2);
+      OSC_ConfigSetChannelNum(&OSC_Config, 4);
       OSC_ConfigSetChannelEnabled(&OSC_Config, CH0);
       OSC_ConfigSetChannelEnabled(&OSC_Config, CH1);
       OSC_ConfigSetChannelEnabled(&OSC_Config, CH2);
@@ -58,6 +58,7 @@
       OSC_ConfigSetPositionAndSize(&OSC_Config, 0, 120, 200, 120);
       OSC_ConfigSetTheme(&OSC_Config, OSC_THEME_LIGHT);
   
+      OSC_ConfigSetChannelDisabled(&OSC_Config, CH1);
       OSC_Init(OSC_INST(1), &OSC_Config);
       OSC_ReDraw(OSC_INST(1));
   

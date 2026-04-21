@@ -473,8 +473,10 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]) {
     volatile bool is_auto_clear      = OSC_CONFIG_MEMBER(OSCx, is_auto_clear);
     uint8_t channel_mask             = OSC_CONFIG_MEMBER(OSCx, channel_mask);
 
+    uint16_t active_channel_num = (channel_num > MAX_OSC_CHANNEL) ? MAX_OSC_CHANNEL : channel_num;
+
     uint16_t wave_CH_color[MAX_OSC_CHANNEL] = {0};
-    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+    for(int i = 0; i < active_channel_num; i++){
         if(is_channel_enabled(channel_mask, CH0 << i)) {
             wave_CH_color[i] = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH0_INDEX + i);
         }
@@ -483,7 +485,7 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]) {
     uint16_t last_index       = OSC_PRIVATE_MEMBER(OSCx, last_index);
     uint16_t x_coor_last      = OSC_PRIVATE_MEMBER(OSCx, x_coor_last);
     uint16_t y_coor_last_CH[MAX_OSC_CHANNEL];
-    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+    for(int i = 0; i < active_channel_num; i++){
         y_coor_last_CH[i] = OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[i]);
     }
 
@@ -506,52 +508,21 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]) {
     uint16_t display_range = display_num_max - display_num_min;
     uint16_t x_coor = x_origin + last_index;
 
-    if(is_channel_enabled(channel_mask, CH0)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH[0])) return OSC_ERROR;
-        uint16_t y_displayValue_CH0 = my_limit(display_num_max, display_num_min, data_CH[0]);
-        uint16_t y_coor_CH0 = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, y_displayValue_CH0);
+    for(int i = 0; i < active_channel_num; i++) {
+        uint8_t ch_mask = (uint8_t)(CH0 << i);
+        if(!is_channel_enabled(channel_mask, ch_mask)) continue;
+
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return OSC_ERROR;
+
+        uint16_t y_display_value = my_limit(display_num_max, display_num_min, data_CH[i]);
+        uint16_t y_coor = y_origin + y_frame_width -
+                coor_normal(y_frame_width, display_range, y_display_value);
+
         if(last_index > 0) {
-            SCREEN_DRAW_LINE(x_coor, y_coor_CH0, 
-                x_coor_last, y_coor_last_CH[0], wave_CH_color[0]);
+            SCREEN_DRAW_LINE(x_coor, y_coor,
+                x_coor_last, y_coor_last_CH[i], wave_CH_color[i]);
         }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[0]) = y_coor_CH0;
-    }
-    //CH1 通道
-    if(is_channel_enabled(channel_mask, CH1)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH[1])) return OSC_ERROR;
-        uint16_t y_displayValue_CH1 = my_limit(display_num_max, display_num_min, data_CH[1]);
-        uint16_t y_coor_CH1 = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, y_displayValue_CH1);
-        if(last_index > 0) {
-            SCREEN_DRAW_LINE(x_coor, y_coor_CH1, 
-                x_coor_last, y_coor_last_CH[1], wave_CH_color[1]);
-        }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[1]) = y_coor_CH1;
-    }
-    //CH2 通道
-    if(is_channel_enabled(channel_mask, CH2)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH[2])) return OSC_ERROR;
-        uint16_t y_displayValue_CH2 = my_limit(display_num_max, display_num_min, data_CH[2]);
-        uint16_t y_coor_CH2 = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, y_displayValue_CH2);
-        if(last_index > 0) {
-            SCREEN_DRAW_LINE(x_coor, y_coor_CH2, 
-                x_coor_last, y_coor_last_CH[2], wave_CH_color[2]);
-        }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[2]) = y_coor_CH2;
-    }
-    //CH3 通道
-    if(is_channel_enabled(channel_mask, CH3)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH[3])) return OSC_ERROR;
-        uint16_t y_displayValue_CH3 = my_limit(display_num_max, display_num_min, data_CH[3]);
-        uint16_t y_coor_CH3 = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, y_displayValue_CH3);
-        if(last_index > 0) {
-            SCREEN_DRAW_LINE(x_coor, y_coor_CH3, 
-                x_coor_last, y_coor_last_CH[3], wave_CH_color[3]);
-        }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[3]) = y_coor_CH3;
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[i]) = y_coor;
     }
 
     OSC_PRIVATE_MEMBER(OSCx, x_coor_last) = x_coor;
