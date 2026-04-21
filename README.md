@@ -42,7 +42,34 @@ cmake --build build
 rm -rf build/
 ```
 
-### 4. 移植方式（基于 `OSC_Profile`）
+### 4. 图形化配置（`tools/profile_gui`）
+**安装依赖**
+```bash
+sudo apt install python3.12-venv
+cd tools/profile_gui
+python -m venv .venv
+source .venv/bin/activate
+pip install pyside6 jinja2
+pip install -r requirements.txt
+```
+
+**启动工具**
+```bash
+cd tools/profile_gui
+source .venv/bin/activate
+python app.py
+```
+
+**使用方式**
+- 在界面中编辑实例参数（坐标、通道、标尺、主题）。
+- 点击 `生成 OSC_Profile.c`：写入 `core/OSC_Profile.c`。
+- 点击 `Run Simulator`：自动生成配置、构建并启动 `OSC_Simulator`。
+
+**生成结果**
+- 输出文件：`core/OSC_Profile.c`
+- 备份文件：`core/OSC_Profile.c.bak`
+
+### 5. 移植方式
 **步骤**
 1. 在目标工程中保留 `core/OSC.c`、`core/OSC.h`、`core/OSC_Profile.c`、`core/OSC_Profile.h`。  
 2. 在 `OSC.h` 中适配 4 个底层绘图宏：`SCREEN_DRAW_LINE`、`SCREEN_DRAW_RECTANGLE`、`SCREEN_FILL`、`SCREEN_DRAW_NUM`。  
