@@ -103,6 +103,8 @@ uint16_t OSC_theme[OSC_THEME_COUNT][OSC_THEME_INDEX_COUNT] = {
         [OSC_THEME_RULER_INDEX]      = __GRAY,
         [OSC_THEME_WAVE_CH0_INDEX]   = __GREEN,
         [OSC_THEME_WAVE_CH1_INDEX]   = __GBLUE,
+        [OSC_THEME_WAVE_CH2_INDEX]   = __YELLOW,
+        [OSC_THEME_WAVE_CH3_INDEX]   = __RED,
         [OSC_THEME_BACKGROUND_INDEX] = __BLACK
     },
     [OSC_THEME_LIGHT]   = {
@@ -110,6 +112,8 @@ uint16_t OSC_theme[OSC_THEME_COUNT][OSC_THEME_INDEX_COUNT] = {
         [OSC_THEME_RULER_INDEX]      = __GRAY,
         [OSC_THEME_WAVE_CH0_INDEX]   = __ORANGE,
         [OSC_THEME_WAVE_CH1_INDEX]   = __DEEP_BLUE,
+        [OSC_THEME_WAVE_CH2_INDEX]   = __RED,
+        [OSC_THEME_WAVE_CH3_INDEX]   = __BLUE,
         [OSC_THEME_BACKGROUND_INDEX] = __WHITE
     }
 };
@@ -227,8 +231,9 @@ OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init) {
     /* Private regs */
     OSC_WRITE_PRIVATE(OSCx, last_index, 0);
     OSC_WRITE_PRIVATE(OSCx, x_coor_last, OSC_Init->x_origin);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH0, 0);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH1, 0);
+    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+        OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
+    }
 
     return OSC_OK;
 }
@@ -267,8 +272,9 @@ OSC_StatusTypeDef OSC_DeInit(int OSCx) {
     }
     OSC_WRITE_PRIVATE(OSCx, last_index, 0);
     OSC_WRITE_PRIVATE(OSCx, x_coor_last, 0);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH0, 0);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH1, 0);
+    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+        OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
+    }
 
     return OSC_OK;
 }
@@ -423,8 +429,9 @@ OSC_StatusTypeDef OSC_CurveClear(int OSCx) {
     // reset the index of OSC
     OSC_WRITE_PRIVATE(OSCx, last_index, 0);
     OSC_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH0, 0);
-    OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH1, 0);
+    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+        OSC_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
+    }
     if(is_display_ruler_y) {
         if(OSC_RulerDisplay(OSCx) == OSC_ERROR) return OSC_ERROR;
     }
@@ -450,7 +457,7 @@ OSC_StatusTypeDef OSC_ReDraw(int OSCx) {
 *  @return : enum OSC_StatusTypeDef 为OSC_OK则无问题，为OSC_ERROR则有问题
 *            若示波器实例is_auto_clear == false，不会自动清屏，同时屏幕满时返回OSC_FULL
 */
-OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) {
+OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]) {
     if(!IS_VALID_OSC_INST(OSCx)) return OSC_ERROR;
     uint16_t x_origin                = OSC_CONFIG_MEMBER(OSCx, x_origin); 
     uint16_t y_origin                = OSC_CONFIG_MEMBER(OSCx, y_origin); 
@@ -466,13 +473,19 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) 
     volatile bool is_auto_clear      = OSC_CONFIG_MEMBER(OSCx, is_auto_clear);
     uint8_t channel_mask             = OSC_CONFIG_MEMBER(OSCx, channel_mask);
 
-    uint16_t wave_CH0_color = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH0_INDEX);
-    uint16_t wave_CH1_color = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH1_INDEX);
+    uint16_t wave_CH_color[MAX_OSC_CHANNEL] = {0};
+    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+        if(is_channel_enabled(channel_mask, CH0 << i)) {
+            wave_CH_color[i] = OSC_GetThemeColor(theme_type, OSC_THEME_WAVE_CH0_INDEX + i);
+        }
+    }
 
     uint16_t last_index       = OSC_PRIVATE_MEMBER(OSCx, last_index);
     uint16_t x_coor_last      = OSC_PRIVATE_MEMBER(OSCx, x_coor_last);
-    uint16_t y_coor_last_CH0  = OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH0);
-    uint16_t y_coor_last_CH1  = OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH1);
+    uint16_t y_coor_last_CH[MAX_OSC_CHANNEL];
+    for(int i = 0; i < MAX_OSC_CHANNEL; i++){
+        y_coor_last_CH[i] = OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[i]);
+    }
 
     uint16_t y_frame_width = (is_display_ruler_x) ? 
             (y_width - CHAR_PIXEL_HEIGHT) : y_width;
@@ -494,28 +507,53 @@ OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1) 
     uint16_t x_coor = x_origin + last_index;
 
     if(is_channel_enabled(channel_mask, CH0)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH0)) return OSC_ERROR;
-        uint16_t y_displayValue_CH0 = my_limit(display_num_max, display_num_min, data_CH0);
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH[0])) return OSC_ERROR;
+        uint16_t y_displayValue_CH0 = my_limit(display_num_max, display_num_min, data_CH[0]);
         uint16_t y_coor_CH0 = y_origin + y_frame_width - 
                 coor_normal(y_frame_width, display_range, y_displayValue_CH0);
         if(last_index > 0) {
             SCREEN_DRAW_LINE(x_coor, y_coor_CH0, 
-                x_coor_last, y_coor_last_CH0, wave_CH0_color);
+                x_coor_last, y_coor_last_CH[0], wave_CH_color[0]);
         }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH0) = y_coor_CH0;
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[0]) = y_coor_CH0;
     }
     //CH1 通道
     if(is_channel_enabled(channel_mask, CH1)) {
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH1)) return OSC_ERROR;
-        uint16_t y_displayValue_CH1 = my_limit(display_num_max, display_num_min, data_CH1);
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH[1])) return OSC_ERROR;
+        uint16_t y_displayValue_CH1 = my_limit(display_num_max, display_num_min, data_CH[1]);
         uint16_t y_coor_CH1 = y_origin + y_frame_width - 
                 coor_normal(y_frame_width, display_range, y_displayValue_CH1);
         if(last_index > 0) {
             SCREEN_DRAW_LINE(x_coor, y_coor_CH1, 
-                x_coor_last, y_coor_last_CH1, wave_CH1_color);
+                x_coor_last, y_coor_last_CH[1], wave_CH_color[1]);
         }
-        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH1) = y_coor_CH1;
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[1]) = y_coor_CH1;
     }
+    //CH2 通道
+    if(is_channel_enabled(channel_mask, CH2)) {
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH[2])) return OSC_ERROR;
+        uint16_t y_displayValue_CH2 = my_limit(display_num_max, display_num_min, data_CH[2]);
+        uint16_t y_coor_CH2 = y_origin + y_frame_width - 
+                coor_normal(y_frame_width, display_range, y_displayValue_CH2);
+        if(last_index > 0) {
+            SCREEN_DRAW_LINE(x_coor, y_coor_CH2, 
+                x_coor_last, y_coor_last_CH[2], wave_CH_color[2]);
+        }
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[2]) = y_coor_CH2;
+    }
+    //CH3 通道
+    if(is_channel_enabled(channel_mask, CH3)) {
+        if(is_out_of_bound(display_num_max, display_num_min, data_CH[3])) return OSC_ERROR;
+        uint16_t y_displayValue_CH3 = my_limit(display_num_max, display_num_min, data_CH[3]);
+        uint16_t y_coor_CH3 = y_origin + y_frame_width - 
+                coor_normal(y_frame_width, display_range, y_displayValue_CH3);
+        if(last_index > 0) {
+            SCREEN_DRAW_LINE(x_coor, y_coor_CH3, 
+                x_coor_last, y_coor_last_CH[3], wave_CH_color[3]);
+        }
+        OSC_PRIVATE_MEMBER(OSCx, y_coor_last_CH[3]) = y_coor_CH3;
+    }
+
     OSC_PRIVATE_MEMBER(OSCx, x_coor_last) = x_coor;
     last_index++;
     OSC_PRIVATE_MEMBER(OSCx, last_index)  = last_index;

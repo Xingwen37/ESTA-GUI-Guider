@@ -43,6 +43,8 @@
       OSC_ConfigSetChannelNum(&OSC_Config, 2);
       OSC_ConfigSetChannelEnabled(&OSC_Config, CH0);
       OSC_ConfigSetChannelEnabled(&OSC_Config, CH1);
+      OSC_ConfigSetChannelEnabled(&OSC_Config, CH2);
+      OSC_ConfigSetChannelEnabled(&OSC_Config, CH3);
       OSC_ConfigSetRulerY(&OSC_Config, true, &ruler_y[0], 4, 4);
       OSC_ConfigSetRulerX(&OSC_Config, true, &ruler_x[0], 3, 0, 100, 8);
       OSC_ConfigSetTheme(&OSC_Config, OSC_THEME_DEFAULT);
@@ -66,6 +68,8 @@
       /* PC 端的主循环与事件处理 */
       bool is_running = true;
       SDL_Event event;
+
+      uint16_t data_OSC[2][4] = {0};
   
       while (is_running)
       {
@@ -77,10 +81,17 @@
                   is_running = false; // 用户点击了窗口的 'X' 号
               }
           }
-  
+          data_OSC[0][0] = gOutputSignal[num];
+          data_OSC[0][1] = gOutputSignal[num_1];
+          data_OSC[0][2] = 1000;
+          data_OSC[0][3] = 1600;
+          data_OSC[1][0] = gOutputSignal[num_1];
+          data_OSC[1][1] = gOutputSignal[num];
+          data_OSC[1][2] = 1400;
+          data_OSC[1][3] = 2400;
           /* 查表输出到缓冲纹理 */
-          OSC_CurveDraw(OSC_INST(0), gOutputSignal[num], gOutputSignal[num_1]);
-          OSC_CurveDraw(OSC_INST(1), gOutputSignal[num_1], gOutputSignal[num]);
+          OSC_CurveDraw(OSC_INST(0), data_OSC[0]);
+          OSC_CurveDraw(OSC_INST(1), data_OSC[1]);
   
           /* 将缓冲数据刷新到计算机屏幕 */
           OSC_SDL2_Update();

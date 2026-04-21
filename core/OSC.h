@@ -51,11 +51,11 @@
 
 /* GLOBAL MARCO */
 // 最大示波器实例个数
-#define MAX_OSC_NUM         2
+#define MAX_OSC_NUM         4
 
 // 单个示波器实例通道数
-//TODO: 实现多通道的示波器 ,现在只支持至多双通道
-#define MAX_OSC_CHANNEL     2
+//TODO: 实现多通道的示波器 ,现在只支持至多四通道
+#define MAX_OSC_CHANNEL     4
 
 /* 通道掩码常量（独热码） */
 #define CH0  (1U << 0)  /* 0b00000001 */
@@ -100,6 +100,8 @@ typedef enum {
     OSC_THEME_RULER_INDEX      ,
     OSC_THEME_WAVE_CH0_INDEX   ,
     OSC_THEME_WAVE_CH1_INDEX   ,
+    OSC_THEME_WAVE_CH2_INDEX   ,
+    OSC_THEME_WAVE_CH3_INDEX   ,
     OSC_THEME_BACKGROUND_INDEX ,
     //用于检查边界条件，并非主题类型！所有添加的类型都放在OSC_THEME_INDEX_COUNT 这个枚举变量上面
     OSC_THEME_INDEX_COUNT 
@@ -203,8 +205,7 @@ typedef struct {
     uint16_t    ruler_buff_x[OSC_MAX_RULER_X_NUM]; 
     uint16_t    last_index;
     uint16_t    x_coor_last;
-    uint16_t    y_coor_last_CH0;
-    uint16_t    y_coor_last_CH1;
+    uint16_t    y_coor_last_CH[MAX_OSC_CHANNEL];
 } OSC_Private_Typedef;
 
 /* be like Class in C++ */
@@ -241,7 +242,7 @@ OSC_StatusTypeDef OSC_RulerDisplay(int OSCx);
 OSC_StatusTypeDef OSC_FrameDisplay(int OSCx);
 OSC_StatusTypeDef OSC_CurveClear(int OSCx);
 OSC_StatusTypeDef OSC_ReDraw(int OSCx);
-OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH0, uint16_t data_CH1);
+OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]); 
 uint16_t OSC_GetThemeColor(OSC_theme_type theme, OSC_theme_color_index_type color_type);
 
 #endif
