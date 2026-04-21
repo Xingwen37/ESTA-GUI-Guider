@@ -52,7 +52,7 @@ uint16_t OSC_theme[OSC_THEME_COUNT][OSC_THEME_INDEX_COUNT] = {
 */
 static uint16_t coor_normal(uint16_t coor_width, uint16_t value_max_range, uint16_t value){
     if(value_max_range == 0 || coor_width == 0) return 0;
-    return (uint16_t)((double)value / (double)value_max_range * (double)coor_width);
+    return (uint16_t)((((uint32_t)value * coor_width) + (value_max_range >> 1)) / value_max_range);
 }
 
 static uint16_t my_limit(uint16_t max, uint16_t min, uint16_t value){
@@ -107,21 +107,17 @@ OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init) {
 
         uint16_t ruler_actual_count_y = (OSC_Init->ruler_count_y > OSC_MAX_RULER_Y_NUM) ? 
                 OSC_MAX_RULER_Y_NUM : OSC_Init->ruler_count_y;
-        for(int i = 0; i < OSC_MAX_RULER_Y_NUM; i++){
-            if(i < ruler_actual_count_y) {
-                OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i) = OSC_Init->ruler_y[i];
-            }else{
-                OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i) = 0;
-            }   
+        // 优化：先将整个缓存区清零，再拷贝有效数据，消除 if-else 分支
+        memset(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_y, 0, sizeof(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_y));
+        for(int i = 0; i < ruler_actual_count_y; i++){
+            OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i) = OSC_Init->ruler_y[i];
         }
         OSC_WRITE_CONFIG_INIT(OSCx, is_display_ruler_y);
         OSC_WRITE_CONFIG(OSCx, ruler_y, NULL);
         OSC_WRITE_CONFIG(OSCx, ruler_count_y, ruler_actual_count_y);
         OSC_WRITE_CONFIG_INIT(OSCx, ruler_num_digits_y);
     }else{
-        for(int i = 0; i < OSC_MAX_RULER_Y_NUM; i++){
-            OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i) = 0;
-        }
+        memset(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_y, 0, sizeof(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_y));
         OSC_WRITE_CONFIG(OSCx, is_display_ruler_y, false);
         OSC_WRITE_CONFIG(OSCx, ruler_y, NULL);
         OSC_WRITE_CONFIG(OSCx, ruler_count_y, 0);
@@ -134,12 +130,9 @@ OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init) {
 
         uint16_t ruler_actual_count_x = (OSC_Init->ruler_count_x > OSC_MAX_RULER_X_NUM) ? 
                 OSC_MAX_RULER_X_NUM : OSC_Init->ruler_count_x;
-        for(int i = 0; i < OSC_MAX_RULER_X_NUM; i++){
-            if(i < ruler_actual_count_x) {
-                OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i) = OSC_Init->ruler_x[i];
-            }else{
-                OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i) = 0;
-            }   
+        memset(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_x, 0, sizeof(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_x));
+        for(int i = 0; i < ruler_actual_count_x; i++){
+            OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i) = OSC_Init->ruler_x[i];
         }
         OSC_WRITE_CONFIG_INIT(OSCx, is_display_ruler_x);
         OSC_WRITE_CONFIG(OSCx, ruler_x, NULL);
@@ -148,9 +141,7 @@ OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init) {
         OSC_WRITE_CONFIG_INIT(OSCx, ruler_full_value_x);
         OSC_WRITE_CONFIG_INIT(OSCx, ruler_num_digits_x);
     }else{
-        for(int i = 0; i < OSC_MAX_RULER_X_NUM; i++){
-            OSC_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i) = 0;
-        }
+        memset(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_x, 0, sizeof(OSC_INST_ADDR(OSCx).OSC_Private.ruler_buff_x));
         OSC_WRITE_CONFIG(OSCx, is_display_ruler_x, false);
         OSC_WRITE_CONFIG(OSCx, ruler_x, NULL);
         OSC_WRITE_CONFIG(OSCx, ruler_count_x, 0);
@@ -234,7 +225,7 @@ uint16_t OSC_GetThemeColor(OSC_theme_type theme, OSC_theme_color_index_type colo
 OSC_StatusTypeDef OSC_RulerDisplay(int OSCx) {
     volatile bool is_display_ruler_y = OSC_CONFIG_MEMBER(OSCx, is_display_ruler_y);
     volatile bool is_display_ruler_x = OSC_CONFIG_MEMBER(OSCx, is_display_ruler_x);
-    if(!(is_display_ruler_x | is_display_ruler_y)) return OSC_OK;
+    if(!(is_display_ruler_x || is_display_ruler_y)) return OSC_OK;
 
     if(!IS_VALID_OSC_INST(OSCx)) return OSC_ERROR;
 
@@ -275,17 +266,17 @@ OSC_StatusTypeDef OSC_RulerDisplay(int OSCx) {
             if((int16_t)ruler_y_coor - CHAR_PIXEL_HEIGHT / 2 < 0) ruler_y_num_coor = 0;
             SCREEN_DRAW_LINE(x_origin, ruler_y_coor, 
                 x_origin + x_frame_width, ruler_y_coor, ruler_color);
-            for(int i = 0; i < 2; i++){
-                // 有时屏幕显示数字需要画两次
+                //原注释：有时屏幕显示数字需要画两次 但在模拟器却没有出现该情况，推测是硬件驱动的问题
                 SCREEN_DRAW_NUM(x_origin + x_frame_width, ruler_y_num_coor, 
                     ruler, ruler_num_digits_y, ruler_color);
-            }
         }
-        //写数字导致边框可能间断，重新绘制
+        //原注释：写数字导致边框可能间断，重新绘制 但在模拟器却没有出现该情况，推测是硬件驱动的问题
+        /*
         uint16_t x_outline_width = x_width;
         uint16_t y_outline_width = y_width;
         SCREEN_DRAW_RECTANGLE(x_origin + x_frame_width, y_origin, 
-            x_origin + x_outline_width, y_origin + y_outline_width, frame_color);
+        x_origin + x_outline_width, y_origin + y_outline_width, frame_color);
+        */
     }
 
     if(is_display_ruler_x){
@@ -307,11 +298,9 @@ OSC_StatusTypeDef OSC_RulerDisplay(int OSCx) {
             }
             SCREEN_DRAW_LINE(ruler_x_coor, y_origin, 
                 ruler_x_coor, y_origin + y_frame_width, ruler_color);
-            for(int i = 0; i < 2; i++){
-                // 有时屏幕显示数字需要画两次
+                //原注释：有时屏幕显示数字需要画两次 但在模拟器却没有出现该情况，推测是硬件驱动的问题
                 SCREEN_DRAW_NUM(ruler_x_num_coor, y_origin + y_frame_width, 
                     ruler, ruler_actual_digits, ruler_color);
-            }
         }
     }
     return OSC_OK;
