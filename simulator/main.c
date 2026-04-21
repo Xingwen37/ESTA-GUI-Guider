@@ -38,39 +38,21 @@
       uint16_t ruler_y[5] = {1000, 2000, 3000, 4000, 0};
       uint16_t ruler_x[5] = {30, 50, 90, 0, 0};
   
-      OSC_Config.x_origin = 10;
-      OSC_Config.y_origin = 0;
-      OSC_Config.x_width  = 200;
-      OSC_Config.y_width  = 120;
-  
-      OSC_Config.display_num_min = 0;
-      OSC_Config.display_num_max = 4095;
-  
-      OSC_Config.channel_num = 2;
-  
-      OSC_Config.is_display_ruler_y = true;
-      OSC_Config.ruler_y = &ruler_y[0];
-      OSC_Config.ruler_count_y = 4;
-      OSC_Config.ruler_num_digits_y = 4;
-  
-      OSC_Config.is_display_ruler_x = true;
-      OSC_Config.ruler_x = &ruler_x[0];
-      OSC_Config.ruler_count_x = 3;
-      OSC_Config.ruler_zero_value_x = 0;
-      OSC_Config.ruler_full_value_x = 100;
-      OSC_Config.ruler_num_digits_x = 8;
-  
-      OSC_Config.theme_type = OSC_THEME_DEFAULT;
-      OSC_Config.is_auto_clear = true;
+      OSC_ConfigSetPositionAndSize(&OSC_Config, 10, 0, 200, 120);
+      OSC_ConfigSetDisplayRange(&OSC_Config, 0, 4095);
+      OSC_ConfigSetChannelNum(&OSC_Config, 2);
+      OSC_ConfigSetRulerY(&OSC_Config, true, &ruler_y[0], 4, 4);
+      OSC_ConfigSetRulerX(&OSC_Config, true, &ruler_x[0], 3, 0, 100, 8);
+      OSC_ConfigSetTheme(&OSC_Config, OSC_THEME_DEFAULT);
+      OSC_ConfigSetAutoClear(&OSC_Config, true);
   
       // 初始化实例 0
       OSC_Init(OSC_INST(0), &OSC_Config);
       OSC_ReDraw(OSC_INST(0));
   
       // 修改配置以初始化实例 1
-      OSC_Config.x_origin = 0;
-      OSC_Config.y_origin = 120;
-      OSC_Config.theme_type = OSC_THEME_LIGHT;
+      OSC_ConfigSetPositionAndSize(&OSC_Config, 0, 120, 200, 120);
+      OSC_ConfigSetTheme(&OSC_Config, OSC_THEME_LIGHT);
   
       OSC_Init(OSC_INST(1), &OSC_Config);
       OSC_ReDraw(OSC_INST(1));

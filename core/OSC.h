@@ -4,7 +4,9 @@
 /* INCLUDE */
 #include <stddef.h>  
 #include <stdint.h>  
-#include <stdbool.h> 
+#include <stdbool.h>
+#include "helper.h"
+
 // 支持硬件抽象层
 // 取消注释以使用对应的底层驱动
 // #define SCREEN_USE_ILI9341
@@ -54,6 +56,21 @@
 // 单个示波器实例通道数
 //TODO: 实现多通道的示波器 ,现在只支持至多双通道
 #define MAX_OSC_CHANNEL     2
+
+/* 通道掩码常量（独热码） */
+#define CH1_MASK  (1U << 0)  /* 0b00000001 */
+#define CH2_MASK  (1U << 1)  /* 0b00000010 */
+#define CH3_MASK  (1U << 2)  /* 0b00000100 */
+#define CH4_MASK  (1U << 3)  /* 0b00001000 */
+#define CH5_MASK  (1U << 4)  /* 0b00010000 */
+#define CH6_MASK  (1U << 5)  /* 0b00100000 */
+#define CH7_MASK  (1U << 6)  /* 0b01000000 */
+#define CH8_MASK  (1U << 7)  /* 0b10000000 */
+
+#define ALL_CHANNELS_MASK (CH1_MASK | CH2_MASK | CH3_MASK | CH4_MASK | \
+    CH5_MASK | CH6_MASK | CH7_MASK | CH8_MASK)
+    
+#define NO_CHANNELS_MASK  (0U)
 
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
 #define OSC_MAX_RULER_Y_NUM   5
@@ -198,6 +215,22 @@ typedef struct {
 
 
 /* function prototype */
+void OSC_ConfigSetPositionAndSize(OSC_Config_TypeDef *config,
+                                  uint16_t x_origin, uint16_t y_origin,
+                                  uint16_t x_width, uint16_t y_width);
+void OSC_ConfigSetDisplayRange(OSC_Config_TypeDef *config,
+                               uint16_t display_num_min, uint16_t display_num_max);
+void OSC_ConfigSetChannelNum(OSC_Config_TypeDef *config, uint16_t channel_num);
+void OSC_ConfigSetRulerY(OSC_Config_TypeDef *config, bool is_display,
+                         uint16_t *ruler_y, uint16_t ruler_count_y,
+                         uint16_t ruler_num_digits_y);
+void OSC_ConfigSetRulerX(OSC_Config_TypeDef *config, bool is_display,
+                         uint16_t *ruler_x, uint16_t ruler_count_x,
+                         uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
+                         uint16_t ruler_num_digits_x);
+void OSC_ConfigSetTheme(OSC_Config_TypeDef *config, OSC_theme_type theme_type);
+void OSC_ConfigSetAutoClear(OSC_Config_TypeDef *config, bool is_auto_clear);
+
 OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init);
 OSC_StatusTypeDef OSC_DeInit(int OSCx);
 OSC_StatusTypeDef OSC_RulerDisplay(int OSCx);

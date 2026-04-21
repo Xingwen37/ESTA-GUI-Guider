@@ -22,11 +22,67 @@
 
 
 #include "OSC.h"
+#include <string.h>
 
 // 不要修改这个数组的名称，我们根据其来寻址
 // 也不要直接通过数组修改里面的内容，而是通过库函数修改配置（除非你知道你在做什么）
 // 你可以将其视作库函数中外设的基地址
 OSC_TypeDef OSC_State[MAX_OSC_NUM];
+
+void OSC_ConfigSetPositionAndSize(OSC_Config_TypeDef *config,
+                                  uint16_t x_origin, uint16_t y_origin,
+                                  uint16_t x_width, uint16_t y_width) {
+    if(config == NULL) return;
+    config->x_origin = x_origin;
+    config->y_origin = y_origin;
+    config->x_width = x_width;
+    config->y_width = y_width;
+}
+
+void OSC_ConfigSetDisplayRange(OSC_Config_TypeDef *config,
+                               uint16_t display_num_min, uint16_t display_num_max) {
+    if(config == NULL) return;
+    config->display_num_min = display_num_min;
+    config->display_num_max = display_num_max;
+}
+
+void OSC_ConfigSetChannelNum(OSC_Config_TypeDef *config, uint16_t channel_num) {
+    if(config == NULL) return;
+    config->channel_num = channel_num;
+}
+
+void OSC_ConfigSetRulerY(OSC_Config_TypeDef *config, bool is_display,
+                         uint16_t *ruler_y, uint16_t ruler_count_y,
+                         uint16_t ruler_num_digits_y) {
+    if(config == NULL) return;
+    config->is_display_ruler_y = is_display;
+    config->ruler_y = ruler_y;
+    config->ruler_count_y = ruler_count_y;
+    config->ruler_num_digits_y = ruler_num_digits_y;
+}
+
+void OSC_ConfigSetRulerX(OSC_Config_TypeDef *config, bool is_display,
+                         uint16_t *ruler_x, uint16_t ruler_count_x,
+                         uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
+                         uint16_t ruler_num_digits_x) {
+    if(config == NULL) return;
+    config->is_display_ruler_x = is_display;
+    config->ruler_x = ruler_x;
+    config->ruler_count_x = ruler_count_x;
+    config->ruler_zero_value_x = ruler_zero_value_x;
+    config->ruler_full_value_x = ruler_full_value_x;
+    config->ruler_num_digits_x = ruler_num_digits_x;
+}
+
+void OSC_ConfigSetTheme(OSC_Config_TypeDef *config, OSC_theme_type theme_type) {
+    if(config == NULL) return;
+    config->theme_type = theme_type;
+}
+
+void OSC_ConfigSetAutoClear(OSC_Config_TypeDef *config, bool is_auto_clear) {
+    if(config == NULL) return;
+    config->is_auto_clear = is_auto_clear;
+}
 
 // 储存主题颜色的数组，你可以在此处添加自己的主题
 // 你还需要OSC_theme_type 枚举内添加你的主题名称
@@ -298,7 +354,7 @@ OSC_StatusTypeDef OSC_RulerDisplay(int OSCx) {
             }
             SCREEN_DRAW_LINE(ruler_x_coor, y_origin, 
                 ruler_x_coor, y_origin + y_frame_width, ruler_color);
-                //原注释：有时屏幕显示数字需要画两次 但在模拟器却没有出现该情况，推测是硬件驱动的问题
+                //原注释：有时屏幕显示数字需要画两次 //但在模拟器却没有出现该情况，推测是硬件驱动的问题
                 SCREEN_DRAW_NUM(ruler_x_num_coor, y_origin + y_frame_width, 
                     ruler, ruler_actual_digits, ruler_color);
         }
