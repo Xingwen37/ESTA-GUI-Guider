@@ -3,7 +3,11 @@ project(OSC_Simulator C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+elseif(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+endif()
 
 # 只需要找核心的 SDL2 库即可
 find_package(SDL2 REQUIRED)
