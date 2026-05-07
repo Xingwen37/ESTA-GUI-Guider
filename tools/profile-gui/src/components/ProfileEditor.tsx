@@ -1,5 +1,5 @@
 ﻿import type { EstaProfile } from "../lib/types";
-import { THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_ESTA_CHANNEL } from "../lib/types";
+import { THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_WAVE_CHANNEL } from "../lib/types";
 
 interface Props {
   profile: EstaProfile;
@@ -70,7 +70,7 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         </div>
         <div className="form-row">
           <label>channel_num</label>
-          {spin(profile.channel_num, 1, MAX_ESTA_CHANNEL, (v) => set("channel_num", v))}
+          {spin(profile.channel_num, 1, MAX_WAVE_CHANNEL, (v) => set("channel_num", v))}
         </div>
         <div className="form-row">
           <label>theme_type</label>
@@ -99,7 +99,7 @@ export default function ProfileEditor({ profile, onChange }: Props) {
       <fieldset className="group-box">
         <legend>通道使能</legend>
         <div className="ch-row">
-          {Array.from({ length: MAX_ESTA_CHANNEL }, (_, i) => (
+          {Array.from({ length: MAX_WAVE_CHANNEL }, (_, i) => (
             <label key={i}>
               <input
                 type="checkbox"

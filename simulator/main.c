@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * @file           : main.c (Simulator Version)
   * @brief          : SDL2 Simulator Main program body for ESTA Library
@@ -10,10 +10,10 @@
   #include <stdbool.h>
   #include <SDL2/SDL.h>
 
-  #include "ESTA.h"
+  #include "WAVE.h"
   #include "ESTA_Profile.h"
   #include "sim_scenario.h"
-  #include "esta_port_sdl2.h"
+  #include "WAVE_port_sdl2.h"
 
   /**
     * @brief  The PC application entry point.
@@ -40,22 +40,22 @@
           return 1;
       }
 
-      int ESTA_count = profiles->ESTA_count;
-      if (ESTA_count > SIM_SCENARIO_ESTA_COUNT) {
-          ESTA_count = SIM_SCENARIO_ESTA_COUNT;
+      int inst_count = profiles->inst_count;
+      if (inst_count > SIM_SCENARIO_inst_count) {
+          inst_count = SIM_SCENARIO_inst_count;
       }
-      if (ESTA_count > MAX_ESTA_NUM) {
-          ESTA_count = MAX_ESTA_NUM;
+      if (inst_count > MAX_WAVE_NUM) {
+          inst_count = MAX_WAVE_NUM;
       }
 
-      for (int i = 0; i < ESTA_count; i++) {
-          if (ESTA_Profile_Apply(ESTA_INST(i), &profiles->profiles[i]) != ESTA_OK) {
+      for (int i = 0; i < inst_count; i++) {
+          if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) {
               printf("ESTA_Profile_Apply failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
           }
-          if (ESTA_ReDraw(ESTA_INST(i)) != ESTA_OK) {
-              printf("ESTA_ReDraw failed at inst=%d.\n", i);
+          if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) {
+              printf("WAVE_ReDraw failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
           }
@@ -65,7 +65,7 @@
       bool is_running = true;
       SDL_Event event;
 
-      uint16_t data_ESTA[SIM_SCENARIO_ESTA_COUNT][MAX_ESTA_CHANNEL] = {0};
+      uint16_t data_ESTA[SIM_SCENARIO_inst_count][MAX_WAVE_CHANNEL] = {0};
 
       while (is_running)
       {
@@ -78,12 +78,12 @@
               }
           }
           /* 由场景层按统一时间基生成每个示波器每一帧的数据 */
-          for (int i = 0; i < ESTA_count; i++) {
+          for (int i = 0; i < inst_count; i++) {
               if (!SimScenario_GetNextFrame(&scenario, i, data_ESTA[i])) {
                   is_running = false;
                   break;
               }
-              if (ESTA_CurveDraw(ESTA_INST(i), data_ESTA[i]) == ESTA_ERROR) {
+              if (WAVE_CurveDraw(WAVE_INST(i), data_ESTA[i]) == WAVE_ERROR) {
                   is_running = false;
                   break;
               }

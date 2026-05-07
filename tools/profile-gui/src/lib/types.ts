@@ -27,11 +27,11 @@ export interface ProfileSet {
 }
 
 export const THEME_OPTIONS = [
-  ["ESTA_THEME_DEFAULT", "Default"],
-  ["ESTA_THEME_LIGHT", "Light"],
+  ["WAVE_THEME_DEFAULT", "Default"],
+  ["WAVE_THEME_LIGHT", "Light"],
 ] as const;
 
-export const MAX_ESTA_INST = 2;
-export const MAX_ESTA_CHANNEL = 4;
+export const MAX_WAVE_INST = 2;
+export const MAX_WAVE_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 5;
 export const MAX_RULER_Y_NUM = 5;

@@ -21,16 +21,16 @@ bool SimScenario_LoadDefault(SimScenarioRuntime *runtime) {
     return true;
 }
 
-bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]) {
+bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, uint16_t data_ch[MAX_WAVE_CHANNEL]) {
     if (runtime == NULL || data_ch == NULL) return false;
-    if (ESTA_idx < 0 || ESTA_idx >= SIM_SCENARIO_ESTA_COUNT) return false;
+    if (inst_idx < 0 || inst_idx >= SIM_SCENARIO_WAVE_COUNT) return false;
     if (runtime->signal_lut == NULL || runtime->signal_len == 0) return false;
 
-    memset(data_ch, 0, sizeof(uint16_t) * MAX_ESTA_CHANNEL);
+    memset(data_ch, 0, sizeof(uint16_t) * MAX_WAVE_CHANNEL);
     size_t base = runtime->tick % runtime->signal_len;
     size_t shift_32 = (runtime->tick + 32U) % runtime->signal_len;
 
-    if (ESTA_idx == 0) {
+    if (inst_idx == 0) {
         data_ch[0] = runtime->signal_lut[base];
         data_ch[1] = runtime->signal_lut[shift_32];
         data_ch[2] = 1000;

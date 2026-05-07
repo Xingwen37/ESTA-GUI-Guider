@@ -149,7 +149,7 @@ fn default_profile() -> ProfileSet {
                 ruler_x: [30, 50, 90, 0, 0],
                 ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
                 ruler_num_digits_x: 8,
-                theme_type: "ESTA_THEME_DEFAULT".into(),
+                theme_type: "WAVE_THEME_DEFAULT".into(),
                 is_auto_clear: true,
             },
             EstaProfile {
@@ -163,7 +163,7 @@ fn default_profile() -> ProfileSet {
                 ruler_x: [30, 50, 90, 0, 0],
                 ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
                 ruler_num_digits_x: 8,
-                theme_type: "ESTA_THEME_LIGHT".into(),
+                theme_type: "WAVE_THEME_LIGHT".into(),
                 is_auto_clear: true,
             },
         ],

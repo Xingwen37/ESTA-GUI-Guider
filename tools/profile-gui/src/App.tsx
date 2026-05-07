@@ -3,7 +3,7 @@ import ProfileEditor from "./components/ProfileEditor";
 import * as api from "./lib/tauri-api";
 import type { ProfileSet, EstaProfile } from "./lib/types";
 import {
-  MAX_ESTA_INST,
+  MAX_WAVE_INST,
   MAX_RULER_X_NUM,
   MAX_RULER_Y_NUM,
 } from "./lib/types";
@@ -19,7 +19,7 @@ const EMPTY_PROFILE: EstaProfile = {
   ruler_x: [30, 50, 90, 0, 0],
   ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
   ruler_num_digits_x: 8,
-  theme_type: "ESTA_THEME_DEFAULT",
+  theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
 };
 
@@ -27,11 +27,11 @@ function validate(profiles: EstaProfile[]): string | null {
   for (let i = 0; i < profiles.length; i++) {
     const p = profiles[i];
     if (p.display_num_min >= p.display_num_max)
-      return `ESTA${i}: display_num_min 必须小于 display_num_max`;
+      return `WAVE${i}: display_num_min 必须小于 display_num_max`;
     if (p.ruler_count_x > MAX_RULER_X_NUM)
-      return `ESTA${i}: ruler_count_x 超过上限`;
+      return `WAVE${i}: ruler_count_x 超过上限`;
     if (p.ruler_count_y > MAX_RULER_Y_NUM)
-      return `ESTA${i}: ruler_count_y 超过上限`;
+      return `WAVE${i}: ruler_count_y 超过上限`;
   }
   return null;
 }
@@ -115,11 +115,11 @@ export default function App() {
           type="number"
           value={data.inst_count}
           min={1}
-          max={MAX_ESTA_INST}
+          max={MAX_WAVE_INST}
           onChange={(e) =>
             setData({
               ...data,
-              inst_count: Math.max(1, Math.min(MAX_ESTA_INST, Number(e.target.value) || 1)),
+              inst_count: Math.max(1, Math.min(MAX_WAVE_INST, Number(e.target.value) || 1)),
             })
           }
         />
@@ -143,7 +143,7 @@ export default function App() {
             className={`tab ${activeTab === i ? "active" : ""}`}
             onClick={() => setActiveTab(i)}
           >
-            ESTA{i}
+            WAVE{i}
           </button>
         ))}
       </div>

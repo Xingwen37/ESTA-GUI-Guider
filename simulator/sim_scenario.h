@@ -4,9 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ESTA.h"
+#include "WAVE.h"
 
-#define SIM_SCENARIO_ESTA_COUNT 2
+#define SIM_SCENARIO_WAVE_COUNT 2
 
 typedef struct {
     const uint16_t *signal_lut;
@@ -16,7 +16,7 @@ typedef struct {
 
 bool SimScenario_LoadDefault(SimScenarioRuntime *runtime);
 
-bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]);
+bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, uint16_t data_ch[MAX_WAVE_CHANNEL]);
 void SimScenario_Tick(SimScenarioRuntime *runtime);
 
 #endif

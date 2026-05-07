@@ -1,5 +1,5 @@
 ﻿{
-  "ESTA_count": 2,
+  "inst_count": 2,
   "profiles": [
     {
       "x_origin": 10,
@@ -32,7 +32,7 @@
       "ruler_zero_value_x": 0,
       "ruler_full_value_x": 100,
       "ruler_num_digits_x": 8,
-      "theme_type": "ESTA_THEME_LIGHT",
+      "theme_type": "WAVE_THEME_LIGHT",
       "is_auto_clear": true
     },
     {
@@ -66,7 +66,7 @@
       "ruler_zero_value_x": 0,
       "ruler_full_value_x": 100,
       "ruler_num_digits_x": 8,
-      "theme_type": "ESTA_THEME_DEFAULT",
+      "theme_type": "WAVE_THEME_DEFAULT",
       "is_auto_clear": true
     }
   ]

@@ -17,11 +17,11 @@ TL-ESTA 是一个基于 OOP-in-C (OOC) 架构的轻量级嵌入式波形显示 G
 ### 2. 核心 API
 | API | 功能说明 |
 | :--- | :--- |
-| `ESTA_Init()` | 初始化显示实例并载入配置。 |
-| `ESTA_DeInit()` | 复位显示实例，清空数据。 |
-| `ESTA_CurveDraw()` | 压入通道数据并触发波形绘制。 |
-| `ESTA_ReDraw()` | 强制重绘边框、背景与坐标轴。 |
-| `ESTA_GetThemeColor()` | 获取当前主题下指定组件的颜色值 (RGB565)。 |
+| `WAVE_Init()` | 初始化显示实例并载入配置。 |
+| `WAVE_DeInit()` | 复位显示实例，清空数据。 |
+| `WAVE_CurveDraw()` | 压入通道数据并触发波形绘制。 |
+| `WAVE_ReDraw()` | 强制重绘边框、背景与坐标轴。 |
+| `WAVE_GetThemeColor()` | 获取当前主题下指定组件的颜色值 (RGB565)。 |
 
 ### 3. 模拟器编译与运行
 
@@ -96,10 +96,10 @@ npm run tauri build
 
 ### 5. 移植方式
 **步骤**
-1. 在目标工程中保留 `core/ESTA.c`、`core/ESTA.h`、`core/ESTA_Profile.c`、`core/ESTA_Profile.h`。  
+1. 在目标工程中保留 `core/WAVE.c`、`core/WAVE.h`、`core/ESTA_Profile.c`、`core/ESTA_Profile.h`。  
 2. 在 `ESTA.h` 中适配 4 个底层绘图宏：`SCREEN_DRAW_LINE`、`SCREEN_DRAW_RECTANGLE`、`SCREEN_FILL`、`SCREEN_DRAW_NUM`。  
 3. 调用 `ESTA_Profile_GetDefault()` 读取配置，使用 `ESTA_Profile_Apply()` 初始化实例。  
-4. 主循环中持续调用 `ESTA_CurveDraw()` 输入采样数据，并按需调用 `ESTA_ReDraw()`。  
+4. 主循环中持续调用 `WAVE_CurveDraw()` 输入采样数据，并按需调用 `WAVE_ReDraw()`。  
 
 **最小 `main.c` 示例（可裁剪）**
 ```c
@@ -113,15 +113,15 @@ int main(void) {
     const ESTA_ProfileSet_TypeDef *profiles = ESTA_Profile_GetDefault();
     if (profiles == NULL) return -1;
 
-    for (int i = 0; i < profiles->ESTA_count; ++i) {
-        if (ESTA_Profile_Apply(ESTA_INST(i), &profiles->profiles[i]) != ESTA_OK) return -1;
-        if (ESTA_ReDraw(ESTA_INST(i)) != ESTA_OK) return -1;
+    for (int i = 0; i < profiles->inst_count; ++i) {
+        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) return -1;
+        if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) return -1;
     }
 
     while (1) {
-        uint16_t ch_data[MAX_ESTA_CHANNEL] = {0};
+        uint16_t ch_data[MAX_WAVE_CHANNEL] = {0};
         AcquireSignal(ch_data);                 /* 用户实现：采样或读取缓存 */
-        ESTA_CurveDraw(ESTA_INST(0), ch_data);   /* 可扩展到多实例 */
+        WAVE_CurveDraw(WAVE_INST(0), ch_data);   /* 可扩展到多实例 */
     }
 }
 ```
@@ -141,11 +141,11 @@ TL-ESTA is a lightweight embedded waveform display GUI library built on an OOP-i
 ### 2. Core APIs
 | API | Description |
 | :--- | :--- |
-| `ESTA_Init()` | Initialize an display instance with configuration. |
-| `ESTA_DeInit()` | Reset instance and clear data. |
-| `ESTA_CurveDraw()` | Push channel data and trigger waveform drawing. |
-| `ESTA_ReDraw()` | Force redraw of frames, backgrounds, and coordinate rulers. |
-| `ESTA_GetThemeColor()` | Get RGB565 color value for specific UI components. |
+| `WAVE_Init()` | Initialize an display instance with configuration. |
+| `WAVE_DeInit()` | Reset instance and clear data. |
+| `WAVE_CurveDraw()` | Push channel data and trigger waveform drawing. |
+| `WAVE_ReDraw()` | Force redraw of frames, backgrounds, and coordinate rulers. |
+| `WAVE_GetThemeColor()` | Get RGB565 color value for specific UI components. |
 
 ### 3. Build & Run Simulator
 
@@ -223,10 +223,10 @@ npm run tauri build
 ---
 
 ### 5. Porting Guide
-1. Keep `core/ESTA.c`, `core/ESTA.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.h` in your target project.
+1. Keep `core/WAVE.c`, `core/WAVE.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.h` in your target project.
 2. In `ESTA.h`, adapt 4 drawing macros: `SCREEN_DRAW_LINE`, `SCREEN_DRAW_RECTANGLE`, `SCREEN_FILL`, `SCREEN_DRAW_NUM`.
 3. Call `ESTA_Profile_GetDefault()` to read configuration, use `ESTA_Profile_Apply()` to initialize instances.
-4. In the main loop, call `ESTA_CurveDraw()` to push sample data, use `ESTA_ReDraw()` as needed.
+4. In the main loop, call `WAVE_CurveDraw()` to push sample data, use `WAVE_ReDraw()` as needed.
 
 **Minimal `main.c` example**
 ```c
@@ -239,15 +239,15 @@ int main(void) {
     const ESTA_ProfileSet_TypeDef *profiles = ESTA_Profile_GetDefault();
     if (profiles == NULL) return -1;
 
-    for (int i = 0; i < profiles->ESTA_count; ++i) {
-        if (ESTA_Profile_Apply(ESTA_INST(i), &profiles->profiles[i]) != ESTA_OK) return -1;
-        if (ESTA_ReDraw(ESTA_INST(i)) != ESTA_OK) return -1;
+    for (int i = 0; i < profiles->inst_count; ++i) {
+        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) return -1;
+        if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) return -1;
     }
 
     while (1) {
-        uint16_t ch_data[MAX_ESTA_CHANNEL] = {0};
+        uint16_t ch_data[MAX_WAVE_CHANNEL] = {0};
         AcquireSignal(ch_data);
-        ESTA_CurveDraw(ESTA_INST(0), ch_data);
+        WAVE_CurveDraw(WAVE_INST(0), ch_data);
     }
 }
 ```

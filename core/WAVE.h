@@ -1,5 +1,5 @@
-﻿#ifndef __ESTA_LIB
-#define __ESTA_LIB
+﻿#ifndef __WAVE_LIB
+#define __WAVE_LIB
 
 /* INCLUDE */
 #include <stddef.h>  
@@ -28,7 +28,7 @@
 
 #elif defined(SCREEN_USE_SDL2)
 // 引入 SDL2 移植层的头文件
-#include "esta_port_sdl2.h"
+#include "WAVE_port_sdl2.h"
 
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
             ESTA_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
@@ -51,11 +51,11 @@
 
 /* GLOBAL MARCO */
 // 最大示波器实例个数
-#define MAX_ESTA_NUM         4
+#define MAX_WAVE_NUM         4
 
 // 单个示波器实例通道数
 //TODO: 实现多通道的示波器 ,现在支持至四通道,可拓展至八通道
-#define MAX_ESTA_CHANNEL     4
+#define MAX_WAVE_CHANNEL     4
 
 /* 通道掩码常量（独热码） */
 #define CH0  (1U << 0)  /* 0b00000001 */
@@ -70,8 +70,8 @@
 
 
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
-#define ESTA_MAX_RULER_Y_NUM   5
-#define ESTA_MAX_RULER_X_NUM   5
+#define WAVE_MAX_RULER_Y_NUM   5
+#define WAVE_MAX_RULER_X_NUM   5
 
 // 一个字符的宽度和高度
 #define CHAR_PIXEL_WIDTH    8
@@ -80,29 +80,29 @@
 
 /* USER MARCO OR ENUM */
 /* INST MARCO */
-#define ESTA_INST(i)                   (i)
-#define ESTA_INST_ADDR(i)              ESTA_State[ESTA_INST(i)]
+#define WAVE_INST(i)                   (i)
+#define WAVE_INST_ADDR(i)              WAVE_State[WAVE_INST(i)]
 
 
 /* THEME SETTINGS */
 typedef enum {
-    ESTA_THEME_DEFAULT = 0,
-    ESTA_THEME_LIGHT ,
-    //用于检查边界条件，并非主题类型！所有添加的类型都放在ESTA_THEME_COUNT 这个枚举变量上面
-    ESTA_THEME_COUNT 
-} ESTA_theme_type;
+    WAVE_THEME_DEFAULT = 0,
+    WAVE_THEME_LIGHT ,
+    //用于检查边界条件，并非主题类型！所有添加的类型都放在WAVE_THEME_COUNT 这个枚举变量上面
+    WAVE_THEME_COUNT 
+} WAVE_theme_type;
 
 typedef enum {
-    ESTA_THEME_FRAME_INDEX = 0  ,
-    ESTA_THEME_RULER_INDEX      ,
-    ESTA_THEME_WAVE_CH0_INDEX   ,
-    ESTA_THEME_WAVE_CH1_INDEX   ,
-    ESTA_THEME_WAVE_CH2_INDEX   ,
-    ESTA_THEME_WAVE_CH3_INDEX   ,
-    ESTA_THEME_BACKGROUND_INDEX ,
-    //用于检查边界条件，并非主题类型！所有添加的类型都放在ESTA_THEME_INDEX_COUNT 这个枚举变量上面
-    ESTA_THEME_INDEX_COUNT 
-} ESTA_theme_color_index_type;
+    WAVE_THEME_FRAME_INDEX = 0  ,
+    WAVE_THEME_RULER_INDEX      ,
+    WAVE_THEME_WAVE_CH0_INDEX   ,
+    WAVE_THEME_WAVE_CH1_INDEX   ,
+    WAVE_THEME_WAVE_CH2_INDEX   ,
+    WAVE_THEME_WAVE_CH3_INDEX   ,
+    WAVE_THEME_BACKGROUND_INDEX ,
+    //用于检查边界条件，并非主题类型！所有添加的类型都放在WAVE_THEME_INDEX_COUNT 这个枚举变量上面
+    WAVE_THEME_INDEX_COUNT 
+} WAVE_theme_color_index_type;
 
 /* COLOR MARCO */
 /* we use RGB565 */
@@ -125,37 +125,37 @@ typedef enum {
 
 
 /* WRITE/READ REGS MARCO */
-#define ESTA_CONFIG_MEMBER(OSCx, reg_name)  \
-            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name
-#define ESTA_PRIVATE_MEMBER(OSCx, reg_name)  \
-            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name
+#define WAVE_CONFIG_MEMBER(OSCx, reg_name)  \
+            WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name
+#define WAVE_PRIVATE_MEMBER(OSCx, reg_name)  \
+            WAVE_INST_ADDR(OSCx).WAVE_Private.reg_name
 
-#define ESTA_CONFIG_MEMBER_ARRAY(OSCx, reg_name, NO)  \
-            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name[NO]
-#define ESTA_PRIVATE_MEMBER_ARRAY(OSCx, reg_name, NO)  \
-            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name[NO]
+#define WAVE_CONFIG_MEMBER_ARRAY(OSCx, reg_name, NO)  \
+            WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name[NO]
+#define WAVE_PRIVATE_MEMBER_ARRAY(OSCx, reg_name, NO)  \
+            WAVE_INST_ADDR(OSCx).WAVE_Private.reg_name[NO]
 
-#define ESTA_WRITE_CONFIG(OSCx, reg_name, reg_value)   \
-            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name = reg_value
-#define ESTA_WRITE_PRIVATE(OSCx, reg_name, reg_value)   \
-            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name = reg_value
+#define WAVE_WRITE_CONFIG(OSCx, reg_name, reg_value)   \
+            WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name = reg_value
+#define WAVE_WRITE_PRIVATE(OSCx, reg_name, reg_value)   \
+            WAVE_INST_ADDR(OSCx).WAVE_Private.reg_name = reg_value
 
-#define ESTA_WRITE_CONFIG_INIT(OSCx, reg_name)         \
-            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name = ESTA_Init->reg_name
+#define WAVE_WRITE_CONFIG_INIT(OSCx, reg_name)         \
+            WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name = WAVE_Init->reg_name
 
 
 /* ASSERT MARCO OR ENUM*/
 /* Defensive Programming */
 typedef enum
 {
-  ESTA_OK       = 0x00,
-  ESTA_ERROR    = 0x01,
-  ESTA_FULL     = 0x02
-} ESTA_StatusTypeDef;
+  WAVE_OK       = 0x00,
+  WAVE_ERROR    = 0x01,
+  WAVE_FULL     = 0x02
+} WAVE_StatusTypeDef;
 
-#define IS_VALID_ESTA_INST(OSCx) ((int)OSCx < MAX_ESTA_NUM && (int)OSCx >= 0)
-#define IS_VALID_THEME(THEMEx)  ((int)THEMEx < ESTA_THEME_COUNT && (int)THEMEx >= 0)
-#define IS_VALID_CHNUM(CHNUM)   ((int)CHNUM < MAX_ESTA_CHANNEL && (int)CHNUM >= 0)
+#define IS_VALID_WAVE_INST(OSCx) ((int)OSCx < MAX_WAVE_NUM && (int)OSCx >= 0)
+#define IS_VALID_THEME(THEMEx)  ((int)THEMEx < WAVE_THEME_COUNT && (int)THEMEx >= 0)
+#define IS_VALID_CHNUM(CHNUM)   ((int)CHNUM < MAX_WAVE_CHANNEL && (int)CHNUM >= 0)
 
 
 /* Software REGS typedef of ESTA */
@@ -181,65 +181,65 @@ typedef struct {
     volatile bool  is_display_ruler_y; // 是否显示y轴标尺
     /* ruler 这个地址只在初始化时用于传参，用于将标尺数据保存在Private中, 其余时间为NULL */
     uint16_t       *ruler_y;           // y轴标尺传入的地址
-    uint16_t       ruler_count_y;      // y轴标尺数量，最多ESTA_MAX_RULER_NUM
+    uint16_t       ruler_count_y;      // y轴标尺数量，最多WAVE_MAX_RULER_NUM
     uint16_t       ruler_num_digits_y; // y轴标尺显示数字的最大位数
     /* ruler 这个地址只在初始化时用于传参，用于将标尺数据保存在Private中, 其余时间为NULL */
     uint16_t       *ruler_x;           // x轴标尺传入的地址
-    uint16_t       ruler_count_x;      // x轴标尺数量，最多ESTA_MAX_RULER_NUM
+    uint16_t       ruler_count_x;      // x轴标尺数量，最多WAVE_MAX_RULER_NUM
     uint16_t       ruler_zero_value_x; // x轴标尺坐标为0的值
     uint16_t       ruler_full_value_x; // x轴标尺坐标最大的值
     uint16_t       ruler_num_digits_x; // x轴标尺显示数字的最大位数
     /* 屏幕满是否自动刷新屏幕 */
     volatile bool  is_auto_clear;
     /* 示波器主题 */
-    ESTA_theme_type theme_type;
-} ESTA_Config_TypeDef;
+    WAVE_theme_type theme_type;
+} WAVE_Config_TypeDef;
 
 typedef struct {
     /* Private regs */
     /* 标尺的数据存储在这里 */
-    uint16_t    ruler_buff_y[ESTA_MAX_RULER_Y_NUM]; 
-    uint16_t    ruler_buff_x[ESTA_MAX_RULER_X_NUM]; 
+    uint16_t    ruler_buff_y[WAVE_MAX_RULER_Y_NUM]; 
+    uint16_t    ruler_buff_x[WAVE_MAX_RULER_X_NUM]; 
     uint16_t    last_index;
     uint16_t    x_coor_last;
-    uint16_t    y_coor_last_CH[MAX_ESTA_CHANNEL];
-} ESTA_Private_Typedef;
+    uint16_t    y_coor_last_CH[MAX_WAVE_CHANNEL];
+} WAVE_Private_Typedef;
 
 /* be like Class in C++ */
 typedef struct {
     /* Public regs */
-    ESTA_Config_TypeDef     ESTA_Config;
+    WAVE_Config_TypeDef     WAVE_Config;
     /* Private regs */
-    ESTA_Private_Typedef    ESTA_Private;
-} ESTA_TypeDef;
+    WAVE_Private_Typedef    WAVE_Private;
+} WAVE_TypeDef;
 
 
 /* function prototype */
-void ESTA_ConfigSetPositionAndSize(ESTA_Config_TypeDef *config,
+void WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
                                   uint16_t x_origin, uint16_t y_origin,
                                   uint16_t x_width, uint16_t y_width);
-void ESTA_ConfigSetDisplayRange(ESTA_Config_TypeDef *config,
+void WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max);
-void ESTA_ConfigSetChannelNum(ESTA_Config_TypeDef *config, uint16_t channel_num);
-void ESTA_ConfigSetChannelEnabled(ESTA_Config_TypeDef *config, uint8_t channel_mask);
-void ESTA_ConfigSetChannelDisabled(ESTA_Config_TypeDef *config, uint8_t channel_mask);
-void ESTA_ConfigSetRulerY(ESTA_Config_TypeDef *config, bool is_display,
+void WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num);
+void WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+void WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+void WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y);
-void ESTA_ConfigSetRulerX(ESTA_Config_TypeDef *config, bool is_display,
+void WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x);
-void ESTA_ConfigSetTheme(ESTA_Config_TypeDef *config, ESTA_theme_type theme_type);
-void ESTA_ConfigSetAutoClear(ESTA_Config_TypeDef *config, bool is_auto_clear);
+void WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type);
+void WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear);
 
-ESTA_StatusTypeDef ESTA_Init(int OSCx, ESTA_Config_TypeDef *ESTA_Init);
-ESTA_StatusTypeDef ESTA_DeInit(int OSCx);
-ESTA_StatusTypeDef ESTA_RulerDisplay(int OSCx);
-ESTA_StatusTypeDef ESTA_FrameDisplay(int OSCx);
-ESTA_StatusTypeDef ESTA_CurveClear(int OSCx);
-ESTA_StatusTypeDef ESTA_ReDraw(int OSCx);
-ESTA_StatusTypeDef ESTA_CurveDraw(int OSCx, uint16_t data_CH[]); 
-uint16_t ESTA_GetThemeColor(ESTA_theme_type theme, ESTA_theme_color_index_type color_type);
+WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init);
+WAVE_StatusTypeDef WAVE_DeInit(int OSCx);
+WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx);
+WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx);
+WAVE_StatusTypeDef WAVE_CurveClear(int OSCx);
+WAVE_StatusTypeDef WAVE_ReDraw(int OSCx);
+WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]); 
+uint16_t WAVE_GetThemeColor(WAVE_theme_type theme, WAVE_theme_color_index_type color_type);
 
 #endif
