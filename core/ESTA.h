@@ -67,10 +67,7 @@
 #define CH6  (1U << 6)  /* 0b01000000 */
 #define CH7  (1U << 7)  /* 0b10000000 */
 
-#define ALL_CHANNELS_MASK (CH1_MASK | CH2_MASK | CH3_MASK | CH4_MASK | \
-    CH5_MASK | CH6_MASK | CH7_MASK | CH8_MASK)
-    
-#define NO_CHANNELS_MASK  (0U)
+
 
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
 #define ESTA_MAX_RULER_Y_NUM   5

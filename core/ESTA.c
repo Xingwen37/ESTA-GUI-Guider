@@ -144,15 +144,6 @@ static uint16_t num_digits(uint16_t x){
     return count;
 }
 
-static void delay_ms(int ms) {
-    #ifdef SCREEN_USE_ILI9341
-        HAL_Delay(ms);
-    #elif defined(SCREEN_USE_SDL2)
-        ESTA_SDL2_Delay(ms); // 调用 SDL 移植层中的延时封装
-    #else
-        // 留空或填写自定义延时
-    #endif
-}
 
 /* @brief : 初始化示波器实例
 *  @param : int OSCx : 示波器实例，如ESTA_INST(0)或ESTA_INST(1)

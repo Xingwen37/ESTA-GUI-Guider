@@ -21,32 +21,6 @@ bool SimScenario_LoadDefault(SimScenarioRuntime *runtime) {
     return true;
 }
 
-ESTA_StatusTypeDef SimScenario_ApplyDefaultProfile(int ESTA_idx) {
-    ESTA_Config_TypeDef config = {0};
-    uint16_t ruler_y[5] = {1000, 2000, 3000, 4000, 0};
-    uint16_t ruler_x[5] = {30, 50, 90, 0, 0};
-
-    if (ESTA_idx == 0) {
-        ESTA_ConfigSetPositionAndSize(&config, 10, 0, 200, 120);
-        ESTA_ConfigSetTheme(&config, ESTA_THEME_DEFAULT);
-        ESTA_ConfigSetChannelEnabled(&config, CH0 | CH1 | CH2 | CH3);
-    } else if (ESTA_idx == 1) {
-        ESTA_ConfigSetPositionAndSize(&config, 0, 120, 200, 120);
-        ESTA_ConfigSetTheme(&config, ESTA_THEME_LIGHT);
-        ESTA_ConfigSetChannelEnabled(&config, CH0 | CH2 | CH3);
-    } else {
-        return ESTA_ERROR;
-    }
-
-    ESTA_ConfigSetDisplayRange(&config, 0, 4095);
-    ESTA_ConfigSetChannelNum(&config, 4);
-    ESTA_ConfigSetRulerY(&config, true, ruler_y, 4, 4);
-    ESTA_ConfigSetRulerX(&config, true, ruler_x, 3, 0, 100, 8);
-    ESTA_ConfigSetAutoClear(&config, true);
-
-    return ESTA_Init(ESTA_INST(ESTA_idx), &config);
-}
-
 bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]) {
     if (runtime == NULL || data_ch == NULL) return false;
     if (ESTA_idx < 0 || ESTA_idx >= SIM_SCENARIO_ESTA_COUNT) return false;

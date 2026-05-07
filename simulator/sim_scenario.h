@@ -15,7 +15,7 @@ typedef struct {
 } SimScenarioRuntime;
 
 bool SimScenario_LoadDefault(SimScenarioRuntime *runtime);
-ESTA_StatusTypeDef SimScenario_ApplyDefaultProfile(int ESTA_idx);
+
 bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]);
 void SimScenario_Tick(SimScenarioRuntime *runtime);
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * @file           : main.c (Simulator Version)
   * @brief          : SDL2 Simulator Main program body for ESTA Library
@@ -9,18 +9,11 @@
   #include <stdio.h>
   #include <stdbool.h>
   #include <SDL2/SDL.h>
-  
+
   #include "ESTA.h"
+  #include "ESTA_Profile.h"
   #include "sim_scenario.h"
   #include "esta_port_sdl2.h"
-
-  #ifndef USE_ESTA_PROFILE_ENV
-  #define USE_ESTA_PROFILE_ENV 1
-  #endif
-
-  #if USE_ESTA_PROFILE_ENV
-  #include "ESTA_Profile.h"
-  #endif
 
   /**
     * @brief  The PC application entry point.
@@ -30,9 +23,9 @@
   {
       (void)argc;
       (void)argv;
-  
+
       ESTA_SDL2_Init();
-  
+
       SimScenarioRuntime scenario;
       if (!SimScenario_LoadDefault(&scenario)) {
           printf("SimScenario_LoadDefault failed.\n");
@@ -40,8 +33,6 @@
           return 1;
       }
 
-      int ESTA_count = 0;
-  #if USE_ESTA_PROFILE_ENV
       const ESTA_ProfileSet_TypeDef *profiles = ESTA_Profile_GetDefault();
       if (profiles == NULL) {
           printf("ESTA_Profile_GetDefault failed.\n");
@@ -49,7 +40,7 @@
           return 1;
       }
 
-      ESTA_count = profiles->ESTA_count;
+      int ESTA_count = profiles->ESTA_count;
       if (ESTA_count > SIM_SCENARIO_ESTA_COUNT) {
           ESTA_count = SIM_SCENARIO_ESTA_COUNT;
       }
@@ -63,32 +54,19 @@
               ESTA_SDL2_Quit();
               return 1;
           }
-  #else
-      ESTA_count = SIM_SCENARIO_ESTA_COUNT;
-      if (ESTA_count > MAX_ESTA_NUM) {
-          ESTA_count = MAX_ESTA_NUM;
-      }
-
-      for (int i = 0; i < ESTA_count; i++) {
-          if (SimScenario_ApplyDefaultProfile(i) != ESTA_OK) {
-              printf("SimScenario_ApplyDefaultProfile failed at inst=%d.\n", i);
-              ESTA_SDL2_Quit();
-              return 1;
-          }
-  #endif
           if (ESTA_ReDraw(ESTA_INST(i)) != ESTA_OK) {
               printf("ESTA_ReDraw failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
           }
       }
-  
+
       /* PC 端的主循环与事件处理 */
       bool is_running = true;
       SDL_Event event;
 
       uint16_t data_ESTA[SIM_SCENARIO_ESTA_COUNT][MAX_ESTA_CHANNEL] = {0};
-  
+
       while (is_running)
       {
           /* 抓取系统事件：处理窗口关闭等操作，防止界面卡死 */
@@ -110,18 +88,18 @@
                   break;
               }
           }
-  
+
           /* 将缓冲数据刷新到计算机屏幕 */
           ESTA_SDL2_Update();
-          
+
           /* 调用在 Port 层封装的延时函数 */
           ESTA_SDL2_Delay(10);
-  
+
           SimScenario_Tick(&scenario);
       }
-  
+
       /* 4. 退出循环后安全释放资源 */
       ESTA_SDL2_Quit();
-  
+
       return 0;
   }
