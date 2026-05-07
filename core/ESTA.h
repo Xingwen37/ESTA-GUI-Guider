@@ -1,5 +1,5 @@
-#ifndef __OSC_LIB
-#define __OSC_LIB
+﻿#ifndef __ESTA_LIB
+#define __ESTA_LIB
 
 /* INCLUDE */
 #include <stddef.h>  
@@ -28,16 +28,16 @@
 
 #elif defined(SCREEN_USE_SDL2)
 // 引入 SDL2 移植层的头文件
-#include "osc_port_sdl2.h"
+#include "esta_port_sdl2.h"
 
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
-            OSC_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
+            ESTA_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR) \
-            OSC_SDL2_DrawRectangle(x1, y1, x2, y2, COLOR)
+            ESTA_SDL2_DrawRectangle(x1, y1, x2, y2, COLOR)
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR) \
-            OSC_SDL2_Fill(x1, y1, x2, y2, COLOR)
+            ESTA_SDL2_Fill(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
-            OSC_SDL2_DrawNum(x, y, num, len, COLOR)
+            ESTA_SDL2_DrawNum(x, y, num, len, COLOR)
 
 #else /* 你的自定义屏幕或其他 */
 // 在这里包含你自己的屏幕库
@@ -51,11 +51,11 @@
 
 /* GLOBAL MARCO */
 // 最大示波器实例个数
-#define MAX_OSC_NUM         4
+#define MAX_ESTA_NUM         4
 
 // 单个示波器实例通道数
 //TODO: 实现多通道的示波器 ,现在支持至四通道,可拓展至八通道
-#define MAX_OSC_CHANNEL     4
+#define MAX_ESTA_CHANNEL     4
 
 /* 通道掩码常量（独热码） */
 #define CH0  (1U << 0)  /* 0b00000001 */
@@ -73,8 +73,8 @@
 #define NO_CHANNELS_MASK  (0U)
 
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
-#define OSC_MAX_RULER_Y_NUM   5
-#define OSC_MAX_RULER_X_NUM   5
+#define ESTA_MAX_RULER_Y_NUM   5
+#define ESTA_MAX_RULER_X_NUM   5
 
 // 一个字符的宽度和高度
 #define CHAR_PIXEL_WIDTH    8
@@ -83,29 +83,29 @@
 
 /* USER MARCO OR ENUM */
 /* INST MARCO */
-#define OSC_INST(i)                   (i)
-#define OSC_INST_ADDR(i)              OSC_State[OSC_INST(i)]
+#define ESTA_INST(i)                   (i)
+#define ESTA_INST_ADDR(i)              ESTA_State[ESTA_INST(i)]
 
 
 /* THEME SETTINGS */
 typedef enum {
-    OSC_THEME_DEFAULT = 0,
-    OSC_THEME_LIGHT ,
-    //用于检查边界条件，并非主题类型！所有添加的类型都放在OSC_THEME_COUNT 这个枚举变量上面
-    OSC_THEME_COUNT 
-} OSC_theme_type;
+    ESTA_THEME_DEFAULT = 0,
+    ESTA_THEME_LIGHT ,
+    //用于检查边界条件，并非主题类型！所有添加的类型都放在ESTA_THEME_COUNT 这个枚举变量上面
+    ESTA_THEME_COUNT 
+} ESTA_theme_type;
 
 typedef enum {
-    OSC_THEME_FRAME_INDEX = 0  ,
-    OSC_THEME_RULER_INDEX      ,
-    OSC_THEME_WAVE_CH0_INDEX   ,
-    OSC_THEME_WAVE_CH1_INDEX   ,
-    OSC_THEME_WAVE_CH2_INDEX   ,
-    OSC_THEME_WAVE_CH3_INDEX   ,
-    OSC_THEME_BACKGROUND_INDEX ,
-    //用于检查边界条件，并非主题类型！所有添加的类型都放在OSC_THEME_INDEX_COUNT 这个枚举变量上面
-    OSC_THEME_INDEX_COUNT 
-} OSC_theme_color_index_type;
+    ESTA_THEME_FRAME_INDEX = 0  ,
+    ESTA_THEME_RULER_INDEX      ,
+    ESTA_THEME_WAVE_CH0_INDEX   ,
+    ESTA_THEME_WAVE_CH1_INDEX   ,
+    ESTA_THEME_WAVE_CH2_INDEX   ,
+    ESTA_THEME_WAVE_CH3_INDEX   ,
+    ESTA_THEME_BACKGROUND_INDEX ,
+    //用于检查边界条件，并非主题类型！所有添加的类型都放在ESTA_THEME_INDEX_COUNT 这个枚举变量上面
+    ESTA_THEME_INDEX_COUNT 
+} ESTA_theme_color_index_type;
 
 /* COLOR MARCO */
 /* we use RGB565 */
@@ -128,40 +128,40 @@ typedef enum {
 
 
 /* WRITE/READ REGS MARCO */
-#define OSC_CONFIG_MEMBER(OSCx, reg_name)  \
-            OSC_INST_ADDR(OSCx).OSC_Config.reg_name
-#define OSC_PRIVATE_MEMBER(OSCx, reg_name)  \
-            OSC_INST_ADDR(OSCx).OSC_Private.reg_name
+#define ESTA_CONFIG_MEMBER(OSCx, reg_name)  \
+            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name
+#define ESTA_PRIVATE_MEMBER(OSCx, reg_name)  \
+            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name
 
-#define OSC_CONFIG_MEMBER_ARRAY(OSCx, reg_name, NO)  \
-            OSC_INST_ADDR(OSCx).OSC_Config.reg_name[NO]
-#define OSC_PRIVATE_MEMBER_ARRAY(OSCx, reg_name, NO)  \
-            OSC_INST_ADDR(OSCx).OSC_Private.reg_name[NO]
+#define ESTA_CONFIG_MEMBER_ARRAY(OSCx, reg_name, NO)  \
+            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name[NO]
+#define ESTA_PRIVATE_MEMBER_ARRAY(OSCx, reg_name, NO)  \
+            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name[NO]
 
-#define OSC_WRITE_CONFIG(OSCx, reg_name, reg_value)   \
-            OSC_INST_ADDR(OSCx).OSC_Config.reg_name = reg_value
-#define OSC_WRITE_PRIVATE(OSCx, reg_name, reg_value)   \
-            OSC_INST_ADDR(OSCx).OSC_Private.reg_name = reg_value
+#define ESTA_WRITE_CONFIG(OSCx, reg_name, reg_value)   \
+            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name = reg_value
+#define ESTA_WRITE_PRIVATE(OSCx, reg_name, reg_value)   \
+            ESTA_INST_ADDR(OSCx).ESTA_Private.reg_name = reg_value
 
-#define OSC_WRITE_CONFIG_INIT(OSCx, reg_name)         \
-            OSC_INST_ADDR(OSCx).OSC_Config.reg_name = OSC_Init->reg_name
+#define ESTA_WRITE_CONFIG_INIT(OSCx, reg_name)         \
+            ESTA_INST_ADDR(OSCx).ESTA_Config.reg_name = ESTA_Init->reg_name
 
 
 /* ASSERT MARCO OR ENUM*/
 /* Defensive Programming */
 typedef enum
 {
-  OSC_OK       = 0x00,
-  OSC_ERROR    = 0x01,
-  OSC_FULL     = 0x02
-} OSC_StatusTypeDef;
+  ESTA_OK       = 0x00,
+  ESTA_ERROR    = 0x01,
+  ESTA_FULL     = 0x02
+} ESTA_StatusTypeDef;
 
-#define IS_VALID_OSC_INST(OSCx) ((int)OSCx < MAX_OSC_NUM && (int)OSCx >= 0)
-#define IS_VALID_THEME(THEMEx)  ((int)THEMEx < OSC_THEME_COUNT && (int)THEMEx >= 0)
-#define IS_VALID_CHNUM(CHNUM)   ((int)CHNUM < MAX_OSC_CHANNEL && (int)CHNUM >= 0)
+#define IS_VALID_ESTA_INST(OSCx) ((int)OSCx < MAX_ESTA_NUM && (int)OSCx >= 0)
+#define IS_VALID_THEME(THEMEx)  ((int)THEMEx < ESTA_THEME_COUNT && (int)THEMEx >= 0)
+#define IS_VALID_CHNUM(CHNUM)   ((int)CHNUM < MAX_ESTA_CHANNEL && (int)CHNUM >= 0)
 
 
-/* Software REGS typedef of OSC */
+/* Software REGS typedef of ESTA */
 typedef struct {
     /* config regs */
     /* 示波器的坐标原点(x_origin, y_origin) */
@@ -184,65 +184,65 @@ typedef struct {
     volatile bool  is_display_ruler_y; // 是否显示y轴标尺
     /* ruler 这个地址只在初始化时用于传参，用于将标尺数据保存在Private中, 其余时间为NULL */
     uint16_t       *ruler_y;           // y轴标尺传入的地址
-    uint16_t       ruler_count_y;      // y轴标尺数量，最多OSC_MAX_RULER_NUM
+    uint16_t       ruler_count_y;      // y轴标尺数量，最多ESTA_MAX_RULER_NUM
     uint16_t       ruler_num_digits_y; // y轴标尺显示数字的最大位数
     /* ruler 这个地址只在初始化时用于传参，用于将标尺数据保存在Private中, 其余时间为NULL */
     uint16_t       *ruler_x;           // x轴标尺传入的地址
-    uint16_t       ruler_count_x;      // x轴标尺数量，最多OSC_MAX_RULER_NUM
+    uint16_t       ruler_count_x;      // x轴标尺数量，最多ESTA_MAX_RULER_NUM
     uint16_t       ruler_zero_value_x; // x轴标尺坐标为0的值
     uint16_t       ruler_full_value_x; // x轴标尺坐标最大的值
     uint16_t       ruler_num_digits_x; // x轴标尺显示数字的最大位数
     /* 屏幕满是否自动刷新屏幕 */
     volatile bool  is_auto_clear;
     /* 示波器主题 */
-    OSC_theme_type theme_type;
-} OSC_Config_TypeDef;
+    ESTA_theme_type theme_type;
+} ESTA_Config_TypeDef;
 
 typedef struct {
     /* Private regs */
     /* 标尺的数据存储在这里 */
-    uint16_t    ruler_buff_y[OSC_MAX_RULER_Y_NUM]; 
-    uint16_t    ruler_buff_x[OSC_MAX_RULER_X_NUM]; 
+    uint16_t    ruler_buff_y[ESTA_MAX_RULER_Y_NUM]; 
+    uint16_t    ruler_buff_x[ESTA_MAX_RULER_X_NUM]; 
     uint16_t    last_index;
     uint16_t    x_coor_last;
-    uint16_t    y_coor_last_CH[MAX_OSC_CHANNEL];
-} OSC_Private_Typedef;
+    uint16_t    y_coor_last_CH[MAX_ESTA_CHANNEL];
+} ESTA_Private_Typedef;
 
 /* be like Class in C++ */
 typedef struct {
     /* Public regs */
-    OSC_Config_TypeDef     OSC_Config;
+    ESTA_Config_TypeDef     ESTA_Config;
     /* Private regs */
-    OSC_Private_Typedef    OSC_Private;
-} OSC_TypeDef;
+    ESTA_Private_Typedef    ESTA_Private;
+} ESTA_TypeDef;
 
 
 /* function prototype */
-void OSC_ConfigSetPositionAndSize(OSC_Config_TypeDef *config,
+void ESTA_ConfigSetPositionAndSize(ESTA_Config_TypeDef *config,
                                   uint16_t x_origin, uint16_t y_origin,
                                   uint16_t x_width, uint16_t y_width);
-void OSC_ConfigSetDisplayRange(OSC_Config_TypeDef *config,
+void ESTA_ConfigSetDisplayRange(ESTA_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max);
-void OSC_ConfigSetChannelNum(OSC_Config_TypeDef *config, uint16_t channel_num);
-void OSC_ConfigSetChannelEnabled(OSC_Config_TypeDef *config, uint8_t channel_mask);
-void OSC_ConfigSetChannelDisabled(OSC_Config_TypeDef *config, uint8_t channel_mask);
-void OSC_ConfigSetRulerY(OSC_Config_TypeDef *config, bool is_display,
+void ESTA_ConfigSetChannelNum(ESTA_Config_TypeDef *config, uint16_t channel_num);
+void ESTA_ConfigSetChannelEnabled(ESTA_Config_TypeDef *config, uint8_t channel_mask);
+void ESTA_ConfigSetChannelDisabled(ESTA_Config_TypeDef *config, uint8_t channel_mask);
+void ESTA_ConfigSetRulerY(ESTA_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y);
-void OSC_ConfigSetRulerX(OSC_Config_TypeDef *config, bool is_display,
+void ESTA_ConfigSetRulerX(ESTA_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x);
-void OSC_ConfigSetTheme(OSC_Config_TypeDef *config, OSC_theme_type theme_type);
-void OSC_ConfigSetAutoClear(OSC_Config_TypeDef *config, bool is_auto_clear);
+void ESTA_ConfigSetTheme(ESTA_Config_TypeDef *config, ESTA_theme_type theme_type);
+void ESTA_ConfigSetAutoClear(ESTA_Config_TypeDef *config, bool is_auto_clear);
 
-OSC_StatusTypeDef OSC_Init(int OSCx, OSC_Config_TypeDef *OSC_Init);
-OSC_StatusTypeDef OSC_DeInit(int OSCx);
-OSC_StatusTypeDef OSC_RulerDisplay(int OSCx);
-OSC_StatusTypeDef OSC_FrameDisplay(int OSCx);
-OSC_StatusTypeDef OSC_CurveClear(int OSCx);
-OSC_StatusTypeDef OSC_ReDraw(int OSCx);
-OSC_StatusTypeDef OSC_CurveDraw(int OSCx, uint16_t data_CH[]); 
-uint16_t OSC_GetThemeColor(OSC_theme_type theme, OSC_theme_color_index_type color_type);
+ESTA_StatusTypeDef ESTA_Init(int OSCx, ESTA_Config_TypeDef *ESTA_Init);
+ESTA_StatusTypeDef ESTA_DeInit(int OSCx);
+ESTA_StatusTypeDef ESTA_RulerDisplay(int OSCx);
+ESTA_StatusTypeDef ESTA_FrameDisplay(int OSCx);
+ESTA_StatusTypeDef ESTA_CurveClear(int OSCx);
+ESTA_StatusTypeDef ESTA_ReDraw(int OSCx);
+ESTA_StatusTypeDef ESTA_CurveDraw(int OSCx, uint16_t data_CH[]); 
+uint16_t ESTA_GetThemeColor(ESTA_theme_type theme, ESTA_theme_color_index_type color_type);
 
 #endif

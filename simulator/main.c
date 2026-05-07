@@ -1,7 +1,7 @@
-/**
+﻿/**
   ******************************************************************************
   * @file           : main.c (Simulator Version)
-  * @brief          : SDL2 Simulator Main program body for OSC Library
+  * @brief          : SDL2 Simulator Main program body for ESTA Library
   * @author         : TongLewis(yangyutong) HEU ESTA 2025
   ******************************************************************************
   */
@@ -10,16 +10,16 @@
   #include <stdbool.h>
   #include <SDL2/SDL.h>
   
-  #include "OSC.h"
+  #include "ESTA.h"
   #include "sim_scenario.h"
-  #include "osc_port_sdl2.h"
+  #include "esta_port_sdl2.h"
 
-  #ifndef USE_OSC_PROFILE_ENV
-  #define USE_OSC_PROFILE_ENV 1
+  #ifndef USE_ESTA_PROFILE_ENV
+  #define USE_ESTA_PROFILE_ENV 1
   #endif
 
-  #if USE_OSC_PROFILE_ENV
-  #include "OSC_Profile.h"
+  #if USE_ESTA_PROFILE_ENV
+  #include "ESTA_Profile.h"
   #endif
 
   /**
@@ -31,54 +31,54 @@
       (void)argc;
       (void)argv;
   
-      OSC_SDL2_Init();
+      ESTA_SDL2_Init();
   
       SimScenarioRuntime scenario;
       if (!SimScenario_LoadDefault(&scenario)) {
           printf("SimScenario_LoadDefault failed.\n");
-          OSC_SDL2_Quit();
+          ESTA_SDL2_Quit();
           return 1;
       }
 
-      int osc_count = 0;
-  #if USE_OSC_PROFILE_ENV
-      const OSC_ProfileSet_TypeDef *profiles = OSC_Profile_GetDefault();
+      int ESTA_count = 0;
+  #if USE_ESTA_PROFILE_ENV
+      const ESTA_ProfileSet_TypeDef *profiles = ESTA_Profile_GetDefault();
       if (profiles == NULL) {
-          printf("OSC_Profile_GetDefault failed.\n");
-          OSC_SDL2_Quit();
+          printf("ESTA_Profile_GetDefault failed.\n");
+          ESTA_SDL2_Quit();
           return 1;
       }
 
-      osc_count = profiles->osc_count;
-      if (osc_count > SIM_SCENARIO_OSC_COUNT) {
-          osc_count = SIM_SCENARIO_OSC_COUNT;
+      ESTA_count = profiles->ESTA_count;
+      if (ESTA_count > SIM_SCENARIO_ESTA_COUNT) {
+          ESTA_count = SIM_SCENARIO_ESTA_COUNT;
       }
-      if (osc_count > MAX_OSC_NUM) {
-          osc_count = MAX_OSC_NUM;
+      if (ESTA_count > MAX_ESTA_NUM) {
+          ESTA_count = MAX_ESTA_NUM;
       }
 
-      for (int i = 0; i < osc_count; i++) {
-          if (OSC_Profile_Apply(OSC_INST(i), &profiles->profiles[i]) != OSC_OK) {
-              printf("OSC_Profile_Apply failed at osc=%d.\n", i);
-              OSC_SDL2_Quit();
+      for (int i = 0; i < ESTA_count; i++) {
+          if (ESTA_Profile_Apply(ESTA_INST(i), &profiles->profiles[i]) != ESTA_OK) {
+              printf("ESTA_Profile_Apply failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
               return 1;
           }
   #else
-      osc_count = SIM_SCENARIO_OSC_COUNT;
-      if (osc_count > MAX_OSC_NUM) {
-          osc_count = MAX_OSC_NUM;
+      ESTA_count = SIM_SCENARIO_ESTA_COUNT;
+      if (ESTA_count > MAX_ESTA_NUM) {
+          ESTA_count = MAX_ESTA_NUM;
       }
 
-      for (int i = 0; i < osc_count; i++) {
-          if (SimScenario_ApplyDefaultProfile(i) != OSC_OK) {
-              printf("SimScenario_ApplyDefaultProfile failed at osc=%d.\n", i);
-              OSC_SDL2_Quit();
+      for (int i = 0; i < ESTA_count; i++) {
+          if (SimScenario_ApplyDefaultProfile(i) != ESTA_OK) {
+              printf("SimScenario_ApplyDefaultProfile failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
               return 1;
           }
   #endif
-          if (OSC_ReDraw(OSC_INST(i)) != OSC_OK) {
-              printf("OSC_ReDraw failed at osc=%d.\n", i);
-              OSC_SDL2_Quit();
+          if (ESTA_ReDraw(ESTA_INST(i)) != ESTA_OK) {
+              printf("ESTA_ReDraw failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
               return 1;
           }
       }
@@ -87,7 +87,7 @@
       bool is_running = true;
       SDL_Event event;
 
-      uint16_t data_OSC[SIM_SCENARIO_OSC_COUNT][MAX_OSC_CHANNEL] = {0};
+      uint16_t data_ESTA[SIM_SCENARIO_ESTA_COUNT][MAX_ESTA_CHANNEL] = {0};
   
       while (is_running)
       {
@@ -100,28 +100,28 @@
               }
           }
           /* 由场景层按统一时间基生成每个示波器每一帧的数据 */
-          for (int i = 0; i < osc_count; i++) {
-              if (!SimScenario_GetNextFrame(&scenario, i, data_OSC[i])) {
+          for (int i = 0; i < ESTA_count; i++) {
+              if (!SimScenario_GetNextFrame(&scenario, i, data_ESTA[i])) {
                   is_running = false;
                   break;
               }
-              if (OSC_CurveDraw(OSC_INST(i), data_OSC[i]) == OSC_ERROR) {
+              if (ESTA_CurveDraw(ESTA_INST(i), data_ESTA[i]) == ESTA_ERROR) {
                   is_running = false;
                   break;
               }
           }
   
           /* 将缓冲数据刷新到计算机屏幕 */
-          OSC_SDL2_Update();
+          ESTA_SDL2_Update();
           
           /* 调用在 Port 层封装的延时函数 */
-          OSC_SDL2_Delay(10);
+          ESTA_SDL2_Delay(10);
   
           SimScenario_Tick(&scenario);
       }
   
       /* 4. 退出循环后安全释放资源 */
-      OSC_SDL2_Quit();
+      ESTA_SDL2_Quit();
   
       return 0;
   }

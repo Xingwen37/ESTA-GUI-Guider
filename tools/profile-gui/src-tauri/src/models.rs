@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct OscProfile {
+pub struct EstaProfile {
     pub x_origin: u16,
     pub y_origin: u16,
     pub x_width: u16,
@@ -26,11 +26,11 @@ pub struct OscProfile {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileSet {
-    pub osc_count: u16,
-    pub profiles: Vec<OscProfile>,
+    pub inst_count: u16,
+    pub profiles: Vec<EstaProfile>,
 }
 
-impl OscProfile {
+impl EstaProfile {
     pub fn channel_mask_expr(&self) -> String {
         let terms: Vec<String> = (0..8)
             .filter(|i| (self.channel_mask & (1u8 << i)) != 0)

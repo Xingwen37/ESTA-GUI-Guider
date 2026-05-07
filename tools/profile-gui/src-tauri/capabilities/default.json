@@ -1,7 +1,7 @@
-{
+﻿{
   "$schema": "https://raw.githubusercontent.com/nicoache/tauri/refs/heads/v2/packages/api/schema.json",
   "identifier": "default",
-  "description": "Default capability for OSC Profile Generator",
+  "description": "Default capability for ESTA Profile Generator",
   "windows": ["main"],
   "permissions": [
     "core:default"

@@ -1,12 +1,12 @@
-use std::path::PathBuf;
+﻿use std::path::PathBuf;
 use std::process::Command;
 use serde_json::json;
 use tauri::State;
-use crate::models::{OscProfile, ProfileSet};
+use crate::models::{EstaProfile, ProfileSet};
 
-const PROFILE_JSON: &str = "core/OSC_Profile.json";
-const PROFILE_C: &str = "core/OSC_Profile.c";
-const TEMPLATE: &str = "OSC_Profile.c.j2";
+const PROFILE_JSON: &str = "core/ESTA_Profile.json";
+const PROFILE_C: &str = "core/ESTA_Profile.c";
+const TEMPLATE: &str = "ESTA_Profile.c.j2";
 
 pub struct AppState {
     pub repo_root: PathBuf,
@@ -69,7 +69,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         .collect();
 
     let mut ctx = tera::Context::new();
-    ctx.insert("osc_count", &data.osc_count);
+    ctx.insert("inst_count", &data.inst_count);
     ctx.insert("profiles", &profiles_for_template);
 
     // Render C code from template
@@ -123,7 +123,7 @@ pub fn build_simulator(state: State<AppState>) -> Result<String, String> {
 
 #[tauri::command]
 pub fn run_simulator(state: State<AppState>) -> Result<(), String> {
-    let exe = state.repo_root.join("build").join("OSC_Simulator.exe");
+    let exe = state.repo_root.join("build").join("ESTA_Simulator.exe");
     if !exe.exists() {
         return Err(format!("未找到可执行文件: {}", exe.display()));
     }
@@ -136,9 +136,9 @@ pub fn run_simulator(state: State<AppState>) -> Result<(), String> {
 
 fn default_profile() -> ProfileSet {
     ProfileSet {
-        osc_count: 2,
+        inst_count: 2,
         profiles: vec![
-            OscProfile {
+            EstaProfile {
                 x_origin: 10, y_origin: 0, x_width: 200, y_width: 120,
                 display_num_min: 0, display_num_max: 4095,
                 channel_num: 4, channel_mask: 0b00001001,
@@ -149,10 +149,10 @@ fn default_profile() -> ProfileSet {
                 ruler_x: [30, 50, 90, 0, 0],
                 ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
                 ruler_num_digits_x: 8,
-                theme_type: "OSC_THEME_DEFAULT".into(),
+                theme_type: "ESTA_THEME_DEFAULT".into(),
                 is_auto_clear: true,
             },
-            OscProfile {
+            EstaProfile {
                 x_origin: 0, y_origin: 120, x_width: 200, y_width: 120,
                 display_num_min: 0, display_num_max: 4095,
                 channel_num: 4, channel_mask: 0b00001111,
@@ -163,7 +163,7 @@ fn default_profile() -> ProfileSet {
                 ruler_x: [30, 50, 90, 0, 0],
                 ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
                 ruler_num_digits_x: 8,
-                theme_type: "OSC_THEME_LIGHT".into(),
+                theme_type: "ESTA_THEME_LIGHT".into(),
                 is_auto_clear: true,
             },
         ],

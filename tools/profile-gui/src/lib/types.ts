@@ -1,4 +1,4 @@
-export interface OscProfile {
+﻿export interface EstaProfile {
   x_origin: number;
   y_origin: number;
   x_width: number;
@@ -22,16 +22,16 @@ export interface OscProfile {
 }
 
 export interface ProfileSet {
-  osc_count: number;
-  profiles: OscProfile[];
+  inst_count: number;
+  profiles: EstaProfile[];
 }
 
 export const THEME_OPTIONS = [
-  ["OSC_THEME_DEFAULT", "Default"],
-  ["OSC_THEME_LIGHT", "Light"],
+  ["ESTA_THEME_DEFAULT", "Default"],
+  ["ESTA_THEME_LIGHT", "Light"],
 ] as const;
 
-export const MAX_OSC_INST = 2;
-export const MAX_OSC_CHANNEL = 4;
+export const MAX_ESTA_INST = 2;
+export const MAX_ESTA_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 5;
 export const MAX_RULER_Y_NUM = 5;

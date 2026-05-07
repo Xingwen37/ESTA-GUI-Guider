@@ -1,12 +1,12 @@
-#ifndef SIM_SCENARIO_H
+﻿#ifndef SIM_SCENARIO_H
 #define SIM_SCENARIO_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include "OSC.h"
+#include "ESTA.h"
 
-#define SIM_SCENARIO_OSC_COUNT 2
+#define SIM_SCENARIO_ESTA_COUNT 2
 
 typedef struct {
     const uint16_t *signal_lut;
@@ -15,8 +15,8 @@ typedef struct {
 } SimScenarioRuntime;
 
 bool SimScenario_LoadDefault(SimScenarioRuntime *runtime);
-OSC_StatusTypeDef SimScenario_ApplyDefaultProfile(int osc_idx);
-bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int osc_idx, uint16_t data_ch[MAX_OSC_CHANNEL]);
+ESTA_StatusTypeDef SimScenario_ApplyDefaultProfile(int ESTA_idx);
+bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]);
 void SimScenario_Tick(SimScenarioRuntime *runtime);
 
 #endif

@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import ProfileEditor from "./components/ProfileEditor";
 import * as api from "./lib/tauri-api";
-import type { ProfileSet, OscProfile } from "./lib/types";
+import type { ProfileSet, EstaProfile } from "./lib/types";
 import {
-  MAX_OSC_INST,
+  MAX_ESTA_INST,
   MAX_RULER_X_NUM,
   MAX_RULER_Y_NUM,
 } from "./lib/types";
 
-const EMPTY_PROFILE: OscProfile = {
+const EMPTY_PROFILE: EstaProfile = {
   x_origin: 0, y_origin: 0, x_width: 200, y_width: 120,
   display_num_min: 0, display_num_max: 4095,
   channel_num: 4, channel_mask: 0b00001111,
@@ -19,19 +19,19 @@ const EMPTY_PROFILE: OscProfile = {
   ruler_x: [30, 50, 90, 0, 0],
   ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
   ruler_num_digits_x: 8,
-  theme_type: "OSC_THEME_DEFAULT",
+  theme_type: "ESTA_THEME_DEFAULT",
   is_auto_clear: true,
 };
 
-function validate(profiles: OscProfile[]): string | null {
+function validate(profiles: EstaProfile[]): string | null {
   for (let i = 0; i < profiles.length; i++) {
     const p = profiles[i];
     if (p.display_num_min >= p.display_num_max)
-      return `OSC${i}: display_num_min 必须小于 display_num_max`;
+      return `ESTA${i}: display_num_min 必须小于 display_num_max`;
     if (p.ruler_count_x > MAX_RULER_X_NUM)
-      return `OSC${i}: ruler_count_x 超过上限`;
+      return `ESTA${i}: ruler_count_x 超过上限`;
     if (p.ruler_count_y > MAX_RULER_Y_NUM)
-      return `OSC${i}: ruler_count_y 超过上限`;
+      return `ESTA${i}: ruler_count_y 超过上限`;
   }
   return null;
 }
@@ -61,31 +61,31 @@ export default function App() {
 
   const currentProfile = data.profiles[activeTab] ?? EMPTY_PROFILE;
 
-  const updateProfile = (p: OscProfile) => {
+  const updateProfile = (p: EstaProfile) => {
     const profiles = [...data.profiles];
     profiles[activeTab] = p;
     setData({ ...data, profiles });
   };
 
   const handleGenerate = async () => {
-    const err = validate(data.profiles.slice(0, data.osc_count));
+    const err = validate(data.profiles.slice(0, data.inst_count));
     if (err) {
       showStatus({ type: "error", msg: err });
       return;
     }
     try {
       await api.saveProfile({
-        osc_count: data.osc_count,
-        profiles: data.profiles.slice(0, data.osc_count),
+        inst_count: data.inst_count,
+        profiles: data.profiles.slice(0, data.inst_count),
       });
-      showStatus({ type: "success", msg: "已生成 core/OSC_Profile.c" });
+      showStatus({ type: "success", msg: "已生成 core/ESTA_Profile.c" });
     } catch (e) {
       showStatus({ type: "error", msg: `保存失败: ${e}` });
     }
   };
 
   const handleBuildRun = async () => {
-    const err = validate(data.profiles.slice(0, data.osc_count));
+    const err = validate(data.profiles.slice(0, data.inst_count));
     if (err) {
       showStatus({ type: "error", msg: err });
       return;
@@ -93,8 +93,8 @@ export default function App() {
     try {
       // Save first
       await api.saveProfile({
-        osc_count: data.osc_count,
-        profiles: data.profiles.slice(0, data.osc_count),
+        inst_count: data.inst_count,
+        profiles: data.profiles.slice(0, data.inst_count),
       });
       showStatus({ type: "success", msg: "已保存，开始编译..." });
       const msg = await api.buildSimulator();
@@ -110,22 +110,22 @@ export default function App() {
     <>
       {/* Toolbar */}
       <div className="toolbar">
-        <label>osc_count</label>
+        <label>inst_count</label>
         <input
           type="number"
-          value={data.osc_count}
+          value={data.inst_count}
           min={1}
-          max={MAX_OSC_INST}
+          max={MAX_ESTA_INST}
           onChange={(e) =>
             setData({
               ...data,
-              osc_count: Math.max(1, Math.min(MAX_OSC_INST, Number(e.target.value) || 1)),
+              inst_count: Math.max(1, Math.min(MAX_ESTA_INST, Number(e.target.value) || 1)),
             })
           }
         />
         <div className="toolbar-spacer" />
         <button className="btn-generate" onClick={handleGenerate}>
-          生成 OSC_Profile.c
+          生成 ESTA_Profile.c
         </button>
         <button className="btn-run" onClick={handleBuildRun}>
           Build & Run
@@ -137,13 +137,13 @@ export default function App() {
 
       {/* Tabs */}
       <div className="tabs">
-        {Array.from({ length: data.osc_count }, (_, i) => (
+        {Array.from({ length: data.inst_count }, (_, i) => (
           <button
             key={i}
             className={`tab ${activeTab === i ? "active" : ""}`}
             onClick={() => setActiveTab(i)}
           >
-            OSC{i}
+            ESTA{i}
           </button>
         ))}
       </div>

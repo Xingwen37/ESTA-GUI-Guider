@@ -1,4 +1,4 @@
-#include "sim_scenario.h"
+﻿#include "sim_scenario.h"
 
 #include <string.h>
 
@@ -21,42 +21,42 @@ bool SimScenario_LoadDefault(SimScenarioRuntime *runtime) {
     return true;
 }
 
-OSC_StatusTypeDef SimScenario_ApplyDefaultProfile(int osc_idx) {
-    OSC_Config_TypeDef config = {0};
+ESTA_StatusTypeDef SimScenario_ApplyDefaultProfile(int ESTA_idx) {
+    ESTA_Config_TypeDef config = {0};
     uint16_t ruler_y[5] = {1000, 2000, 3000, 4000, 0};
     uint16_t ruler_x[5] = {30, 50, 90, 0, 0};
 
-    if (osc_idx == 0) {
-        OSC_ConfigSetPositionAndSize(&config, 10, 0, 200, 120);
-        OSC_ConfigSetTheme(&config, OSC_THEME_DEFAULT);
-        OSC_ConfigSetChannelEnabled(&config, CH0 | CH1 | CH2 | CH3);
-    } else if (osc_idx == 1) {
-        OSC_ConfigSetPositionAndSize(&config, 0, 120, 200, 120);
-        OSC_ConfigSetTheme(&config, OSC_THEME_LIGHT);
-        OSC_ConfigSetChannelEnabled(&config, CH0 | CH2 | CH3);
+    if (ESTA_idx == 0) {
+        ESTA_ConfigSetPositionAndSize(&config, 10, 0, 200, 120);
+        ESTA_ConfigSetTheme(&config, ESTA_THEME_DEFAULT);
+        ESTA_ConfigSetChannelEnabled(&config, CH0 | CH1 | CH2 | CH3);
+    } else if (ESTA_idx == 1) {
+        ESTA_ConfigSetPositionAndSize(&config, 0, 120, 200, 120);
+        ESTA_ConfigSetTheme(&config, ESTA_THEME_LIGHT);
+        ESTA_ConfigSetChannelEnabled(&config, CH0 | CH2 | CH3);
     } else {
-        return OSC_ERROR;
+        return ESTA_ERROR;
     }
 
-    OSC_ConfigSetDisplayRange(&config, 0, 4095);
-    OSC_ConfigSetChannelNum(&config, 4);
-    OSC_ConfigSetRulerY(&config, true, ruler_y, 4, 4);
-    OSC_ConfigSetRulerX(&config, true, ruler_x, 3, 0, 100, 8);
-    OSC_ConfigSetAutoClear(&config, true);
+    ESTA_ConfigSetDisplayRange(&config, 0, 4095);
+    ESTA_ConfigSetChannelNum(&config, 4);
+    ESTA_ConfigSetRulerY(&config, true, ruler_y, 4, 4);
+    ESTA_ConfigSetRulerX(&config, true, ruler_x, 3, 0, 100, 8);
+    ESTA_ConfigSetAutoClear(&config, true);
 
-    return OSC_Init(OSC_INST(osc_idx), &config);
+    return ESTA_Init(ESTA_INST(ESTA_idx), &config);
 }
 
-bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int osc_idx, uint16_t data_ch[MAX_OSC_CHANNEL]) {
+bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int ESTA_idx, uint16_t data_ch[MAX_ESTA_CHANNEL]) {
     if (runtime == NULL || data_ch == NULL) return false;
-    if (osc_idx < 0 || osc_idx >= SIM_SCENARIO_OSC_COUNT) return false;
+    if (ESTA_idx < 0 || ESTA_idx >= SIM_SCENARIO_ESTA_COUNT) return false;
     if (runtime->signal_lut == NULL || runtime->signal_len == 0) return false;
 
-    memset(data_ch, 0, sizeof(uint16_t) * MAX_OSC_CHANNEL);
+    memset(data_ch, 0, sizeof(uint16_t) * MAX_ESTA_CHANNEL);
     size_t base = runtime->tick % runtime->signal_len;
     size_t shift_32 = (runtime->tick + 32U) % runtime->signal_len;
 
-    if (osc_idx == 0) {
+    if (ESTA_idx == 0) {
         data_ch[0] = runtime->signal_lut[base];
         data_ch[1] = runtime->signal_lut[shift_32];
         data_ch[2] = 1000;

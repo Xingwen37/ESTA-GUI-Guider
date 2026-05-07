@@ -1,4 +1,4 @@
-#include "osc_port_sdl2.h"
+﻿#include "esta_port_sdl2.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include "font.h" // 引入你的字库
@@ -26,10 +26,10 @@ static void draw_pixel(uint16_t x, uint16_t y, uint16_t color) {
 
 /* ================== 系统级控制 ================== */
 
-void OSC_SDL2_Init(void) {
+void ESTA_SDL2_Init(void) {
     SDL_Init(SDL_INIT_VIDEO);
     
-    g_window = SDL_CreateWindow("TL-OSC Simulator", 
+    g_window = SDL_CreateWindow("TL-ESTA Simulator", 
                                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
                                 SIMULATOR_SCREEN_WIDTH * 2,  // 放大两倍显示，不那么伤眼
                                 SIMULATOR_SCREEN_HEIGHT * 2, 
@@ -51,7 +51,7 @@ void OSC_SDL2_Init(void) {
     SDL_RenderClear(g_renderer);
 }
 
-void OSC_SDL2_Update(void) {
+void ESTA_SDL2_Update(void) {
     // 1. 暂时把渲染目标切回电脑真实的屏幕窗口
     SDL_SetRenderTarget(g_renderer, NULL); 
     // 2. 把我们画好数据的虚拟屏幕纹理盖到窗口上
@@ -62,37 +62,37 @@ void OSC_SDL2_Update(void) {
     SDL_SetRenderTarget(g_renderer, g_screen); 
 }
 
-void OSC_SDL2_Quit(void) {
+void ESTA_SDL2_Quit(void) {
     SDL_DestroyTexture(g_screen);
     SDL_DestroyRenderer(g_renderer);
     SDL_DestroyWindow(g_window);
     SDL_Quit();
 }
 
-void OSC_SDL2_Delay(uint32_t ms) {
+void ESTA_SDL2_Delay(uint32_t ms) {
     SDL_Delay(ms);
 }
 
 /* ================== 绘图 API 映射 ================== */
 
-void OSC_SDL2_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void ESTA_SDL2_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     set_draw_color(color);
     SDL_RenderDrawLine(g_renderer, x1, y1, x2, y2);
 }
 
-void OSC_SDL2_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void ESTA_SDL2_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     set_draw_color(color);
     SDL_Rect rect = {x1, y1, x2 - x1, y2 - y1};
     SDL_RenderDrawRect(g_renderer, &rect);
 }
 
-void OSC_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void ESTA_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     set_draw_color(color);
     SDL_Rect rect = {x1, y1, x2 - x1, y2 - y1};
     SDL_RenderFillRect(g_renderer, &rect);
 }
 
-void OSC_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
+void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
     char buf[16];
     // 格式化为带前导零的字符串
     snprintf(buf, sizeof(buf), "%0*u", len, num); 

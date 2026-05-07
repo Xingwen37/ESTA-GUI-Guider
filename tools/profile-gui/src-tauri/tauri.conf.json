@@ -1,8 +1,8 @@
-{
+﻿{
   "$schema": "https://raw.githubusercontent.com/nicoache/tauri/refs/heads/v2/packages/api/schema.json",
-  "productName": "OSC Profile Generator",
+  "productName": "ESTA Profile Generator",
   "version": "0.1.0",
-  "identifier": "com.esta.osc-profile-gui",
+  "identifier": "com.esta.esta-profile-gui",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "OSC Profile Generator",
+        "title": "ESTA Profile Generator",
         "width": 1000,
         "height": 780
       }
