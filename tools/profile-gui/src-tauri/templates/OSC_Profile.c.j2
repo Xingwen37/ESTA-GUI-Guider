@@ -3,51 +3,33 @@
 #include <string.h>
 
 static const OSC_ProfileSet_TypeDef g_default_profiles = {
-    .osc_count = 2,
+    .osc_count = {{ osc_count }},
     .profiles = {
+{% for p in profiles %}
         {
-            .x_origin = 10,
-            .y_origin = 0,
-            .x_width = 200,
-            .y_width = 120,
-            .display_num_min = 0,
-            .display_num_max = 4095,
-            .channel_num = 4,
-            .channel_mask = CH0 | CH3,
-            .is_display_ruler_y = true,
-            .ruler_y = { 1000, 2000, 3000, 4000, 0 },
-            .ruler_count_y = 4,
-            .ruler_num_digits_y = 4,
-            .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0 },
-            .ruler_count_x = 3,
-            .ruler_zero_value_x = 0,
-            .ruler_full_value_x = 100,
-            .ruler_num_digits_x = 8,
-            .theme_type = OSC_THEME_DEFAULT,
-            .is_auto_clear = true
-        },        {
-            .x_origin = 0,
-            .y_origin = 120,
-            .x_width = 200,
-            .y_width = 120,
-            .display_num_min = 0,
-            .display_num_max = 4095,
-            .channel_num = 4,
-            .channel_mask = CH0 | CH1 | CH2 | CH3,
-            .is_display_ruler_y = true,
-            .ruler_y = { 1000, 2000, 3000, 4000, 0 },
-            .ruler_count_y = 4,
-            .ruler_num_digits_y = 4,
-            .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0 },
-            .ruler_count_x = 3,
-            .ruler_zero_value_x = 0,
-            .ruler_full_value_x = 100,
-            .ruler_num_digits_x = 8,
-            .theme_type = OSC_THEME_LIGHT,
-            .is_auto_clear = true
-        }    }
+            .x_origin = {{ p.x_origin }},
+            .y_origin = {{ p.y_origin }},
+            .x_width = {{ p.x_width }},
+            .y_width = {{ p.y_width }},
+            .display_num_min = {{ p.display_num_min }},
+            .display_num_max = {{ p.display_num_max }},
+            .channel_num = {{ p.channel_num }},
+            .channel_mask = {{ p.channel_mask_expr }},
+            .is_display_ruler_y = {{ p.is_display_ruler_y }},
+            .ruler_y = { {{ p.ruler_y | join(sep=", ") }} },
+            .ruler_count_y = {{ p.ruler_count_y }},
+            .ruler_num_digits_y = {{ p.ruler_num_digits_y }},
+            .is_display_ruler_x = {{ p.is_display_ruler_x }},
+            .ruler_x = { {{ p.ruler_x | join(sep=", ") }} },
+            .ruler_count_x = {{ p.ruler_count_x }},
+            .ruler_zero_value_x = {{ p.ruler_zero_value_x }},
+            .ruler_full_value_x = {{ p.ruler_full_value_x }},
+            .ruler_num_digits_x = {{ p.ruler_num_digits_x }},
+            .theme_type = {{ p.theme_type }},
+            .is_auto_clear = {{ p.is_auto_clear }}
+        }{% if not loop.last %},{% endif %}
+{% endfor %}
+    }
 };
 
 const OSC_ProfileSet_TypeDef *OSC_Profile_GetDefault(void) {

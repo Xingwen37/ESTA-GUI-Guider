@@ -23,51 +23,76 @@ TL-OSC 是一个基于 OOP-in-C (OOC) 架构的轻量级嵌入式示波器 GUI �
 | `OSC_ReDraw()` | 强制重绘边框、背景与坐标轴。 |
 | `OSC_GetThemeColor()` | 获取当前主题下指定组件的颜色值 (RGB565)。 |
 
-### 3. 模拟器编译与运行 (Linux/WSL)
-**安装依赖**
+### 3. 模拟器编译与运行
+
+**Linux / WSL**
+
+安装依赖：
 ```bash
 sudo apt update
 sudo apt install build-essential cmake libsdl2-dev
 ```
 
-**编译执行**
+编译执行：
 ```bash
 cmake -B build
 cmake --build build
 ./build/OSC_Simulator
 ```
 
-**清理工程**
+**Windows (MinGW64)**
+
+前置条件：安装 [MinGW-w64](https://www.mingw-w64.org/) 及 SDL2 开发库。
+
+使用 `build.ps1` 一键构建：
+```powershell
+.\build.ps1
+```
+
+或手动执行：
+```powershell
+$env:PATH = "<mingw64>/bin;" + $env:PATH
+cmake -G "MinGW Makefiles" -B build -S .
+cmake --build build
+.\build\OSC_Simulator.exe
+```
+
+清理：
 ```bash
 rm -rf build/
 ```
 
-### 4. 图形化配置（`tools/profile_gui`）
-**安装依赖**
+### 4. 图形化配置器（`tools/profile-gui`）
+
+基于 **Tauri v2 + React + Rust** 的桌面配置器，替代原 PySide6 方案，二进制体积 ~5MB。
+
+**前置条件**
+- [Rust](https://www.rust-lang.org/) (>= 1.70)
+- [Node.js](https://nodejs.org/) (>= 18)
+- Windows：系统自带 WebView2；Linux：需安装 `libwebkit2gtk-4.1-dev`
+
+**启动（开发模式）**
 ```bash
-sudo apt install python3.12-venv
-cd tools/profile_gui
-python -m venv .venv
-source .venv/bin/activate
-pip install pyside6 jinja2
-pip install -r requirements.txt
+cd tools/profile-gui
+npm install
+npm run tauri dev
 ```
 
-**启动工具**
+**打包为独立可执行文件**
 ```bash
-cd tools/profile_gui
-source .venv/bin/activate
-python app.py
+cd tools/profile-gui
+npm run tauri build
 ```
 
 **使用方式**
-- 在界面中编辑实例参数（坐标、通道、标尺、主题）。
-- 点击 `生成 OSC_Profile.c`：写入 `core/OSC_Profile.c`。
-- 点击 `Run Simulator`：自动生成配置、构建并启动 `OSC_Simulator`。
+- 界面中编辑 OSC 实例参数（坐标、通道、标尺、主题）。
+- 点击「生成 OSC_Profile.c」：从 JSON 源文件渲染写入 `core/OSC_Profile.c`。
+- 点击「Build & Run」：自动保存、编译并启动模拟器。
 
-**生成结果**
-- 输出文件：`core/OSC_Profile.c`
-- 备份文件：`core/OSC_Profile.c.bak`
+**数据流**
+- 配置源文件：`core/OSC_Profile.json`
+- 生成输出：`core/OSC_Profile.c`
+- 模板引擎：Tera（语法兼容 Jinja2）
 
 ### 5. 移植方式
 **步骤**
@@ -122,21 +147,131 @@ TL-OSC is a lightweight embedded oscilloscope GUI library built on an OOP-in-C a
 | `OSC_ReDraw()` | Force redraw of frames, backgrounds, and coordinate rulers. |
 | `OSC_GetThemeColor()` | Get RGB565 color value for specific UI components. |
 
-### 3. Build & Run Simulator (Linux/WSL)
-**Dependencies**
+### 3. Build & Run Simulator
+
+**Linux / WSL**
+
+Install dependencies:
 ```bash
 sudo apt update
 sudo apt install build-essential cmake libsdl2-dev
 ```
 
-**Build and Run**
+Build and run:
 ```bash
 cmake -B build
 cmake --build build
 ./build/OSC_Simulator
 ```
 
-**Clean**
+**Windows (MinGW64)**
+
+Prerequisites: [MinGW-w64](https://www.mingw-w64.org/) with SDL2 development libraries.
+
+One-click build with `build.ps1`:
+```powershell
+.\build.ps1
+```
+
+Or manually:
+```powershell
+$env:PATH = "<mingw64>/bin;" + $env:PATH
+cmake -G "MinGW Makefiles" -B build -S .
+cmake --build build
+.\build\OSC_Simulator.exe
+```
+
+Clean:
 ```bash
 rm -rf build/
+```
+
+---
+
+### 4. Profile GUI (`tools/profile-gui`)
+
+A **Tauri v2 + React + Rust** desktop configurator replacing the previous PySide6 solution. Binary size ~5MB.
+
+**Prerequisites**
+- [Rust](https://www.rust-lang.org/) (>= 1.70)
+- [Node.js](https://nodejs.org/) (>= 18)
+- Windows: WebView2 included with OS; Linux: install `libwebkit2gtk-4.1-dev`
+
+**Development mode**
+```bash
+cd tools/profile-gui
+npm install
+npm run tauri dev
+```
+
+**Package as standalone executable**
+```bash
+cd tools/profile-gui
+npm run tauri build
+```
+
+**Usage**
+- Edit OSC instance parameters (position, channels, rulers, theme) in the GUI.
+- Click "Generate OSC_Profile.c" to render and write `core/OSC_Profile.c` from the JSON source.
+- Click "Build & Run" to save, compile, and launch the simulator.
+
+**Data flow**
+- Source of truth: `core/OSC_Profile.json`
+- Generated output: `core/OSC_Profile.c`
+- Template engine: Tera (Jinja2-compatible syntax)
+
+---
+
+### 5. Porting Guide
+1. Keep `core/OSC.c`, `core/OSC.h`, `core/OSC_Profile.c`, `core/OSC_Profile.h` in your target project.
+2. In `OSC.h`, adapt 4 drawing macros: `SCREEN_DRAW_LINE`, `SCREEN_DRAW_RECTANGLE`, `SCREEN_FILL`, `SCREEN_DRAW_NUM`.
+3. Call `OSC_Profile_GetDefault()` to read configuration, use `OSC_Profile_Apply()` to initialize instances.
+4. In the main loop, call `OSC_CurveDraw()` to push sample data, use `OSC_ReDraw()` as needed.
+
+**Minimal `main.c` example**
+```c
+#include "OSC.h"
+#include "OSC_Profile.h"
+
+int main(void) {
+    Platform_Init();
+
+    const OSC_ProfileSet_TypeDef *profiles = OSC_Profile_GetDefault();
+    if (profiles == NULL) return -1;
+
+    for (int i = 0; i < profiles->osc_count; ++i) {
+        if (OSC_Profile_Apply(OSC_INST(i), &profiles->profiles[i]) != OSC_OK) return -1;
+        if (OSC_ReDraw(OSC_INST(i)) != OSC_OK) return -1;
+    }
+
+    while (1) {
+        uint16_t ch_data[MAX_OSC_CHANNEL] = {0};
+        AcquireSignal(ch_data);
+        OSC_CurveDraw(OSC_INST(0), ch_data);
+    }
+}
+```
+
+---
+
+### 6. Project Structure
+```
+ESTA-GUI-Guider/
+├── core/                   # Oscilloscope library core
+│   ├── OSC.h / OSC.c       # Core rendering engine
+│   ├── OSC_Profile.h/.c    # Instance configuration (auto-generated)
+│   └── OSC_Profile.json    # Configuration source of truth
+├── port/                   # Platform abstraction layer
+│   └── osc_port_sdl2.c     # SDL2 backend
+├── simulator/              # PC simulator entry
+│   ├── main.c
+│   └── sim_scenario.c
+├── tools/
+│   └── profile-gui/        # Tauri-based profile configurator
+│       ├── src/            # React TypeScript frontend
+│       ├── src-tauri/      # Rust backend (Tera templates + commands)
+│       └── package.json
+├── CMakeLists.txt          # C project build
+├── build.ps1               # Windows MinGW build script
+└── README.md
 ```

@@ -20,3 +20,21 @@ OSC_Simulator
 .idea/
 .DS_Store
 .cursor/
+
+# 4. Rust / Cargo
+target/
+
+# 5. Node.js / Tauri
+node_modules/
+dist/
+*.tsbuildinfo
+
+# 6. Tauri 自动生成
+gen/
+
+# 6. 备份文件
+*.bak
+*.c.bak
+
+# 7. AI 工具目录
+.claude/

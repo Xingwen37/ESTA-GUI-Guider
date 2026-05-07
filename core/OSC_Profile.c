@@ -5,6 +5,7 @@
 static const OSC_ProfileSet_TypeDef g_default_profiles = {
     .osc_count = 2,
     .profiles = {
+
         {
             .x_origin = 10,
             .y_origin = 0,
@@ -13,20 +14,22 @@ static const OSC_ProfileSet_TypeDef g_default_profiles = {
             .display_num_min = 0,
             .display_num_max = 4095,
             .channel_num = 4,
-            .channel_mask = CH0 | CH3,
+            .channel_mask = CH0 | CH1 | CH3,
             .is_display_ruler_y = true,
             .ruler_y = { 1000, 2000, 3000, 4000, 0 },
             .ruler_count_y = 4,
             .ruler_num_digits_y = 4,
             .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0 },
-            .ruler_count_x = 3,
+            .ruler_x = { 30, 50, 70, 120, 0 },
+            .ruler_count_x = 4,
             .ruler_zero_value_x = 0,
             .ruler_full_value_x = 100,
             .ruler_num_digits_x = 8,
-            .theme_type = OSC_THEME_DEFAULT,
+            .theme_type = OSC_THEME_LIGHT,
             .is_auto_clear = true
-        },        {
+        },
+
+        {
             .x_origin = 0,
             .y_origin = 120,
             .x_width = 200,
@@ -40,14 +43,16 @@ static const OSC_ProfileSet_TypeDef g_default_profiles = {
             .ruler_count_y = 4,
             .ruler_num_digits_y = 4,
             .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0 },
+            .ruler_x = { 30, 40, 90, 0, 0 },
             .ruler_count_x = 3,
             .ruler_zero_value_x = 0,
             .ruler_full_value_x = 100,
             .ruler_num_digits_x = 8,
-            .theme_type = OSC_THEME_LIGHT,
+            .theme_type = OSC_THEME_DEFAULT,
             .is_auto_clear = true
-        }    }
+        }
+
+    }
 };
 
 const OSC_ProfileSet_TypeDef *OSC_Profile_GetDefault(void) {
