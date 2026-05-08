@@ -1,5 +1,5 @@
 {
-  "inst_count": 2,
+  "inst_count": 1,
   "profiles": [
     {
       "x_origin": 10,
@@ -9,7 +9,7 @@
       "display_num_min": 0,
       "display_num_max": 4095,
       "channel_num": 4,
-      "channel_mask": 11,
+      "channel_mask": 14,
       "is_display_ruler_y": true,
       "ruler_y": [
         1000,
@@ -33,40 +33,6 @@
       "ruler_full_value_x": 100,
       "ruler_num_digits_x": 8,
       "theme_type": "WAVE_THEME_LIGHT",
-      "is_auto_clear": true
-    },
-    {
-      "x_origin": 0,
-      "y_origin": 120,
-      "x_width": 200,
-      "y_width": 120,
-      "display_num_min": 0,
-      "display_num_max": 4095,
-      "channel_num": 4,
-      "channel_mask": 15,
-      "is_display_ruler_y": true,
-      "ruler_y": [
-        1000,
-        2000,
-        3000,
-        4000,
-        0
-      ],
-      "ruler_count_y": 4,
-      "ruler_num_digits_y": 4,
-      "is_display_ruler_x": true,
-      "ruler_x": [
-        30,
-        40,
-        90,
-        0,
-        0
-      ],
-      "ruler_count_x": 3,
-      "ruler_zero_value_x": 0,
-      "ruler_full_value_x": 100,
-      "ruler_num_digits_x": 8,
-      "theme_type": "WAVE_THEME_DEFAULT",
       "is_auto_clear": true
     }
   ]

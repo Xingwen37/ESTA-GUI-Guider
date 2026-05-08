@@ -263,12 +263,14 @@ typedef struct {
 
 ### 4.4 主题桥接宏
 
+`ESTA_GetThemeColor` 是**全局共享**宏，定义在 `core/ui_theme.h` 中：
+
 ```c
-#define {NAME}_GetThemeColor(theme, color_index) \
+#define ESTA_GetThemeColor(theme, color_index) \
     UI_GetThemeColor((int)(theme), (int)(color_index))
 ```
 
-每个组件必须定义此宏，以便组件代码能以命名空间化的方式获取主题颜色。
+所有组件直接使用 `ESTA_GetThemeColor`，无需各自定义桥接宏。
 
 ### 4.5 强制规则
 
@@ -286,44 +288,48 @@ typedef struct {
 
 ## 第五章：状态码与错误处理
 
-### 5.1 状态枚举模板
+### 5.1 统一状态枚举
+
+`ESTA_StatusTypeDef` 是**全局共享**状态类型，定义在 `core/ui_base.h` 中。所有组件共用同一个状态枚举，不再各自定义：
 
 ```c
 typedef enum
 {
-    {NAME}_OK       = 0x00,  /* 成功 */
-    {NAME}_ERROR    = 0x01,  /* 通用错误（参数无效、NULL 指针、越界等） */
-    {NAME}_FULL     = 0x02   /* 缓冲区满（仅当组件存在数据积压场景时定义） */
-    /* 组件特定错误码从 0x03 开始递增 */
-} {NAME}_StatusTypeDef;
+    ESTA_OK       = 0x00,  /* 成功 */
+    ESTA_ERROR    = 0x01,  /* 通用错误（参数无效、NULL 指针、越界等） */
+    ESTA_FULL     = 0x02   /* 缓冲区满（仅当组件存在数据积压场景时定义） */
+} ESTA_StatusTypeDef;
 ```
 
 规则：
-- `OK` 必须为 `0x00`（C 语言约定：零表示成功）
-- `ERROR` 为通用错误码 `0x01`
-- `FULL` 为可选特殊状态码 `0x02`（仅限有缓冲区满语义的组件）
-- 组件特定状态码从 `0x03` 起分配，值递增
+- `ESTA_OK` 固定为 `0x00`（C 语言约定：零表示成功）
+- `ESTA_ERROR` 为通用错误码 `0x01`
+- `ESTA_FULL` 为可选特殊状态码 `0x02`
+- 所有组件函数返回 `ESTA_StatusTypeDef`，使用 `ESTA_OK` / `ESTA_ERROR` / `ESTA_FULL` 作为返回值
 
 ### 5.2 返回值约定
 
 | 函数类别 | 返回类型 | 说明 |
 |----------|----------|------|
-| 生命周期函数 (Init/DeInit) | `{NAME}_StatusTypeDef` | 参数错误或操作失败返回 ERROR |
-| 显示/操作函数 | `{NAME}_StatusTypeDef` | 同上 |
-| Config Setter | `{NAME}_StatusTypeDef` | **新规：不再使用 void**（见第八章） |
+| 生命周期函数 (Init/DeInit) | `ESTA_StatusTypeDef` | 参数错误或操作失败返回 ESTA_ERROR |
+| 显示/操作函数 | `ESTA_StatusTypeDef` | 同上 |
+| Config Setter | `ESTA_StatusTypeDef` | 不得使用 void（见第八章） |
 
-### 5.3 错误传播模式
+### 5.3 错误传播宏
 
-子操作返回错误时，上层函数**必须**向上传播：
+`ESTA_RETURN_IF_ERROR` 定义在 `core/ui_base.h` 中，用于简洁的错误传播：
 
 ```c
-{NAME}_StatusTypeDef {NAME}_SomeOp(int inst) {
-    if (!IS_VALID_{NAME}_INST(inst)) return {NAME}_ERROR;
+#define ESTA_RETURN_IF_ERROR(expr) \
+    do { if ((expr) != ESTA_OK) return ESTA_ERROR; } while(0)
+```
 
-    if (SubFunction(inst) != {NAME}_OK) {
-        return {NAME}_ERROR;
-    }
-    return {NAME}_OK;
+用法：
+```c
+ESTA_StatusTypeDef {NAME}_SomeOp(int inst) {
+    if (!IS_VALID_{NAME}_INST(inst)) return ESTA_ERROR;
+    ESTA_RETURN_IF_ERROR(SubFunction(inst));
+    return ESTA_OK;
 }
 ```
 
@@ -378,8 +384,8 @@ typedef enum {
 所有接受指针参数的函数必须在校验后使用：
 
 ```c
-{NAME}_StatusTypeDef {NAME}_ConfigSetXxx({NAME}_Config_TypeDef *config, ...) {
-    if (config == NULL) return {NAME}_ERROR;
+ESTA_StatusTypeDef {NAME}_ConfigSetXxx({NAME}_Config_TypeDef *config, ...) {
+    if (config == NULL) return ESTA_ERROR;
     // ... 正常逻辑 ...
 }
 ```
@@ -402,12 +408,12 @@ typedef enum {
  * @brief  初始化组件实例
  * @param  inst        : 组件实例，如 {NAME}_INST(0)
  * @param  pConfig     : 指向配置结构体的指针
- * @return {NAME}_StatusTypeDef
+ * @return ESTA_StatusTypeDef
  * @note   将配置深拷贝到实例的 Config 寄存器，初始化 Private 状态
  */
-{NAME}_StatusTypeDef {NAME}_Init(int inst, {NAME}_Config_TypeDef *pConfig) {
-    if (!IS_VALID_{NAME}_INST(inst)) return {NAME}_ERROR;
-    if (pConfig == NULL) return {NAME}_ERROR;
+ESTA_StatusTypeDef {NAME}_Init(int inst, {NAME}_Config_TypeDef *pConfig) {
+    if (!IS_VALID_{NAME}_INST(inst)) return ESTA_ERROR;
+    if (pConfig == NULL) return ESTA_ERROR;
 
     /* ---- 写入 Config 字段 ---- */
     {NAME}_WRITE_CONFIG_INIT(inst, x_origin);
@@ -419,7 +425,7 @@ typedef enum {
     /* ---- 初始化 Private 字段 ---- */
     {NAME}_WRITE_PRIVATE(inst, state_field, 0);
 
-    return {NAME}_OK;
+    return ESTA_OK;
 }
 ```
 
@@ -439,10 +445,10 @@ typedef enum {
 /**
  * @brief  复位（反初始化）组件实例
  * @param  inst        : 组件实例
- * @return {NAME}_StatusTypeDef
+ * @return ESTA_StatusTypeDef
  */
-{NAME}_StatusTypeDef {NAME}_DeInit(int inst) {
-    if (!IS_VALID_{NAME}_INST(inst)) return {NAME}_ERROR;
+ESTA_StatusTypeDef {NAME}_DeInit(int inst) {
+    if (!IS_VALID_{NAME}_INST(inst)) return ESTA_ERROR;
 
     /* 将所有 Config 字段重置为默认值（零/false/NULL/默认主题） */
     {NAME}_WRITE_CONFIG(inst, x_origin, 0);
@@ -452,7 +458,7 @@ typedef enum {
     {NAME}_WRITE_PRIVATE(inst, state_field, 0);
     // ...
 
-    return {NAME}_OK;
+    return ESTA_OK;
 }
 ```
 
@@ -464,13 +470,13 @@ typedef enum {
 ### 7.3 显示/操作函数
 
 ```c
-{NAME}_StatusTypeDef {NAME}_OperationX(int inst, ...);
-{NAME}_StatusTypeDef {NAME}_ReDraw(int inst);  // 全量重绘
+ESTA_StatusTypeDef {NAME}_OperationX(int inst, ...);
+ESTA_StatusTypeDef {NAME}_ReDraw(int inst);  // 全量重绘
 ```
 
 规则：
 - 首个参数固定为 `int inst`（实例句柄）
-- 返回 `{NAME}_StatusTypeDef`
+- 返回 `ESTA_StatusTypeDef`
 - 函数内部先获取配置快照（局部变量缓存），避免反复通过宏读取
 - 内部子函数失败时向上传播错误
 
@@ -488,19 +494,19 @@ typedef enum {
 
 ### 8.1 核心规则（新规）
 
-**所有 Config Setter 必须返回 `{NAME}_StatusTypeDef`**，不再使用 `void`。
+**所有 Config Setter 必须返回 `ESTA_StatusTypeDef`**，不再使用 `void`。
 
 原因：调用者 Setter 无法区分"正常执行"和"传入 NULL 被静默忽略"，在生产环境中难以排查配置遗漏问题。
 
 ### 8.2 函数签名模板
 
 ```c
-{NAME}_StatusTypeDef {NAME}_ConfigSetPositionAndSize(
+ESTA_StatusTypeDef {NAME}_ConfigSetPositionAndSize(
     {NAME}_Config_TypeDef *config,
     uint16_t x_origin, uint16_t y_origin,
     uint16_t x_width, uint16_t y_width);
 
-{NAME}_StatusTypeDef {NAME}_ConfigSet{Feature}(
+ESTA_StatusTypeDef {NAME}_ConfigSet{Feature}(
     {NAME}_Config_TypeDef *config,
     <其他参数>);
 ```
@@ -508,18 +514,18 @@ typedef enum {
 ### 8.3 实现模板
 
 ```c
-{NAME}_StatusTypeDef {NAME}_ConfigSetXxx(
+ESTA_StatusTypeDef {NAME}_ConfigSetXxx(
     {NAME}_Config_TypeDef *config, param1, param2, ...)
 {
-    if (config == NULL) return {NAME}_ERROR;
+    if (config == NULL) return ESTA_ERROR;
 
     // 参数合法性检查
-    // if (param1 > MAX_VALUE) return {NAME}_ERROR;
+    // if (param1 > MAX_VALUE) return ESTA_ERROR;
 
     config->field1 = param1;
     config->field2 = param2;
 
-    return {NAME}_OK;
+    return ESTA_OK;
 }
 ```
 
@@ -528,7 +534,7 @@ typedef enum {
 1. 首个参数固定为 `{NAME}_Config_TypeDef *config`
 2. 必须检查 `config == NULL` → 返回 ERROR
 3. 必须检查参数合法性（范围、边界），不合理则返回 ERROR
-4. 返回 `{NAME}_OK` 或 `{NAME}_ERROR`
+4. 返回 `ESTA_OK` 或 `ESTA_ERROR`
 5. 一个 Setter 仅操作一个逻辑字段或一组紧密相关的字段
 6. 命名格式：`{NAME}_ConfigSet{FeatureName}`（PascalCase 连接特性名）
 
@@ -639,7 +645,7 @@ uint16_t UI_themeColorTable[UI_THEME_MAX][UI_COLOR_SLOT_MAX] = {
 
 ```c
 uint16_t theme_type = {NAME}_CONFIG_MEMBER(inst, theme_type);
-uint16_t color = {NAME}_GetThemeColor(theme_type, {NAME}_THEME_FRAME_INDEX);
+uint16_t color = ESTA_GetThemeColor(theme_type, {NAME}_THEME_FRAME_INDEX);
 SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, color);
 ```
 
@@ -750,19 +756,19 @@ bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile,
  * @brief  ToConfig + Init 的二合一封装
  * @param  inst_idx : 组件实例索引
  * @param  profile  : Profile 数据
- * @return {NAME}_StatusTypeDef
+ * @return ESTA_StatusTypeDef
  */
-{NAME}_StatusTypeDef ESTA_Profile_Apply(int inst_idx,
+ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx,
                                          const ESTA_Profile_TypeDef *profile);
 ```
 
 实现模式：
 ```c
-{NAME}_StatusTypeDef ESTA_Profile_Apply(int inst_idx,
+ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx,
                                          const ESTA_Profile_TypeDef *profile) {
     {NAME}_Config_TypeDef config;
     if (!ESTA_Profile_ToConfig(profile, &config)) {
-        return {NAME}_ERROR;
+        return ESTA_ERROR;
     }
     return {NAME}_Init(inst_idx, &config);
 }

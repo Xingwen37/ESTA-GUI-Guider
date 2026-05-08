@@ -49,12 +49,12 @@
       }
 
       for (int i = 0; i < inst_count; i++) {
-          if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) {
+          if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != ESTA_OK) {
               printf("ESTA_Profile_Apply failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
           }
-          if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) {
+          if (WAVE_ReDraw(WAVE_INST(i)) != ESTA_OK) {
               printf("WAVE_ReDraw failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
@@ -83,7 +83,7 @@
                   is_running = false;
                   break;
               }
-              if (WAVE_CurveDraw(WAVE_INST(i), data_ESTA[i]) == WAVE_ERROR) {
+              if (WAVE_CurveDraw(WAVE_INST(i), data_ESTA[i]) == ESTA_ERROR) {
                   is_running = false;
                   break;
               }

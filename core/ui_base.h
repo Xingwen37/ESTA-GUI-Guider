@@ -64,6 +64,30 @@
 #define __ORANGE              0XFD20
 #define __PURPLE              0X8010
 
+/* ================== 通用状态码 ================== */
+typedef enum
+{
+    ESTA_OK       = 0x00,
+    ESTA_ERROR    = 0x01,
+    ESTA_FULL     = 0x02
+} ESTA_StatusTypeDef;
+
+/* ================== 公共配置基类 ================== */
+/* 所有可视化组件的 Config 结构体必须以此 4 字段开头，顺序一致 */
+typedef struct {
+    uint16_t x_origin;
+    uint16_t y_origin;
+    uint16_t x_width;
+    uint16_t y_width;
+} ESTA_BaseConfig;
+
+ESTA_StatusTypeDef ESTA_ConfigSetPositionAndSize(ESTA_BaseConfig *base,
+    uint16_t x_origin, uint16_t y_origin, uint16_t x_width, uint16_t y_width);
+
+/* ================== 错误传播宏 ================== */
+#define ESTA_RETURN_IF_ERROR(expr) \
+    do { if ((expr) != ESTA_OK) return ESTA_ERROR; } while(0)
+
 /* ================== 通用工具函数 ================== */
 uint16_t ui_coor_normal(uint16_t coor_width, uint16_t value_max_range, uint16_t value);
 uint16_t ui_limit(uint16_t max, uint16_t min, uint16_t value);

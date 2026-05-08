@@ -40,7 +40,7 @@ bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile, WAVE_Config_Type
     if (profile == NULL || out_config == NULL) return false;
     memset(out_config, 0, sizeof(*out_config));
 
-    WAVE_ConfigSetPositionAndSize(out_config, profile->x_origin, profile->y_origin,
+    ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->x_origin, profile->y_origin,
                                  profile->x_width, profile->y_width);
     WAVE_ConfigSetDisplayRange(out_config, profile->display_num_min, profile->display_num_max);
     WAVE_ConfigSetChannelNum(out_config, profile->channel_num);
@@ -56,10 +56,10 @@ bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile, WAVE_Config_Type
     return true;
 }
 
-WAVE_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile) {
+ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile) {
     WAVE_Config_TypeDef config;
     if (!ESTA_Profile_ToConfig(profile, &config)) {
-        return WAVE_ERROR;
+        return ESTA_ERROR;
     }
     return WAVE_Init(inst_idx, &config);
 }

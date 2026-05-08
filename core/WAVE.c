@@ -29,78 +29,67 @@
 // 你可以将其视作库函数中外设的基地址
 WAVE_TypeDef WAVE_State[MAX_WAVE_NUM];
 
-WAVE_StatusTypeDef WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
-                                  uint16_t x_origin, uint16_t y_origin,
-                                  uint16_t x_width, uint16_t y_width) {
-    if(config == NULL) return WAVE_ERROR;
-    config->x_origin = x_origin;
-    config->y_origin = y_origin;
-    config->x_width = x_width;
-    config->y_width = y_width;
-    return WAVE_OK;
-}
-
-WAVE_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
+ESTA_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max) {
-    if(config == NULL) return WAVE_ERROR;
+    if(config == NULL) return ESTA_ERROR;
     config->display_num_min = display_num_min;
     config->display_num_max = display_num_max;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num) {
-    if(config == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num) {
+    if(config == NULL) return ESTA_ERROR;
     config->channel_num = channel_num;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
-    if(config == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return ESTA_ERROR;
     config->channel_mask |= channel_mask;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
-    if(config == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return ESTA_ERROR;
     config->channel_mask &= ~channel_mask;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
+ESTA_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y) {
-    if(config == NULL) return WAVE_ERROR;
+    if(config == NULL) return ESTA_ERROR;
     config->is_display_ruler_y = is_display;
     config->ruler_y = ruler_y;
     config->ruler_count_y = ruler_count_y;
     config->ruler_num_digits_y = ruler_num_digits_y;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
+ESTA_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x) {
-    if(config == NULL) return WAVE_ERROR;
+    if(config == NULL) return ESTA_ERROR;
     config->is_display_ruler_x = is_display;
     config->ruler_x = ruler_x;
     config->ruler_count_x = ruler_count_x;
     config->ruler_zero_value_x = ruler_zero_value_x;
     config->ruler_full_value_x = ruler_full_value_x;
     config->ruler_num_digits_x = ruler_num_digits_x;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type) {
-    if(config == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type) {
+    if(config == NULL) return ESTA_ERROR;
     config->theme_type = theme_type;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
-WAVE_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
-    if(config == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
+    if(config == NULL) return ESTA_ERROR;
     config->is_auto_clear = is_auto_clear;
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 
@@ -108,25 +97,25 @@ WAVE_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_
 /* @brief : 初始化示波器实例
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
 *           WAVE_Config_TypeDef *WAVE_Init : 指向ESTA设置结构体的指针
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 *  @note   : WAVE_Config_TypeDef 见ESTA.h
 */
-WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
-    if(WAVE_Init == NULL) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
+    if(WAVE_Init == NULL) return ESTA_ERROR;
 
     WAVE_WRITE_CONFIG_INIT(OSCx, x_origin);
     WAVE_WRITE_CONFIG_INIT(OSCx, y_origin);
     WAVE_WRITE_CONFIG_INIT(OSCx, x_width);
     WAVE_WRITE_CONFIG_INIT(OSCx, y_width);
-    if(WAVE_Init->display_num_min >= WAVE_Init->display_num_max) return WAVE_ERROR;
+    if(WAVE_Init->display_num_min >= WAVE_Init->display_num_max) return ESTA_ERROR;
     WAVE_WRITE_CONFIG_INIT(OSCx, display_num_min);
     WAVE_WRITE_CONFIG_INIT(OSCx, display_num_max);
     WAVE_WRITE_CONFIG_INIT(OSCx, channel_mask);
 
     // 初始化Y轴标尺
     if(WAVE_Init->is_display_ruler_y){
-        if(WAVE_Init->ruler_y == NULL) return WAVE_ERROR;
+        if(WAVE_Init->ruler_y == NULL) return ESTA_ERROR;
 
         uint16_t ruler_actual_count_y = (WAVE_Init->ruler_count_y > WAVE_MAX_RULER_Y_NUM) ? 
                 WAVE_MAX_RULER_Y_NUM : WAVE_Init->ruler_count_y;
@@ -149,7 +138,7 @@ WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
     
     // 初始化X轴标尺
     if(WAVE_Init->is_display_ruler_x){
-        if(WAVE_Init->ruler_x == NULL) return WAVE_ERROR;
+        if(WAVE_Init->ruler_x == NULL) return ESTA_ERROR;
 
         uint16_t ruler_actual_count_x = (WAVE_Init->ruler_count_x > WAVE_MAX_RULER_X_NUM) ? 
                 WAVE_MAX_RULER_X_NUM : WAVE_Init->ruler_count_x;
@@ -173,10 +162,10 @@ WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         WAVE_WRITE_CONFIG(OSCx, ruler_num_digits_x, 0);
     }
 
-    if(!IS_VALID_CHNUM(WAVE_CONFIG_MEMBER(OSCx, channel_num))) return WAVE_ERROR;
+    if(!IS_VALID_CHNUM(WAVE_CONFIG_MEMBER(OSCx, channel_num))) return ESTA_ERROR;
     WAVE_WRITE_CONFIG_INIT(OSCx, channel_num);
 
-    if(!IS_VALID_THEME(WAVE_CONFIG_MEMBER(OSCx, theme_type))) return WAVE_ERROR;
+    if(!IS_VALID_THEME(WAVE_CONFIG_MEMBER(OSCx, theme_type))) return ESTA_ERROR;
     WAVE_WRITE_CONFIG_INIT(OSCx, theme_type);
     WAVE_WRITE_CONFIG_INIT(OSCx, is_auto_clear);
 
@@ -187,15 +176,15 @@ WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         WAVE_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
     }
 
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 /* @brief : 复位示波器实例
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
-WAVE_StatusTypeDef WAVE_DeInit(int OSCx) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_DeInit(int OSCx) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
 
     WAVE_WRITE_CONFIG(OSCx, x_origin, 0);
     WAVE_WRITE_CONFIG(OSCx, y_origin, 0);
@@ -228,7 +217,7 @@ WAVE_StatusTypeDef WAVE_DeInit(int OSCx) {
         WAVE_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
     }
 
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 /* @brief : 获得主题颜色
@@ -239,14 +228,14 @@ WAVE_StatusTypeDef WAVE_DeInit(int OSCx) {
 
 /* @brief : 绘制示波器标尺
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
-WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
+ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
     volatile bool is_display_ruler_y = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y);
     volatile bool is_display_ruler_x = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x);
-    if(!(is_display_ruler_x || is_display_ruler_y)) return WAVE_OK;
+    if(!(is_display_ruler_x || is_display_ruler_y)) return ESTA_OK;
 
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
 
     uint16_t x_origin             = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
     uint16_t y_origin             = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
@@ -322,15 +311,15 @@ WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
                     ruler, ruler_actual_digits, ruler_color);
         }
     }
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 /* @brief : 绘制示波器框架
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
-WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
     uint16_t x_origin    = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
     uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
     uint16_t x_width     = WAVE_CONFIG_MEMBER(OSCx, x_width);
@@ -350,15 +339,15 @@ WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
             x_origin + x_frame_width, y_origin + y_frame_width, frame_color);
     SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
             x_origin + x_outline_width, y_origin + y_width, frame_color);
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 /* @brief : 清除曲线
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
-WAVE_StatusTypeDef WAVE_CurveClear(int OSCx) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_CurveClear(int OSCx) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
     uint16_t x_origin    = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
     uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
     uint16_t x_width     = WAVE_CONFIG_MEMBER(OSCx, x_width);
@@ -379,32 +368,32 @@ WAVE_StatusTypeDef WAVE_CurveClear(int OSCx) {
         WAVE_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
     }
     if(is_display_ruler_y) {
-        if(WAVE_RulerDisplay(OSCx) == WAVE_ERROR) return WAVE_ERROR;
+        ESTA_RETURN_IF_ERROR(WAVE_RulerDisplay(OSCx));
     }
-    return WAVE_OK;
+    return ESTA_OK;
 }
 
 /* @brief : 绘制示波器框架与（如有）标尺
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
 *           WAVE_Config_TypeDef *WAVE_Init : 指向ESTA设置结构体的指针
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
-WAVE_StatusTypeDef WAVE_ReDraw(int OSCx) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
-    if(WAVE_FrameDisplay(OSCx) == WAVE_ERROR) return WAVE_ERROR;
-    if(WAVE_CurveClear(OSCx) == WAVE_ERROR) return WAVE_ERROR;
-    return WAVE_OK;
+ESTA_StatusTypeDef WAVE_ReDraw(int OSCx) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
+    ESTA_RETURN_IF_ERROR(WAVE_FrameDisplay(OSCx));
+    ESTA_RETURN_IF_ERROR(WAVE_CurveClear(OSCx));
+    return ESTA_OK;
 }
 
 /* @brief : 向示波器发送一个数据，绘制曲线，（可选）曲线满自动清屏
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
 *           uint16_t data_CH0 : CH0通道的数据
 *           uint16_t data_CH1 : CH1通道的数据，若为单通道置零即可
-*  @return : enum WAVE_StatusTypeDef 为WAVE_OK则无问题，为WAVE_ERROR则有问题
-*            若示波器实例is_auto_clear == false，不会自动清屏，同时屏幕满时返回WAVE_FULL
+*  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
+*            若示波器实例is_auto_clear == false，不会自动清屏，同时屏幕满时返回ESTA_FULL
 */
-WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
-    if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
+    if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
     uint16_t x_origin                = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
     uint16_t y_origin                = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
     uint16_t x_width                 = WAVE_CONFIG_MEMBER(OSCx, x_width);
@@ -445,7 +434,7 @@ WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
             // 重置绘制状态
             WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
             WAVE_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
-            return WAVE_FULL;
+            return ESTA_FULL;
         }
         last_index = 0;
         WAVE_CurveClear(OSCx);
@@ -458,7 +447,7 @@ WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
         uint8_t ch_mask = (uint8_t)(CH0 << i);
         if(!is_channel_enabled(channel_mask, ch_mask)) continue;
 
-        if(ui_is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return WAVE_ERROR;
+        if(ui_is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return ESTA_ERROR;
 
         uint16_t y_display_value = ui_limit(display_num_max, display_num_min, data_CH[i]);
         uint16_t y_coor = y_origin + y_frame_width -
@@ -475,5 +464,5 @@ WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
     last_index++;
     WAVE_PRIVATE_MEMBER(OSCx, last_index)  = last_index;
 
-    return WAVE_OK;
+    return ESTA_OK;
 }

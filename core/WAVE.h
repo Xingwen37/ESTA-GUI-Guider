@@ -17,16 +17,6 @@
 //TODO: 实现多通道的示波器 ,现在支持至四通道,可拓展至八通道
 #define MAX_WAVE_CHANNEL     4
 
-/* 通道掩码常量（独热码） */
-#define CH0  (1U << 0)  /* 0b00000001 */
-#define CH1  (1U << 1)  /* 0b00000010 */
-#define CH2  (1U << 2)  /* 0b00000100 */
-#define CH3  (1U << 3)  /* 0b00001000 */
-#define CH4  (1U << 4)  /* 0b00010000 */
-#define CH5  (1U << 5)  /* 0b00100000 */
-#define CH6  (1U << 6)  /* 0b01000000 */
-#define CH7  (1U << 7)  /* 0b10000000 */
-
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
 #define WAVE_MAX_RULER_Y_NUM   5
 #define WAVE_MAX_RULER_X_NUM   5
@@ -58,11 +48,6 @@ typedef enum {
     WAVE_THEME_INDEX_COUNT
 } WAVE_theme_color_index_type;
 
-// 向后兼容：WAVE_GetThemeColor 重定向到通用 UI_GetThemeColor
-#define WAVE_GetThemeColor(theme, color_index) \
-    UI_GetThemeColor((int)(theme), (int)(color_index))
-
-
 /* WRITE/READ REGS MARCO */
 #define WAVE_CONFIG_MEMBER(OSCx, reg_name)  \
             WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name
@@ -82,15 +67,6 @@ typedef enum {
 #define WAVE_WRITE_CONFIG_INIT(OSCx, reg_name)         \
             WAVE_INST_ADDR(OSCx).WAVE_Config.reg_name = WAVE_Init->reg_name
 
-
-/* ASSERT MARCO OR ENUM*/
-/* Defensive Programming */
-typedef enum
-{
-  WAVE_OK       = 0x00,
-  WAVE_ERROR    = 0x01,
-  WAVE_FULL     = 0x02
-} WAVE_StatusTypeDef;
 
 #define IS_VALID_WAVE_INST(OSCx) ((int)OSCx < MAX_WAVE_NUM && (int)OSCx >= 0)
 #define IS_VALID_THEME(THEMEx)  ((int)THEMEx < WAVE_THEME_COUNT && (int)THEMEx >= 0)
@@ -154,30 +130,27 @@ typedef struct {
 
 
 /* function prototype */
-WAVE_StatusTypeDef WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
-                                  uint16_t x_origin, uint16_t y_origin,
-                                  uint16_t x_width, uint16_t y_width);
-WAVE_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
+ESTA_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max);
-WAVE_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num);
-WAVE_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
-WAVE_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
-WAVE_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
+ESTA_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num);
+ESTA_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+ESTA_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+ESTA_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y);
-WAVE_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
+ESTA_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x);
-WAVE_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type);
-WAVE_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear);
+ESTA_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type);
+ESTA_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear);
 
-WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init);
-WAVE_StatusTypeDef WAVE_DeInit(int OSCx);
-WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx);
-WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx);
-WAVE_StatusTypeDef WAVE_CurveClear(int OSCx);
-WAVE_StatusTypeDef WAVE_ReDraw(int OSCx);
-WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]);
+ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init);
+ESTA_StatusTypeDef WAVE_DeInit(int OSCx);
+ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx);
+ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx);
+ESTA_StatusTypeDef WAVE_CurveClear(int OSCx);
+ESTA_StatusTypeDef WAVE_ReDraw(int OSCx);
+ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]);
 
 #endif

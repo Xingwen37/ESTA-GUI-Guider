@@ -21,7 +21,7 @@ TL-ESTA 是一个基于 OOP-in-C (OOC) 架构的轻量级嵌入式波形显示 G
 | `WAVE_DeInit()` | 复位显示实例，清空数据。 |
 | `WAVE_CurveDraw()` | 压入通道数据并触发波形绘制。 |
 | `WAVE_ReDraw()` | 强制重绘边框、背景与坐标轴。 |
-| `WAVE_GetThemeColor()` | 获取当前主题下指定组件的颜色值 (RGB565)。 |
+| `ESTA_GetThemeColor()` | 获取当前主题下指定组件的颜色值 (RGB565)。 |
 
 ### 3. 模拟器编译与运行
 
@@ -114,8 +114,8 @@ int main(void) {
     if (profiles == NULL) return -1;
 
     for (int i = 0; i < profiles->inst_count; ++i) {
-        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) return -1;
-        if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) return -1;
+        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != ESTA_OK) return -1;
+        if (WAVE_ReDraw(WAVE_INST(i)) != ESTA_OK) return -1;
     }
 
     while (1) {
@@ -145,7 +145,7 @@ TL-ESTA is a lightweight embedded waveform display GUI library built on an OOP-i
 | `WAVE_DeInit()` | Reset instance and clear data. |
 | `WAVE_CurveDraw()` | Push channel data and trigger waveform drawing. |
 | `WAVE_ReDraw()` | Force redraw of frames, backgrounds, and coordinate rulers. |
-| `WAVE_GetThemeColor()` | Get RGB565 color value for specific UI components. |
+| `ESTA_GetThemeColor()` | Get RGB565 color value for specific UI components. |
 
 ### 3. Build & Run Simulator
 
@@ -240,8 +240,8 @@ int main(void) {
     if (profiles == NULL) return -1;
 
     for (int i = 0; i < profiles->inst_count; ++i) {
-        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != WAVE_OK) return -1;
-        if (WAVE_ReDraw(WAVE_INST(i)) != WAVE_OK) return -1;
+        if (ESTA_Profile_Apply(WAVE_INST(i), &profiles->profiles[i]) != ESTA_OK) return -1;
+        if (WAVE_ReDraw(WAVE_INST(i)) != ESTA_OK) return -1;
     }
 
     while (1) {

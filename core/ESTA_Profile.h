@@ -43,6 +43,6 @@ typedef struct {
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);
 bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile, WAVE_Config_TypeDef *out_config);
-WAVE_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile);
+ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile);
 
 #endif

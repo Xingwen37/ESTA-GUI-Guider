@@ -167,19 +167,33 @@ core/{NAME}.h + core/{NAME}.c   // 组件代码（如 WAVE.h/WAVE.c）
 | `{NAME}_WRITE_CONFIG_INIT(inst, f)` | 从 Init 参数复制到实例（仅限 Init 内） |
 | `{NAME}_CONFIG_MEMBER_ARRAY(inst, f, i)` | 数组版读取 |
 | `{NAME}_PRIVATE_MEMBER_ARRAY(inst, f, i)` | 数组版读取 |
-| `{NAME}_GetThemeColor(t, idx)` | 主题颜色桥接 → `UI_GetThemeColor` |
 | `IS_VALID_{NAME}_INST(x)` | 实例索引范围检查 |
+
+### 共享基础设施（所有组件通用）
+
+| 定义 | 位置 | 用途 |
+|------|------|------|
+| `ESTA_StatusTypeDef` | `core/ui_base.h` | 统一状态码（OK/ERROR/FULL） |
+| `ESTA_BaseConfig` | `core/ui_base.h` | 公共配置基类（x_origin, y_origin, x_width, y_width） |
+| `ESTA_ConfigSetPositionAndSize` | `core/ui_base.c` | 公共位置尺寸 Setter |
+| `ESTA_RETURN_IF_ERROR(expr)` | `core/ui_base.h` | 错误传播宏 |
+| `ESTA_GetThemeColor(t, idx)` | `core/ui_theme.h` | 主题颜色访问（所有组件共用） |
+| `CH0`–`CH7` | `core/helper.h` | 通道掩码常量 |
 
 ### 关键规则
 
 1. **所有 Config/Private 访问必须通过宏**，严禁 `State[i].Config.field` 直接访问
-2. **Config Setter 必须返回 `StatusTypeDef`**（新规，不再 void），必须 NULL 检查
-3. **StatusTypeDef**：`OK=0x00, ERROR=0x01, FULL=0x02`（可选）
+2. **Config Setter 必须返回 `ESTA_StatusTypeDef`**（新规，不再 void），必须 NULL 检查
+3. **状态码统一使用 `ESTA_OK`/`ESTA_ERROR`/`ESTA_FULL`**（定义在 `ui_base.h`）
 4. **绘制仅通过 `SCREEN_DRAW_*` 宏**，禁止直接调 Port 层函数
 5. **每个组件必须配套 Profile**（GetDefault + ToConfig + Apply）
-6. **主题枚举**：必须含 `_COUNT` / `_INDEX_COUNT` 哨兵值
-7. **Config 指针型字段**（仅 Init 传参用）：Init 后必须置 NULL
-8. **命名**：Config 用 `TypeDef`，Private 用 `Typedef`（有意区分 Public/Private）
+6. **主题颜色通过 `ESTA_GetThemeColor` 获取**（定义在 `ui_theme.h`）
+7. **`ESTA_ConfigSetPositionAndSize` 公共 Setter**，组件不再各自实现
+8. **错误传播使用 `ESTA_RETURN_IF_ERROR(expr)`** 宏
+9. **Config 结构体前 4 字段必须与 `ESTA_BaseConfig` 一致**（x_origin, y_origin, x_width, y_width）
+10. **Config 指针型字段**（仅 Init 传参用）：Init 后必须置 NULL
+11. **命名**：Config 用 `TypeDef`，Private 用 `Typedef`（有意区分 Public/Private）
+12. **通道掩码常量 CH0-CH7** 定义在 `helper.h` 中
 
 ### 主题颜色槽位
 
