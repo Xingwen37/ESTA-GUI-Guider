@@ -101,6 +101,18 @@ body {
   border-bottom-color: #0e639c;
 }
 
+.tab-sep {
+  width: 8px;
+  flex-shrink: 0;
+}
+
+/* Form hints */
+.hint {
+  font-size: 11px;
+  color: #888;
+  margin-left: 6px;
+}
+
 /* Editor content */
 .editor-scroll {
   flex: 1;

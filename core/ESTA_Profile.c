@@ -4,6 +4,7 @@
 
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .inst_count = 1,
+    .bar_inst_count = 1,
     .profiles = {
 
         {

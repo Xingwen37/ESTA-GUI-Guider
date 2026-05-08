@@ -1,5 +1,5 @@
 ﻿import type { EstaProfile } from "../lib/types";
-import { THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_WAVE_CHANNEL } from "../lib/types";
+import { WAVE_THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_WAVE_CHANNEL } from "../lib/types";
 
 interface Props {
   profile: EstaProfile;
@@ -78,7 +78,7 @@ export default function ProfileEditor({ profile, onChange }: Props) {
             value={profile.theme_type}
             onChange={(e) => set("theme_type", e.target.value)}
           >
-            {THEME_OPTIONS.map(([value, text]) => (
+            {WAVE_THEME_OPTIONS.map(([value, text]) => (
               <option key={value} value={value}>
                 {text}
               </option>

@@ -39,6 +39,7 @@ pub struct EstaProfile {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileSet {
     pub inst_count: u16,
+    pub bar_inst_count: u16,
     pub profiles: Vec<EstaProfile>,
 }
 

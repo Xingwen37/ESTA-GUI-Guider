@@ -58,6 +58,7 @@ typedef struct {
 
 typedef struct {
     uint16_t inst_count;
+    uint16_t bar_inst_count;
     ESTA_Profile_TypeDef profiles[ESTA_PROFILE_MAX_INST];
 } ESTA_ProfileSet_TypeDef;
 
