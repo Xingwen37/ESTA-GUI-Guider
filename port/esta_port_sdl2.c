@@ -73,6 +73,10 @@ void ESTA_SDL2_Delay(uint32_t ms) {
     SDL_Delay(ms);
 }
 
+uint32_t ESTA_SDL2_GetWindowID(void) {
+    return SDL_GetWindowID(g_window);
+}
+
 /* ================== 绘图 API 映射 ================== */
 
 void ESTA_SDL2_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {

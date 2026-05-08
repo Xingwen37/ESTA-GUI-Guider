@@ -5,6 +5,7 @@
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .inst_count = 1,
     .bar_inst_count = 1,
+    .button_count = 2,
     .profiles = {
 
         {
@@ -28,14 +29,14 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_num_digits_x = 8,
             .theme_type = WAVE_THEME_LIGHT,
             .is_auto_clear = true,
-            .bar_x_origin = 7,
+            .bar_x_origin = 6,
             .bar_y_origin = 125,
-            .bar_x_width = 150,
+            .bar_x_width = 130,
             .bar_y_width = 110,
             .bar_display_num_min = 0,
             .bar_display_num_max = 120,
-            .bar_count = 7,
-            .bar_width = 0,
+            .bar_count = 6,
+            .bar_width = 20,
             .bar_spacing = 0,
             .bar_is_display_value = true,
             .bar_is_display_axis = true,
@@ -98,4 +99,10 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_T
         return ESTA_ERROR;
     }
     return BARCHART_Init(inst_idx, &config);
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
+    (void)profile_set;
+    ESTA_EventInit();
+    return ESTA_OK;
 }

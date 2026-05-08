@@ -13,8 +13,10 @@
   #include "WAVE.h"
   #include "BARCHART.h"
   #include "ESTA_Profile.h"
+  #include "event.h"
   #include "sim_scenario.h"
   #include "esta_port_sdl2.h"
+  #include "btn_ui.h"
 
   /**
     * @brief  The PC application entry point.
@@ -74,6 +76,10 @@
           return 1;
       }
 
+      /* 事件系统与仿真按键窗口初始化 */
+      ESTA_Profile_ApplyEvents(profiles);
+      BTN_UI_Init(profiles->button_count);
+
       /* PC 端的主循环与事件处理 */
       bool is_running = true;
       SDL_Event event;
@@ -89,8 +95,17 @@
           {
               if (event.type == SDL_QUIT)
               {
-                  is_running = false; // 用户点击了窗口的 'X' 号
+                  is_running = false; /* 全局退出信号 */
               }
+              else if (event.type == SDL_WINDOWEVENT &&
+                       event.window.event == SDL_WINDOWEVENT_CLOSE)
+              {
+                  uint32_t main_id = ESTA_SDL2_GetWindowID();
+                  if (event.window.windowID == main_id) {
+                      is_running = false; /* 主窗口关闭 */
+                  }
+              }
+              BTN_UI_ProcessEvent(&event);
           }
           /* 由场景层按统一时间基生成每个示波器每一帧的数据 */
           for (int i = 0; i < inst_count; i++) {
@@ -109,6 +124,23 @@
               BARCHART_UpdateAll(BARCHART_INST(0), data_BARCHART, bar_count);
           }
 
+          /* 消费事件队列：组件响应外部按键 */
+          {
+              ESTA_EventTypeDef evt;
+              while (ESTA_EventPoll(&evt)) {
+                  if (evt.event_type == ESTA_EVENT_BUTTON_PRESS && evt.button_id == 0) {
+                      WAVE_theme_type cur = WAVE_CONFIG_MEMBER(0, theme_type);
+                      WAVE_theme_type next = (cur == WAVE_THEME_DEFAULT)
+                                             ? WAVE_THEME_LIGHT : WAVE_THEME_DEFAULT;
+                      WAVE_WRITE_CONFIG(0, theme_type, next);
+                      WAVE_ReDraw(WAVE_INST(0));
+                  }
+              }
+          }
+
+          /* 渲染仿真按键窗口 */
+          BTN_UI_Render();
+
           /* 将缓冲数据刷新到计算机屏幕 */
           ESTA_SDL2_Update();
 
@@ -119,6 +151,7 @@
       }
 
       /* 4. 退出循环后安全释放资源 */
+      BTN_UI_Destroy();
       ESTA_SDL2_Quit();
 
       return 0;

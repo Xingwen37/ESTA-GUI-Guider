@@ -6,6 +6,7 @@ import type { ProfileSet, EstaProfile } from "./lib/types";
 import {
   MAX_WAVE_INST,
   MAX_BAR_INST,
+  MAX_BUTTON_COUNT,
   MAX_RULER_X_NUM,
   MAX_RULER_Y_NUM,
 } from "./lib/types";
@@ -110,6 +111,7 @@ export default function App() {
       await api.saveProfile({
         inst_count: waveCount,
         bar_inst_count: barCount,
+        button_count: data.button_count,
         profiles: data.profiles.slice(0, Math.max(waveCount, barCount)),
       });
       showStatus({ type: "success", msg: "已生成 core/ESTA_Profile.c" });
@@ -127,6 +129,7 @@ export default function App() {
       await api.saveProfile({
         inst_count: waveCount,
         bar_inst_count: barCount,
+        button_count: data.button_count,
         profiles: data.profiles.slice(0, Math.max(waveCount, barCount)),
       });
       showStatus({ type: "success", msg: "已保存，开始编译..." });
@@ -166,6 +169,19 @@ export default function App() {
             setData({
               ...data,
               bar_inst_count: Math.max(0, Math.min(MAX_BAR_INST, Number(e.target.value) || 0)),
+            })
+          }
+        />
+        <label style={{ marginLeft: 12 }}>BUTTON</label>
+        <input
+          type="number"
+          value={data.button_count}
+          min={0}
+          max={MAX_BUTTON_COUNT}
+          onChange={(e) =>
+            setData({
+              ...data,
+              button_count: Math.max(0, Math.min(MAX_BUTTON_COUNT, Number(e.target.value) || 0)),
             })
           }
         />

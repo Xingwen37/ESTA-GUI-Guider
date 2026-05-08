@@ -19,5 +19,6 @@ void ESTA_SDL2_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 void ESTA_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color);
 void ESTA_SDL2_Delay(uint32_t ms);
+uint32_t ESTA_SDL2_GetWindowID(void);
 
 #endif /* __ESTA_PORT_SDL2_H */

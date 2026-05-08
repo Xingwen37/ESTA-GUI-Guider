@@ -6,6 +6,7 @@
 
 #include "WAVE.h"
 #include "BARCHART.h"
+#include "event.h"
 
 #define ESTA_PROFILE_MAX_INST 2
 
@@ -59,6 +60,7 @@ typedef struct {
 typedef struct {
     uint16_t inst_count;
     uint16_t bar_inst_count;
+    uint16_t button_count;
     ESTA_Profile_TypeDef profiles[ESTA_PROFILE_MAX_INST];
 } ESTA_ProfileSet_TypeDef;
 
@@ -67,5 +69,6 @@ bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile, WAVE_Config_Type
 ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile);
 bool ESTA_Profile_ToBARCHART_Config(const ESTA_Profile_TypeDef *profile, BARCHART_Config_TypeDef *out_config);
 ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_TypeDef *profile);
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set);
 
 #endif

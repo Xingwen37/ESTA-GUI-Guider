@@ -106,6 +106,8 @@ typedef struct {
     BARCHART_Private_Typedef    BARCHART_Private;
 } BARCHART_TypeDef;
 
+extern BARCHART_TypeDef BARCHART_State[BARCHART_MAX_NUM];
+
 /* function prototype */
 ESTA_StatusTypeDef BARCHART_ConfigSetDisplayRange(BARCHART_Config_TypeDef *config,
     uint16_t display_num_min, uint16_t display_num_max);

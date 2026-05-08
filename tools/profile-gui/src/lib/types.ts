@@ -36,6 +36,7 @@
 export interface ProfileSet {
   inst_count: number;
   bar_inst_count: number;
+  button_count: number;
   profiles: EstaProfile[];
 }
 
@@ -51,6 +52,7 @@ export const BAR_THEME_OPTIONS = [
 
 export const MAX_WAVE_INST = 2;
 export const MAX_BAR_INST = 2;
+export const MAX_BUTTON_COUNT = 8;
 export const MAX_WAVE_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 5;
 export const MAX_RULER_Y_NUM = 5;

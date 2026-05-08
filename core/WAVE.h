@@ -128,6 +128,7 @@ typedef struct {
     WAVE_Private_Typedef    WAVE_Private;
 } WAVE_TypeDef;
 
+extern WAVE_TypeDef WAVE_State[MAX_WAVE_NUM];
 
 /* function prototype */
 ESTA_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,

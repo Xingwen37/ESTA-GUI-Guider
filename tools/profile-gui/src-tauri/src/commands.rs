@@ -87,6 +87,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     let mut ctx = tera::Context::new();
     ctx.insert("inst_count", &data.inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
+    ctx.insert("button_count", &data.button_count);
     ctx.insert("profiles", &profiles_for_template);
 
     // Render C code from template
@@ -155,6 +156,7 @@ fn default_profile() -> ProfileSet {
     ProfileSet {
         inst_count: 2,
         bar_inst_count: 1,
+        button_count: 2,
         profiles: vec![
             EstaProfile {
                 x_origin: 10, y_origin: 0, x_width: 200, y_width: 120,

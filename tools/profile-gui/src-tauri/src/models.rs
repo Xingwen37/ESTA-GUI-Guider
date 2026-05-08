@@ -40,6 +40,7 @@ pub struct EstaProfile {
 pub struct ProfileSet {
     pub inst_count: u16,
     pub bar_inst_count: u16,
+    pub button_count: u16,
     pub profiles: Vec<EstaProfile>,
 }
 
