@@ -57,7 +57,18 @@ export default function App() {
     setTimeout(() => setStatus({ type: "idle" }), 3000);
   }, []);
 
-  if (!data) return <div className="editor-scroll">Loading...</div>;
+  if (!data) {
+    return (
+      <div className="editor-scroll">
+        <div>Loading...</div>
+        {status.type === "error" && (
+          <div className="status" style={{ color: "#f44747", marginTop: 12 }}>
+            {status.msg}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const currentProfile = data.profiles[activeTab] ?? EMPTY_PROFILE;
 

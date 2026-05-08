@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://raw.githubusercontent.com/nicoache/tauri/refs/heads/v2/packages/api/schema.json",
   "productName": "ESTA Profile Generator",
   "version": "0.1.0",

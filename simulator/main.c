@@ -13,7 +13,7 @@
   #include "WAVE.h"
   #include "ESTA_Profile.h"
   #include "sim_scenario.h"
-  #include "WAVE_port_sdl2.h"
+  #include "esta_port_sdl2.h"
 
   /**
     * @brief  The PC application entry point.
@@ -41,8 +41,8 @@
       }
 
       int inst_count = profiles->inst_count;
-      if (inst_count > SIM_SCENARIO_inst_count) {
-          inst_count = SIM_SCENARIO_inst_count;
+      if (inst_count > SIM_SCENARIO_WAVE_COUNT) {
+          inst_count = SIM_SCENARIO_WAVE_COUNT;
       }
       if (inst_count > MAX_WAVE_NUM) {
           inst_count = MAX_WAVE_NUM;
@@ -65,7 +65,7 @@
       bool is_running = true;
       SDL_Event event;
 
-      uint16_t data_ESTA[SIM_SCENARIO_inst_count][MAX_WAVE_CHANNEL] = {0};
+      uint16_t data_ESTA[SIM_SCENARIO_WAVE_COUNT][MAX_WAVE_CHANNEL] = {0};
 
       while (is_running)
       {

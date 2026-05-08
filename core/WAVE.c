@@ -94,55 +94,6 @@ void WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
     config->is_auto_clear = is_auto_clear;
 }
 
-// 储存主题颜色的数组，你可以在此处添加自己的主题
-// 你还需要WAVE_theme_type 枚举内添加你的主题名称
-// 这样在配置寄存器的时候你就可以修改theme_type更改主题
-uint16_t WAVE_theme[WAVE_THEME_COUNT][WAVE_THEME_INDEX_COUNT] = {
-    [WAVE_THEME_DEFAULT] = {
-        [WAVE_THEME_FRAME_INDEX]      = __WHITE,
-        [WAVE_THEME_RULER_INDEX]      = __GRAY,
-        [WAVE_THEME_WAVE_CH0_INDEX]   = __GREEN,
-        [WAVE_THEME_WAVE_CH1_INDEX]   = __GBLUE,
-        [WAVE_THEME_WAVE_CH2_INDEX]   = __YELLOW,
-        [WAVE_THEME_WAVE_CH3_INDEX]   = __RED,
-        [WAVE_THEME_BACKGROUND_INDEX] = __BLACK
-    },
-    [WAVE_THEME_LIGHT]   = {
-        [WAVE_THEME_FRAME_INDEX]      = __BLACK,
-        [WAVE_THEME_RULER_INDEX]      = __GRAY,
-        [WAVE_THEME_WAVE_CH0_INDEX]   = __ORANGE,
-        [WAVE_THEME_WAVE_CH1_INDEX]   = __DEEP_BLUE,
-        [WAVE_THEME_WAVE_CH2_INDEX]   = __RED,
-        [WAVE_THEME_WAVE_CH3_INDEX]   = __BLUE,
-        [WAVE_THEME_BACKGROUND_INDEX] = __WHITE
-    }
-};
-
-/* @brief : 坐标标准化
-*/
-static uint16_t coor_normal(uint16_t coor_width, uint16_t value_max_range, uint16_t value){
-    if(value_max_range == 0 || coor_width == 0) return 0;
-    return (uint16_t)((((uint32_t)value * coor_width) + (value_max_range >> 1)) / value_max_range);
-}
-
-static uint16_t my_limit(uint16_t max, uint16_t min, uint16_t value){
-    if(value > max) return max;
-    else if(value < min) return min;
-    else return value;
-}
-
-static bool is_out_of_bound(uint16_t max, uint16_t min, uint16_t value){
-    return (value < min || value > max); 
-}
-
-static uint16_t num_digits(uint16_t x){
-    int count = 0;
-    while(x != 0){
-        x /= 10;
-        count++;
-    }
-    return count;
-}
 
 
 /* @brief : 初始化示波器实例
@@ -275,12 +226,6 @@ WAVE_StatusTypeDef WAVE_DeInit(int OSCx) {
 *           WAVE_theme_color_index_type color_type 颜色类型索引
 *  @return : uint16_t 颜色值
 */
-uint16_t WAVE_GetThemeColor(WAVE_theme_type theme, WAVE_theme_color_index_type color_type) {
-    if(theme >= WAVE_THEME_COUNT) theme = WAVE_THEME_DEFAULT;
-    if(color_type >= WAVE_THEME_INDEX_COUNT) color_type = WAVE_THEME_FRAME_INDEX;
-    
-    return WAVE_theme[theme][color_type];
-}
 
 /* @brief : 绘制示波器标尺
 *  @param : int OSCx : 示波器实例，如WAVE_INST(0)或WAVE_INST(1)
@@ -306,8 +251,8 @@ WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
     uint16_t ruler_full_value_x   = WAVE_CONFIG_MEMBER(OSCx, ruler_full_value_x);
     uint16_t ruler_num_digits_x   = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_x);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = WAVE_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
-    uint16_t ruler_color = WAVE_GetThemeColor(theme_type, WAVE_THEME_RULER_INDEX);
+    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
+    uint16_t ruler_color = UI_GetThemeColor(theme_type, WAVE_THEME_RULER_INDEX);
 
     uint16_t y_frame_width = (is_display_ruler_x) ? 
             (y_width - CHAR_PIXEL_HEIGHT) : y_width;
@@ -321,10 +266,10 @@ WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
             uint16_t ruler = WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i);
             uint16_t ruler_y_coor = 0;
             ruler_y_coor = y_origin + y_frame_width - 
-                coor_normal(y_frame_width, display_range, ruler - display_num_min);
-            ruler_y_coor = my_limit(y_origin + y_frame_width - 2, y_origin + 2, ruler_y_coor);
+                ui_coor_normal(y_frame_width, display_range, ruler - display_num_min);
+            ruler_y_coor = ui_limit(y_origin + y_frame_width - 2, y_origin + 2, ruler_y_coor);
             uint16_t ruler_y_num_coor = 
-                my_limit(y_origin + y_frame_width, y_origin, 
+                ui_limit(y_origin + y_frame_width, y_origin, 
                 ruler_y_coor - CHAR_PIXEL_HEIGHT / 2);
             // 防止无符号整数溢出
             if((int16_t)ruler_y_coor - CHAR_PIXEL_HEIGHT / 2 < 0) ruler_y_num_coor = 0;
@@ -347,14 +292,14 @@ WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
         uint16_t x_ruler_range = ruler_full_value_x - ruler_zero_value_x;
         for(int i = 0; i < ruler_count_x; i++){
             uint16_t ruler = WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i);
-            uint16_t ruler_actual_digits = num_digits(ruler);
+            uint16_t ruler_actual_digits = ui_num_digits(ruler);
             uint16_t ruler_x_coor = 0;
             ruler_x_coor = x_origin + 
-                coor_normal(x_frame_width, x_ruler_range, ruler - ruler_zero_value_x);
+                ui_coor_normal(x_frame_width, x_ruler_range, ruler - ruler_zero_value_x);
             ruler_x_coor = 
-                my_limit(x_origin + x_frame_width - 2, x_origin + 2, ruler_x_coor);
+                ui_limit(x_origin + x_frame_width - 2, x_origin + 2, ruler_x_coor);
             uint16_t ruler_x_num_coor = 
-                my_limit(x_origin + x_frame_width, x_origin, 
+                ui_limit(x_origin + x_frame_width, x_origin, 
                 ruler_x_coor - ruler_actual_digits * CHAR_PIXEL_WIDTH / 2);
             // 防止无符号整数溢出
             if((int16_t)ruler_x_coor - ruler_actual_digits * CHAR_PIXEL_WIDTH / 2 < 0) {
@@ -384,7 +329,7 @@ WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
     volatile bool is_display_ruler_x = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x);
     uint16_t ruler_num_digits_y = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = WAVE_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
+    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
 
     uint16_t y_frame_width = (is_display_ruler_x) ? 
             (y_width - CHAR_PIXEL_HEIGHT) : y_width;
@@ -411,8 +356,8 @@ WAVE_StatusTypeDef WAVE_CurveClear(int OSCx) {
     volatile bool is_display_ruler_y = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y);
     uint16_t ruler_num_digits_y = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = WAVE_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
-    uint16_t bg_color    = WAVE_GetThemeColor(theme_type, WAVE_THEME_BACKGROUND_INDEX);
+    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
+    uint16_t bg_color    = UI_GetThemeColor(theme_type, WAVE_THEME_BACKGROUND_INDEX);
 
     SCREEN_FILL(x_origin, y_origin, x_origin + x_width, y_origin + y_width, bg_color);
     SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
@@ -469,7 +414,7 @@ WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
     uint16_t wave_CH_color[MAX_WAVE_CHANNEL] = {0};
     for(int i = 0; i < active_channel_num; i++){
         if(is_channel_enabled(channel_mask, CH0 << i)) {
-            wave_CH_color[i] = WAVE_GetThemeColor(theme_type, WAVE_THEME_WAVE_CH0_INDEX + i);
+            wave_CH_color[i] = UI_GetThemeColor(theme_type, WAVE_THEME_WAVE_CH0_INDEX + i);
         }
     }
 
@@ -503,11 +448,11 @@ WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
         uint8_t ch_mask = (uint8_t)(CH0 << i);
         if(!is_channel_enabled(channel_mask, ch_mask)) continue;
 
-        if(is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return WAVE_ERROR;
+        if(ui_is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return WAVE_ERROR;
 
-        uint16_t y_display_value = my_limit(display_num_max, display_num_min, data_CH[i]);
+        uint16_t y_display_value = ui_limit(display_num_max, display_num_min, data_CH[i]);
         uint16_t y_coor = y_origin + y_frame_width -
-                coor_normal(y_frame_width, display_range, y_display_value);
+                ui_coor_normal(y_frame_width, display_range, y_display_value);
 
         if(last_index > 0) {
             SCREEN_DRAW_LINE(x_coor, y_coor,

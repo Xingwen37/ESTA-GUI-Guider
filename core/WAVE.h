@@ -1,53 +1,13 @@
-﻿#ifndef __WAVE_LIB
+#ifndef __WAVE_LIB
 #define __WAVE_LIB
 
 /* INCLUDE */
-#include <stddef.h>  
-#include <stdint.h>  
+#include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include "helper.h"
-
-// 支持硬件抽象层
-// 取消注释以使用对应的底层驱动
-// #define SCREEN_USE_ILI9341
-#define SCREEN_USE_SDL2 
-
-#ifdef SCREEN_USE_ILI9341
-#include "main.h"
-#include "ili9341_driver.h"
-
-// (x1, y1)起始点 (x2, y2)终止点
-#define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
-            ILI9341_draw_line(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR) \
-            ILI9341_draw_rectangle(x1, y1, x2, y2, COLOR)
-#define SCREEN_FILL(x1, y1, x2, y2, COLOR) \
-            ILI9341_fill(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
-            ILI9341_draw_num(x, y, num, len, COLOR)
-
-#elif defined(SCREEN_USE_SDL2)
-// 引入 SDL2 移植层的头文件
-#include "WAVE_port_sdl2.h"
-
-#define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
-            ESTA_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR) \
-            ESTA_SDL2_DrawRectangle(x1, y1, x2, y2, COLOR)
-#define SCREEN_FILL(x1, y1, x2, y2, COLOR) \
-            ESTA_SDL2_Fill(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
-            ESTA_SDL2_DrawNum(x, y, num, len, COLOR)
-
-#else /* 你的自定义屏幕或其他 */
-// 在这里包含你自己的屏幕库
-// 并在宏后写你自己的屏幕函数
-#define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR)
-#define SCREEN_FILL(x1, y1, x2, y2, COLOR)
-#define SCREEN_DRAW_NUM(x, y, num, len, COLOR)
-#endif
-
+#include "ui_base.h"
+#include "ui_theme.h"
 
 /* GLOBAL MARCO */
 // 最大示波器实例个数
@@ -67,15 +27,9 @@
 #define CH6  (1U << 6)  /* 0b01000000 */
 #define CH7  (1U << 7)  /* 0b10000000 */
 
-
-
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
 #define WAVE_MAX_RULER_Y_NUM   5
 #define WAVE_MAX_RULER_X_NUM   5
-
-// 一个字符的宽度和高度
-#define CHAR_PIXEL_WIDTH    8
-#define CHAR_PIXEL_HEIGHT   16
 
 
 /* USER MARCO OR ENUM */
@@ -89,7 +43,7 @@ typedef enum {
     WAVE_THEME_DEFAULT = 0,
     WAVE_THEME_LIGHT ,
     //用于检查边界条件，并非主题类型！所有添加的类型都放在WAVE_THEME_COUNT 这个枚举变量上面
-    WAVE_THEME_COUNT 
+    WAVE_THEME_COUNT
 } WAVE_theme_type;
 
 typedef enum {
@@ -101,27 +55,12 @@ typedef enum {
     WAVE_THEME_WAVE_CH3_INDEX   ,
     WAVE_THEME_BACKGROUND_INDEX ,
     //用于检查边界条件，并非主题类型！所有添加的类型都放在WAVE_THEME_INDEX_COUNT 这个枚举变量上面
-    WAVE_THEME_INDEX_COUNT 
+    WAVE_THEME_INDEX_COUNT
 } WAVE_theme_color_index_type;
 
-/* COLOR MARCO */
-/* we use RGB565 */
-#define RGB888_To_RGB565(R,G,B)  (uint16_t)((R & 0x1f)<<11|(G & 0x3f)<<5|(B & 0x1f)) 
-#define __WHITE         	 0xFFFF
-#define __BLACK         	 0x0000	  
-#define __BLUE         	     0x001F  
-#define __DEEP_BLUE          0x101F
-#define __BRED               0XF81F//粉紫
-#define __GRED 			     0XFFE0//黄色
-#define __GBLUE			     0x059F//浅蓝
-#define __RED           	 0xF800
-#define __GREEN         	 0x07E0
-#define __YELLOW        	 0xFFE0
-#define __BROWN 			 0XBC40 //棕色
-#define __BRRED 			 0XFC07 //棕红色
-#define __GRAY  			 0X8430 //灰色
-#define __ORANGE             0XFD20 //橙色
-#define __PURPLE             0X8010 
+// 向后兼容：WAVE_GetThemeColor 重定向到通用 UI_GetThemeColor
+#define WAVE_GetThemeColor(theme, color_index) \
+    UI_GetThemeColor((int)(theme), (int)(color_index))
 
 
 /* WRITE/READ REGS MARCO */
@@ -158,7 +97,7 @@ typedef enum
 #define IS_VALID_CHNUM(CHNUM)   ((int)CHNUM < MAX_WAVE_CHANNEL && (int)CHNUM >= 0)
 
 
-/* Software REGS typedef of ESTA */
+/* Software REGS typedef of WAVE */
 typedef struct {
     /* config regs */
     /* 示波器的坐标原点(x_origin, y_origin) */
@@ -198,8 +137,8 @@ typedef struct {
 typedef struct {
     /* Private regs */
     /* 标尺的数据存储在这里 */
-    uint16_t    ruler_buff_y[WAVE_MAX_RULER_Y_NUM]; 
-    uint16_t    ruler_buff_x[WAVE_MAX_RULER_X_NUM]; 
+    uint16_t    ruler_buff_y[WAVE_MAX_RULER_Y_NUM];
+    uint16_t    ruler_buff_x[WAVE_MAX_RULER_X_NUM];
     uint16_t    last_index;
     uint16_t    x_coor_last;
     uint16_t    y_coor_last_CH[MAX_WAVE_CHANNEL];
@@ -239,7 +178,6 @@ WAVE_StatusTypeDef WAVE_RulerDisplay(int OSCx);
 WAVE_StatusTypeDef WAVE_FrameDisplay(int OSCx);
 WAVE_StatusTypeDef WAVE_CurveClear(int OSCx);
 WAVE_StatusTypeDef WAVE_ReDraw(int OSCx);
-WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]); 
-uint16_t WAVE_GetThemeColor(WAVE_theme_type theme, WAVE_theme_color_index_type color_type);
+WAVE_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]);
 
 #endif

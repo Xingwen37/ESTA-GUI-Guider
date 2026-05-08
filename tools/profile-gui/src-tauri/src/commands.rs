@@ -26,7 +26,11 @@ pub fn repo_root() -> PathBuf {
 pub fn load_profile(state: State<AppState>) -> Result<ProfileSet, String> {
     let json_path = state.repo_root.join(PROFILE_JSON);
     if json_path.exists() {
-        let content = std::fs::read_to_string(&json_path).map_err(|e| e.to_string())?;
+        let mut content = std::fs::read_to_string(&json_path).map_err(|e| e.to_string())?;
+        // Strip UTF-8 BOM if present (Windows editors may add it)
+        if content.starts_with('\u{FEFF}') {
+            content.remove(0);
+        }
         serde_json::from_str(&content).map_err(|e| format!("JSON 解析失败: {}", e))
     } else {
         Ok(default_profile())
