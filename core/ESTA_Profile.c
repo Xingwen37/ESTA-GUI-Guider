@@ -28,19 +28,18 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_num_digits_x = 8,
             .theme_type = WAVE_THEME_LIGHT,
             .is_auto_clear = true,
-
-            .bar_x_origin = 10,
+            .bar_x_origin = 7,
             .bar_y_origin = 125,
-            .bar_x_width = 300,
+            .bar_x_width = 150,
             .bar_y_width = 110,
             .bar_display_num_min = 0,
-            .bar_display_num_max = 100,
-            .bar_count = 6,
+            .bar_display_num_max = 120,
+            .bar_count = 7,
             .bar_width = 0,
             .bar_spacing = 0,
             .bar_is_display_value = true,
             .bar_is_display_axis = true,
-            .bar_theme_type = BARCHART_THEME_DEFAULT
+            .bar_theme_type = BARCHART_THEME_LIGHT
         }
 
     }

@@ -68,6 +68,18 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "ruler_num_digits_x": p.ruler_num_digits_x,
                 "theme_type": p.theme_type,
                 "is_auto_clear": p.is_auto_clear,
+                "bar_x_origin": p.bar_x_origin,
+                "bar_y_origin": p.bar_y_origin,
+                "bar_x_width": p.bar_x_width,
+                "bar_y_width": p.bar_y_width,
+                "bar_display_num_min": p.bar_display_num_min,
+                "bar_display_num_max": p.bar_display_num_max,
+                "bar_count": p.bar_count,
+                "bar_width": p.bar_width,
+                "bar_spacing": p.bar_spacing,
+                "bar_is_display_value": p.bar_is_display_value,
+                "bar_is_display_axis": p.bar_is_display_axis,
+                "bar_theme_type": p.bar_theme_type,
             })
         })
         .collect();
