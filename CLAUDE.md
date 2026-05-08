@@ -133,3 +133,74 @@ PowerShell 和某些 Windows 编辑器写入 UTF-8 文件时会附带 BOM（`EF 
 - **WAVE** — 波形渲染引擎（`core/WAVE.h`、`WAVE_TypeDef`、`WAVE_Init` 等）
 - **ESTA** — profile/配置系统及整体项目名称（`core/ESTA_Profile.*`、`ESTA_Simulator`）
 - Tauri GUI 的 crate 名称为 `esta-profile-gui`
+
+## 组件开发规范（速查）
+
+完整规范文档：`docs/COMPONENT_SPEC.md`。所有新 UI 组件必须遵循该规范。
+
+### 组件文件模板
+
+```
+core/{NAME}.h + core/{NAME}.c   // 组件代码（如 WAVE.h/WAVE.c）
+```
+
+### 三结构体模式（OOC）
+
+```c
+{NAME}_Config_TypeDef      // 公开配置"寄存器"（TypeDef 后缀）
+{NAME}_Private_Typedef     // 私有运行时状态（Typedef 后缀 — 注意拼写差异）
+{NAME}_TypeDef             // 聚合实例（{NAME}_Config + {NAME}_Private）
+```
+
+全局实例数组：`{NAME}_TypeDef {NAME}_State[MAX_{NAME}_NUM];`
+
+### 核心宏速查
+
+| 宏 | 用途 |
+|------|------|
+| `{NAME}_INST(i)` | 实例身份宏（展开为 `(i)`） |
+| `{NAME}_INST_ADDR(i)` | 获取实例引用 → `State[i]` |
+| `{NAME}_CONFIG_MEMBER(inst, f)` | 读取 Config 字段 |
+| `{NAME}_PRIVATE_MEMBER(inst, f)` | 读取 Private 字段 |
+| `{NAME}_WRITE_CONFIG(inst, f, v)` | 写入 Config 字段 |
+| `{NAME}_WRITE_PRIVATE(inst, f, v)` | 写入 Private 字段 |
+| `{NAME}_WRITE_CONFIG_INIT(inst, f)` | 从 Init 参数复制到实例（仅限 Init 内） |
+| `{NAME}_CONFIG_MEMBER_ARRAY(inst, f, i)` | 数组版读取 |
+| `{NAME}_PRIVATE_MEMBER_ARRAY(inst, f, i)` | 数组版读取 |
+| `{NAME}_GetThemeColor(t, idx)` | 主题颜色桥接 → `UI_GetThemeColor` |
+| `IS_VALID_{NAME}_INST(x)` | 实例索引范围检查 |
+
+### 关键规则
+
+1. **所有 Config/Private 访问必须通过宏**，严禁 `State[i].Config.field` 直接访问
+2. **Config Setter 必须返回 `StatusTypeDef`**（新规，不再 void），必须 NULL 检查
+3. **StatusTypeDef**：`OK=0x00, ERROR=0x01, FULL=0x02`（可选）
+4. **绘制仅通过 `SCREEN_DRAW_*` 宏**，禁止直接调 Port 层函数
+5. **每个组件必须配套 Profile**（GetDefault + ToConfig + Apply）
+6. **主题枚举**：必须含 `_COUNT` / `_INDEX_COUNT` 哨兵值
+7. **Config 指针型字段**（仅 Init 传参用）：Init 后必须置 NULL
+8. **命名**：Config 用 `TypeDef`，Private 用 `Typedef`（有意区分 Public/Private）
+
+### 主题颜色槽位
+
+| 槽位 | 组件 |
+|:---:|------|
+| 0-6 | WAVE (FRAME, RULER, CH0-3, BG) |
+| 7-15 | 预留 |
+
+新组件需在 `core/ui_theme.c` 中注册颜色（指定初始化器）。
+
+### 新组件集成需修改的文件（共 12 个）
+
+`core/XXX.h`, `core/XXX.c`（新建），`core/ui_theme.c`, `core/ESTA_Profile.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src/lib/types.ts`, `simulator/sim_scenario.h/.c`, `docs/COMPONENT_SPEC.md`
+
+### 标准包含顺序
+
+```c
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "helper.h"
+#include "ui_base.h"
+#include "ui_theme.h"
+```

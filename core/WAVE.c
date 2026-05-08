@@ -29,69 +29,78 @@
 // 你可以将其视作库函数中外设的基地址
 WAVE_TypeDef WAVE_State[MAX_WAVE_NUM];
 
-void WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
+WAVE_StatusTypeDef WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
                                   uint16_t x_origin, uint16_t y_origin,
                                   uint16_t x_width, uint16_t y_width) {
-    if(config == NULL) return;
+    if(config == NULL) return WAVE_ERROR;
     config->x_origin = x_origin;
     config->y_origin = y_origin;
     config->x_width = x_width;
     config->y_width = y_width;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
+WAVE_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max) {
-    if(config == NULL) return;
+    if(config == NULL) return WAVE_ERROR;
     config->display_num_min = display_num_min;
     config->display_num_max = display_num_max;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num) {
-    if(config == NULL) return;
+WAVE_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num) {
+    if(config == NULL) return WAVE_ERROR;
     config->channel_num = channel_num;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
-    if(config == NULL) return;
+WAVE_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return WAVE_ERROR;
     config->channel_mask |= channel_mask;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
-    if(config == NULL) return;
+WAVE_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask) {
+    if(config == NULL) return WAVE_ERROR;
     config->channel_mask &= ~channel_mask;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
+WAVE_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y) {
-    if(config == NULL) return;
+    if(config == NULL) return WAVE_ERROR;
     config->is_display_ruler_y = is_display;
     config->ruler_y = ruler_y;
     config->ruler_count_y = ruler_count_y;
     config->ruler_num_digits_y = ruler_num_digits_y;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
+WAVE_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x) {
-    if(config == NULL) return;
+    if(config == NULL) return WAVE_ERROR;
     config->is_display_ruler_x = is_display;
     config->ruler_x = ruler_x;
     config->ruler_count_x = ruler_count_x;
     config->ruler_zero_value_x = ruler_zero_value_x;
     config->ruler_full_value_x = ruler_full_value_x;
     config->ruler_num_digits_x = ruler_num_digits_x;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type) {
-    if(config == NULL) return;
+WAVE_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type) {
+    if(config == NULL) return WAVE_ERROR;
     config->theme_type = theme_type;
+    return WAVE_OK;
 }
 
-void WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
-    if(config == NULL) return;
+WAVE_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
+    if(config == NULL) return WAVE_ERROR;
     config->is_auto_clear = is_auto_clear;
+    return WAVE_OK;
 }
 
 
@@ -104,6 +113,7 @@ void WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear) {
 */
 WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
     if(!IS_VALID_WAVE_INST(OSCx)) return WAVE_ERROR;
+    if(WAVE_Init == NULL) return WAVE_ERROR;
 
     WAVE_WRITE_CONFIG_INIT(OSCx, x_origin);
     WAVE_WRITE_CONFIG_INIT(OSCx, y_origin);

@@ -154,23 +154,23 @@ typedef struct {
 
 
 /* function prototype */
-void WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
+WAVE_StatusTypeDef WAVE_ConfigSetPositionAndSize(WAVE_Config_TypeDef *config,
                                   uint16_t x_origin, uint16_t y_origin,
                                   uint16_t x_width, uint16_t y_width);
-void WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
+WAVE_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max);
-void WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num);
-void WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
-void WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
-void WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
+WAVE_StatusTypeDef WAVE_ConfigSetChannelNum(WAVE_Config_TypeDef *config, uint16_t channel_num);
+WAVE_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+WAVE_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, uint8_t channel_mask);
+WAVE_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_y, uint16_t ruler_count_y,
                          uint16_t ruler_num_digits_y);
-void WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
+WAVE_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
                          uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
                          uint16_t ruler_num_digits_x);
-void WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type);
-void WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear);
+WAVE_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config, WAVE_theme_type theme_type);
+WAVE_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config, bool is_auto_clear);
 
 WAVE_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init);
 WAVE_StatusTypeDef WAVE_DeInit(int OSCx);
