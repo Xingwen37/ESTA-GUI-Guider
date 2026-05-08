@@ -204,9 +204,27 @@ core/{NAME}.h + core/{NAME}.c   // 组件代码（如 WAVE.h/WAVE.c）
 
 新组件需在 `core/ui_theme.c` 中注册颜色（指定初始化器）。
 
-### 新组件集成需修改的文件（共 12 个）
+### 新组件集成需修改的文件（共 16 个）
 
-`core/XXX.h`, `core/XXX.c`（新建），`core/ui_theme.c`, `core/ESTA_Profile.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src/lib/types.ts`, `simulator/sim_scenario.h/.c`, `docs/COMPONENT_SPEC.md`
+`core/XXX.h`, `core/XXX.c`（新建），`core/ui_theme.c`, `core/ui_theme.h`, `core/ESTA_Profile.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src-tauri/src/commands.rs`, `tools/profile-gui/src/lib/types.ts`, `tools/profile-gui/src/components/XXXEditor.tsx`（新建），`tools/profile-gui/src/App.tsx`, `simulator/sim_scenario.h/.c`, `simulator/main.c`, `docs/COMPONENT_SPEC.md`
+
+完整集成步骤参见 `docs/INTEGRATION_SPEC.md`（三层架构：C核心 → Rust后端 → TS前端，含精确修改位置和代码模板）。
+
+### 主题颜色槽位分配
+
+| 槽位 | 组件 |
+|:---:|------|
+| 0-6 | WAVE (FRAME, RULER, CH0-3, BG) |
+| 7-14 | BARCHART (FRAME, AXIS, BAR, BAR_CH1-3, BG, LABEL) |
+| 15-31 | 预留 |
+
+### Profile 字段前缀约定
+
+| 组件 | 前缀 | 示例 |
+|------|------|------|
+| WAVE | (无) | `x_origin`, `theme_type` |
+| BARCHART | `bar_` | `bar_x_origin`, `bar_theme_type` |
+| 新组件 | `xxx_` | `xxx_x_origin`, `xxx_theme_type` |
 
 ### 标准包含顺序
 

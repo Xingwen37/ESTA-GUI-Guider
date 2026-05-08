@@ -1,0 +1,731 @@
+# TL-ESTA 新 UI 组件集成规范
+
+版本：v1.0
+适用范围：为代码配置器、生成器与仿真器添加新 UI 组件支持的全部步骤
+参考实现：WAVE（第一个组件）、BARCHART（第二个组件，验证了集成模式）
+
+---
+
+## 第一章：架构总览
+
+### 1.1 三层数据流
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ TypeScript 前端 (tools/profile-gui/src/)                     │
+│   types.ts → App.tsx → XxxEditor.tsx                        │
+│   用户编辑 ProfileSet → 调用 saveProfile()                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ invoke("save_profile", { data })
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Rust 后端 (tools/profile-gui/src-tauri/)                     │
+│   models.rs → commands.rs → Tera 模板渲染                    │
+│   ProfileSet → json!({...}) 上下文 → ESTA_Profile.c.j2      │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ 写入文件
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│ C 代码 (core/) + 仿真器 (simulator/)                         │
+│   ESTA_Profile.c (生成) + XXX.c (手写)                       │
+│   ESTA_Profile_ApplyXXX() → XXX_Init() → XXX_ReDraw()       │
+│   main.c 主循环: scenario.GetData() → XXX_Update()           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 涉及文件总览（以 BARCHART 为参考）
+
+| 层 | 文件 | 操作 | 变更量 |
+|----|------|:---:|:---:|
+| C-组件 | `core/BARCHART.h` | **新建** | ~120 行 |
+| C-组件 | `core/BARCHART.c` | **新建** | ~300 行 |
+| C-主题 | `core/ui_theme.c` | 修改 | +16 行 |
+| C-主题 | `core/ui_theme.h` | 修改 | 视需要调 MAX |
+| C-Profile | `core/ESTA_Profile.h` | 修改 | +15 行 |
+| C-Profile | `core/ESTA_Profile.c` | 修改 | +30 行 |
+| C-Profile | `core/ESTA_Profile.json` | 修改 | +13 行 |
+| C-仿真 | `simulator/sim_scenario.h` | 修改 | +2 行 |
+| C-仿真 | `simulator/sim_scenario.c` | 修改 | +15 行 |
+| C-仿真 | `simulator/main.c` | 修改 | +25 行 |
+| Rust | `src-tauri/src/models.rs` | 修改 | +13 行 |
+| Rust | `src-tauri/src/commands.rs` | 修改 | +16 行 |
+| Rust | `src-tauri/templates/ESTA_Profile.c.j2` | 修改 | +28 行 |
+| TS | `src/lib/types.ts` | 修改 | +10 行 |
+| TS | `src/components/XxxEditor.tsx` | **新建** | ~100 行 |
+| TS | `src/App.tsx` | 修改 | ~40 行 |
+| 可选 | `src/styles/app.css` | 修改 | 按需 |
+
+### 1.3 约定
+
+- 本文以虚构组件 `NEWCOMP` 为例（前缀 `newcomp_`）
+- 字段命名：C 层 `snake_case`，Rust 层 `snake_case`，TS 层 `snake_case`
+- 实例数最大值默认 2（`MAX_NEWCOMP_INST = 2`）
+- 主题颜色从下一个可用全局槽位开始分配
+
+---
+
+## 第二章：C 核心层集成
+
+### 步骤 1：创建组件代码
+
+按 `docs/COMPONENT_SPEC.md` 规范创建 `core/NEWCOMP.h` 和 `core/NEWCOMP.c`，以 `core/BARCHART.h/.c` 为模板。
+
+必须包含：
+- `ESTA_BaseConfig` 兼容的 Config 结构体（前 4 字段 `x_origin, y_origin, x_width, y_width`）
+- 主题枚举（`NEWCOMP_theme_type`、`NEWCOMP_theme_color_index_type`）
+- 7 个标准访问宏 + 实例宏 + 验证宏
+- Config Setter 函数（返回 `ESTA_StatusTypeDef`）
+- `Init` / `DeInit` / `ReDraw` 生命周期函数
+- 组件专属显示/更新函数
+
+**颜色索引枚举值从下一个可用全局槽位开始**：
+
+```
+当前占用：WAVE 0-6, BARCHART 7-14
+下一个可用：15
+```
+
+```c
+typedef enum {
+    NEWCOMP_THEME_FRAME_INDEX      = 15,
+    NEWCOMP_THEME_ITEM_INDEX       = 16,
+    NEWCOMP_THEME_BACKGROUND_INDEX = 17,
+    NEWCOMP_THEME_INDEX_COUNT
+} NEWCOMP_theme_color_index_type;
+```
+
+如槽位不够，修改 `core/ui_theme.h`：
+
+```c
+#define UI_COLOR_SLOT_MAX   32   // 从 16 扩至 32
+```
+
+### 步骤 2：注册主题颜色
+
+**文件**：`core/ui_theme.c`
+
+(1) 添加 `#include "NEWCOMP.h"`：
+
+```c
+#include "ui_theme.h"
+#include "WAVE.h"
+#include "BARCHART.h"
+#include "NEWCOMP.h"          // 新增
+```
+
+(2) 在 `[WAVE_THEME_DEFAULT]` 和 `[WAVE_THEME_LIGHT]` 两个主题行中追加颜色条目：
+
+```c
+[WAVE_THEME_DEFAULT] = {
+    // ... WAVE + BARCHART 现有条目 ...
+    [NEWCOMP_THEME_FRAME_INDEX]      = __WHITE,
+    [NEWCOMP_THEME_ITEM_INDEX]       = __GREEN,
+    [NEWCOMP_THEME_BACKGROUND_INDEX] = __BLACK,
+},
+[WAVE_THEME_LIGHT] = {
+    // ... WAVE + BARCHART 现有条目 ...
+    [NEWCOMP_THEME_FRAME_INDEX]      = __BLACK,
+    [NEWCOMP_THEME_ITEM_INDEX]       = __DEEP_BLUE,
+    [NEWCOMP_THEME_BACKGROUND_INDEX] = __WHITE,
+},
+```
+
+### 步骤 3：扩展 Profile 类型
+
+**文件**：`core/ESTA_Profile.h`
+
+(1) 添加 `#include "NEWCOMP.h"`
+
+(2) 在 `ESTA_Profile_TypeDef` 末尾追加字段块（在 BARCHART 字段之后、右花括号之前）：
+
+```c
+    /* ---- NEWCOMP 组件字段 ---- */
+    uint16_t newcomp_x_origin;
+    uint16_t newcomp_y_origin;
+    uint16_t newcomp_x_width;
+    uint16_t newcomp_y_width;
+    // ... 其他组件专属字段 ...
+    NEWCOMP_theme_type newcomp_theme_type;
+} ESTA_Profile_TypeDef;
+```
+
+(3) 在 `ESTA_ProfileSet_TypeDef` 中追加实例计数：
+
+```c
+typedef struct {
+    uint16_t inst_count;
+    uint16_t bar_inst_count;
+    uint16_t newcomp_inst_count;   // 新增
+    ESTA_Profile_TypeDef profiles[ESTA_PROFILE_MAX_INST];
+} ESTA_ProfileSet_TypeDef;
+```
+
+(4) 追加两个函数声明：
+
+```c
+bool ESTA_Profile_ToNEWCOMP_Config(const ESTA_Profile_TypeDef *profile,
+    NEWCOMP_Config_TypeDef *out_config);
+ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
+    const ESTA_Profile_TypeDef *profile);
+```
+
+### 步骤 4：实现 Profile 函数
+
+**文件**：`core/ESTA_Profile.c`
+
+> **注意**：此文件由 Tera 模板自动生成。以下为代码模式说明，实际内容在 GUI 保存时覆盖。需同步修改模板（见第三章步骤 3）。
+
+(1) 在 `g_default_profiles` 中追加 `.newcomp_inst_count`：
+
+```c
+static const ESTA_ProfileSet_TypeDef g_default_profiles = {
+    .inst_count = 1,
+    .bar_inst_count = 1,
+    .newcomp_inst_count = 1,   // 新增
+    .profiles = { ... }
+};
+```
+
+(2) 在 profile 条目中追加 `newcomp_` 字段默认值：
+
+```c
+.newcomp_x_origin = 10,
+.newcomp_y_origin = 0,
+// ...
+.newcomp_theme_type = NEWCOMP_THEME_DEFAULT,
+```
+
+(3) 实现 `ESTA_Profile_ToNEWCOMP_Config`（以 `ToBARCHART_Config` 为模板）：
+
+```c
+bool ESTA_Profile_ToNEWCOMP_Config(const ESTA_Profile_TypeDef *profile,
+    NEWCOMP_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config,
+        profile->newcomp_x_origin, profile->newcomp_y_origin,
+        profile->newcomp_x_width, profile->newcomp_y_width);
+    NEWCOMP_ConfigSetXxx(out_config, profile->newcomp_xxx);
+    // ... 其他 Setter 调用 ...
+
+    return true;
+}
+```
+
+(4) 实现 `ESTA_Profile_ApplyNEWCOMP`：
+
+```c
+ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
+    const ESTA_Profile_TypeDef *profile) {
+    NEWCOMP_Config_TypeDef config;
+    if (!ESTA_Profile_ToNEWCOMP_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return NEWCOMP_Init(inst_idx, &config);
+}
+```
+
+### 步骤 5：更新 JSON 数据源
+
+**文件**：`core/ESTA_Profile.json`
+
+(1) 根对象追加 `"newcomp_inst_count": 1`
+
+(2) 每个 profile 对象追加 `newcomp_` 字段：
+
+```json
+{
+  "inst_count": 1,
+  "bar_inst_count": 1,
+  "newcomp_inst_count": 1,
+  "profiles": [
+    {
+      "x_origin": 10,
+      ...
+      "bar_theme_type": "BARCHART_THEME_LIGHT",
+      "newcomp_x_origin": 10,
+      "newcomp_y_origin": 0,
+      "newcomp_x_width": 200,
+      "newcomp_y_width": 100,
+      "newcomp_theme_type": "NEWCOMP_THEME_DEFAULT"
+    }
+  ]
+}
+```
+
+### 步骤 6：添加模拟器场景数据
+
+**文件**：`simulator/sim_scenario.h`
+
+```c
+#define SIM_SCENARIO_NEWCOMP_COUNT 1
+
+bool SimScenario_NEWCOMP_GetData(const SimScenarioRuntime *runtime,
+    uint16_t *out_data, uint16_t data_count);
+```
+
+**文件**：`simulator/sim_scenario.c`
+
+以 `SimScenario_BARCHART_GetData` 为模板，使用 `runtime->signal_lut` 和 `runtime->tick` 产生动态测试数据：
+
+```c
+bool SimScenario_NEWCOMP_GetData(const SimScenarioRuntime *runtime,
+    uint16_t *out_data, uint16_t data_count) {
+    if (runtime == NULL || out_data == NULL) return false;
+    size_t t = runtime->tick;
+    size_t len = runtime->signal_len;
+    for (int i = 0; i < data_count; i++) {
+        size_t phase = (t + i * 10U) % len;
+        out_data[i] = runtime->signal_lut[phase];
+    }
+    return true;
+}
+```
+
+### 步骤 7：修改模拟器主循环
+
+**文件**：`simulator/main.c`
+
+(1) 添加 `#include "NEWCOMP.h"`
+
+(2) 在 BARCHART 初始化代码块之后添加 NEWCOMP 初始化（模式相同）：
+
+```c
+if (ESTA_Profile_ApplyNEWCOMP(NEWCOMP_INST(0), &profiles->profiles[0]) != ESTA_OK) {
+    printf("ESTA_Profile_ApplyNEWCOMP failed.\n");
+    ESTA_SDL2_Quit();
+    return 1;
+}
+if (NEWCOMP_ReDraw(NEWCOMP_INST(0)) != ESTA_OK) {
+    printf("NEWCOMP_ReDraw failed.\n");
+    ESTA_SDL2_Quit();
+    return 1;
+}
+```
+
+(3) 在主循环中添加数据获取和更新：
+
+```c
+uint16_t data_NEWCOMP[BUF_SIZE] = {0};
+// ... 循环内 ...
+if (SimScenario_NEWCOMP_GetData(&scenario, data_NEWCOMP, count)) {
+    NEWCOMP_Update(NEWCOMP_INST(0), data_NEWCOMP, count);
+}
+```
+
+---
+
+## 第三章：Rust 后端集成
+
+### 步骤 1：扩展数据模型
+
+**文件**：`src-tauri/src/models.rs`
+
+(1) 在 `EstaProfile` 结构体末尾追加字段（在右花括号 `}` 之前）：
+
+```rust
+pub struct EstaProfile {
+    // ... 现有 WAVE 字段 ...
+    pub is_auto_clear: bool,
+    // ... 现有 BARCHART 字段 ...
+    pub bar_theme_type: String,
+    // ---- NEWCOMP 字段 ----
+    pub newcomp_x_origin: u16,
+    pub newcomp_y_origin: u16,
+    pub newcomp_x_width: u16,
+    pub newcomp_y_width: u16,
+    pub newcomp_theme_type: String,
+    // ... 其他字段 ...
+}
+```
+
+(2) 在 `ProfileSet` 结构体中追加实例计数：
+
+```rust
+pub struct ProfileSet {
+    pub inst_count: u16,
+    pub bar_inst_count: u16,
+    pub newcomp_inst_count: u16,   // 新增
+    pub profiles: Vec<EstaProfile>,
+}
+```
+
+### 步骤 2：更新命令处理
+
+**文件**：`src-tauri/src/commands.rs`
+
+三处修改：
+
+**(A)** `default_profile()` 函数 — ProfileSet 构造：
+
+```rust
+ProfileSet {
+    inst_count: 2,
+    bar_inst_count: 1,
+    newcomp_inst_count: 1,   // 新增
+    profiles: vec![ ... ],
+}
+```
+
+同时在每个 `EstaProfile { ... }` 实例化中添加新组件字段的默认值。
+
+**(B)** `save_profile()` 函数 — `json!({...})` 映射块（第 50-83 行区域）：
+
+```rust
+"bar_theme_type": p.bar_theme_type,
+// ---- NEWCOMP 字段 ----
+"newcomp_x_origin": p.newcomp_x_origin,
+"newcomp_y_origin": p.newcomp_y_origin,
+"newcomp_x_width": p.newcomp_x_width,
+"newcomp_y_width": p.newcomp_y_width,
+"newcomp_theme_type": p.newcomp_theme_type,
+// ... 其他字段 ...
+```
+
+**(C)** `save_profile()` 函数 — 模板上下文插入（第 87-90 行区域）：
+
+```rust
+ctx.insert("inst_count", &data.inst_count);
+ctx.insert("bar_inst_count", &data.bar_inst_count);
+ctx.insert("newcomp_inst_count", &data.newcomp_inst_count);
+ctx.insert("profiles", &profiles_for_template);
+```
+
+### 步骤 3：更新 Tera 模板
+
+**文件**：`src-tauri/templates/ESTA_Profile.c.j2`
+
+**(A)** 顶层结构体初始化（第 7-8 行区域）：
+
+```c
+.inst_count = {{ inst_count }},
+.bar_inst_count = {{ bar_inst_count }},
+.newcomp_inst_count = {{ newcomp_inst_count }},
+```
+
+**(B)** profile 循环内字段（第 42 行之后，右花括号之前）：
+
+```c
+            .bar_theme_type = {{ p.bar_theme_type }},
+            .newcomp_x_origin = {{ p.newcomp_x_origin }},
+            .newcomp_y_origin = {{ p.newcomp_y_origin }},
+            .newcomp_x_width = {{ p.newcomp_x_width }},
+            .newcomp_y_width = {{ p.newcomp_y_width }},
+            .newcomp_theme_type = {{ p.newcomp_theme_type }},
+```
+
+**(C)** 文件末尾追加两个函数模板（以 BARCHART 的 `ToBARCHART_Config` / `ApplyBARCHART` 为模板）：
+
+```c
+bool ESTA_Profile_ToNEWCOMP_Config(const ESTA_Profile_TypeDef *profile,
+    NEWCOMP_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config,
+        profile->newcomp_x_origin, profile->newcomp_y_origin,
+        profile->newcomp_x_width, profile->newcomp_y_width);
+    NEWCOMP_ConfigSetXxx(out_config, profile->newcomp_xxx);
+    // ... 其他 Setter ...
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
+    const ESTA_Profile_TypeDef *profile) {
+    NEWCOMP_Config_TypeDef config;
+    if (!ESTA_Profile_ToNEWCOMP_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return NEWCOMP_Init(inst_idx, &config);
+}
+```
+
+---
+
+## 第四章：TypeScript 前端集成
+
+### 步骤 1：扩展类型定义
+
+**文件**：`src/lib/types.ts`
+
+```typescript
+// (A) ProfileSet 追加实例计数
+export interface ProfileSet {
+  inst_count: number;
+  bar_inst_count: number;
+  newcomp_inst_count: number;
+  profiles: EstaProfile[];
+}
+
+// (B) EstaProfile 追加字段
+export interface EstaProfile {
+  // ... 现有字段 ...
+  bar_theme_type: string;
+  newcomp_x_origin: number;
+  newcomp_y_origin: number;
+  newcomp_x_width: number;
+  newcomp_y_width: number;
+  newcomp_theme_type: string;
+}
+
+// (C) 主题选项
+export const NEWCOMP_THEME_OPTIONS = [
+  ["NEWCOMP_THEME_DEFAULT", "Default"],
+  ["NEWCOMP_THEME_LIGHT", "Light"],
+] as const;
+
+// (D) 最大实例数
+export const MAX_NEWCOMP_INST = 2;
+```
+
+### 步骤 2：创建编辑器组件
+
+**文件**：`src/components/NewCompEditor.tsx` — **新建**
+
+以 `BarChartEditor.tsx` 为模板，遵循相同的模式：
+
+```typescript
+import type { EstaProfile } from "../lib/types";
+import { NEWCOMP_THEME_OPTIONS } from "../lib/types";
+
+interface Props {
+  profile: EstaProfile;
+  onChange: (p: EstaProfile) => void;
+}
+
+// spin 辅助函数（数字输入）
+function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
+  return <input type="number" value={value} min={min} max={max}
+    onChange={(e) => onChange(Number(e.target.value) || 0)} />;
+}
+
+export default function NewCompEditor({ profile, onChange }: Props) {
+  const set = (key: keyof EstaProfile, value: unknown) =>
+    onChange({ ...profile, [key]: value });
+
+  return (
+    <div>
+      <fieldset className="group-box">
+        <legend>位置与尺寸</legend>
+        <div className="form-row">
+          <label>newcomp_x_origin</label>
+          {spin(profile.newcomp_x_origin, 0, 65535, (v) => set("newcomp_x_origin", v))}
+        </div>
+        {/* ... 更多字段 ... */}
+      </fieldset>
+
+      <fieldset className="group-box">
+        <legend>显示选项</legend>
+        <div className="form-row">
+          <label>newcomp_theme_type</label>
+          <select value={profile.newcomp_theme_type}
+            onChange={(e) => set("newcomp_theme_type", e.target.value)}>
+            {NEWCOMP_THEME_OPTIONS.map(([value, text]) => (
+              <option key={value} value={value}>{text}</option>
+            ))}
+          </select>
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+```
+
+关键规则：
+- Props 接口固定为 `{ profile: EstaProfile; onChange: (p: EstaProfile) => void }`
+- 使用 `set("field_name", value)` 更新任意字段
+- 数字输入使用 `spin()` 辅助函数
+- 布尔字段使用 `<input type="checkbox">`
+- 主题选择使用 `<select>` + `XXX_THEME_OPTIONS`
+- 布局使用 `fieldset.group-box > div.form-row > label + input`
+
+### 步骤 3：修改主应用 App.tsx
+
+**文件**：`src/App.tsx` — 共 8 处修改。
+
+#### 3a. 导入
+
+```typescript
+import NewCompEditor from "./components/NewCompEditor";
+import { ..., MAX_NEWCOMP_INST } from "./lib/types";
+```
+
+#### 3b. EMPTY_PROFILE 默认值
+
+```typescript
+const EMPTY_PROFILE: EstaProfile = {
+  // ... 现有 WAVE + BARCHART 默认值 ...
+  newcomp_x_origin: 10, newcomp_y_origin: 0,
+  newcomp_x_width: 200, newcomp_y_width: 100,
+  newcomp_theme_type: "NEWCOMP_THEME_DEFAULT",
+};
+```
+
+#### 3c. 验证函数
+
+```typescript
+function validateNewComp(profiles: EstaProfile[], count: number): string | null {
+  for (let i = 0; i < count; i++) {
+    const p = profiles[i];
+    // ... 组件专属校验逻辑 ...
+  }
+  return null;
+}
+```
+
+#### 3d. 标签索引计算
+
+2 组件时：
+```typescript
+const waveCount = data.inst_count;
+const barCount = data.bar_inst_count;
+```
+
+3 组件时扩展为：
+```typescript
+const waveCount = data.inst_count;
+const barCount = data.bar_inst_count;
+const newcompCount = data.newcomp_inst_count;
+const totalTabs = waveCount + barCount + newcompCount;
+
+const isWaveTab = activeTab < waveCount;
+const isBarTab = activeTab >= waveCount && activeTab < waveCount + barCount;
+const isNewCompTab = activeTab >= waveCount + barCount;
+
+const profileIndex = isWaveTab
+  ? activeTab
+  : isBarTab
+    ? activeTab - waveCount
+    : activeTab - waveCount - barCount;
+```
+
+#### 3e. 标签页渲染
+
+在 BARCHART 标签块之后追加：
+
+```typescript
+{barCount > 0 && newcompCount > 0 && <span className="tab-sep" />}
+{Array.from({ length: newcompCount }, (_, i) => (
+  <button
+    key={`n${i}`}
+    className={`tab ${activeTab === waveCount + barCount + i ? "active" : ""}`}
+    onClick={() => setActiveTab(waveCount + barCount + i)}
+  >
+    NEWCOMP{i}
+  </button>
+))}
+```
+
+#### 3f. 编辑器切换
+
+```typescript
+{totalTabs === 0 ? (
+  <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>
+) : isWaveTab ? (
+  <ProfileEditor profile={currentProfile} onChange={updateProfile} />
+) : isBarTab ? (
+  <BarChartEditor profile={currentProfile} onChange={updateProfile} />
+) : (
+  <NewCompEditor profile={currentProfile} onChange={updateProfile} />
+)}
+```
+
+#### 3g. 工具栏计数控件
+
+在 BARCHART 输入框之后追加：
+
+```typescript
+<label style={{ marginLeft: 12 }}>NEWCOMP</label>
+<input type="number" value={data.newcomp_inst_count} min={0} max={MAX_NEWCOMP_INST}
+  onChange={(e) => setData({
+    ...data,
+    newcomp_inst_count: Math.max(0, Math.min(MAX_NEWCOMP_INST, Number(e.target.value) || 0)),
+  })}
+/>
+```
+
+#### 3h. saveProfile 调用
+
+```typescript
+// handleGenerate 和 handleBuildRun 两处都需更新
+const xxxErr = validateNewComp(data.profiles, newcompCount);
+if (xxxErr) { showStatus({ type: "error", msg: xxxErr }); return; }
+
+await api.saveProfile({
+  inst_count: waveCount,
+  bar_inst_count: barCount,
+  newcomp_inst_count: newcompCount,
+  profiles: data.profiles.slice(0, Math.max(waveCount, barCount, newcompCount)),
+});
+```
+
+### 步骤 4：样式
+
+**文件**：`src/styles/app.css` — 通常无需修改。仅当新组件需要非标准布局（非 `form-row` 模式）时才添加样式。
+
+---
+
+## 第五章：端到端验证清单
+
+完成所有步骤后，依次执行：
+
+| # | 命令 | 预期结果 |
+|:---:|------|------|
+| 1 | `cd tools/profile-gui && npx tsc --noEmit` | TypeScript 无错误 |
+| 2 | `cd tools/profile-gui/src-tauri && cargo check` | Rust 无错误 |
+| 3 | `cmake -B build -S . && cmake --build build` | C 编译通过 |
+| 4 | `cd tools/profile-gui && npm run tauri dev` | GUI 启动 |
+| 4a | — 新组件标签页可见 | NEWCOMP0 标签显示 |
+| 4b | — 字段可编辑 | 修改数字、切换复选框、选择主题均正常 |
+| 4c | — 点击"生成" | 无模板渲染错误，状态显示成功 |
+| 4d | — 检查生成的 `core/ESTA_Profile.c` | 包含 `newcomp_` 字段和 `ToNEWCOMP_Config`/`ApplyNEWCOMP` 函数 |
+| 5 | `.\build\ESTA_Simulator.exe` | 模拟器运行 |
+| 5a | — 新组件可见 | NEWCOMP 正确渲染在屏幕上 |
+| 5b | — 与现有组件共存 | WAVE 和 BARCHART 不受影响 |
+| 5c | — 关闭窗口 | 无崩溃，正常退出 |
+
+---
+
+## 附录 A：主题槽位分配表（持续更新）
+
+| 槽位范围 | 占用数 | 组件 | 状态 |
+|----------|:---:|------|:---:|
+| 0 - 6 | 7 | WAVE | 已注册 |
+| 7 - 14 | 8 | BARCHART | 已注册 |
+| 15 - 31 | 17 | **预留** | — |
+
+## 附录 B：Profile 字段前缀约定
+
+| 组件 | 前缀 | 示例字段 |
+|------|------|------|
+| WAVE | 无前缀 | `x_origin`, `theme_type` |
+| BARCHART | `bar_` | `bar_x_origin`, `bar_theme_type` |
+| 新组件 | `newcomp_` | `newcomp_x_origin`, `newcomp_theme_type` |
+
+> **规则**：第一个组件（WAVE）无前缀，后续组件使用描述性前缀。前缀用于在共享的 `ESTA_Profile_TypeDef` 中区分字段归属。
+
+## 附录 C：快速检查清单
+
+- [ ] `core/NEWCOMP.h` 新建
+- [ ] `core/NEWCOMP.c` 新建
+- [ ] `core/ui_theme.c` 添加 include + 颜色注册
+- [ ] `core/ui_theme.h` 调整 `UI_COLOR_SLOT_MAX`（按需）
+- [ ] `core/ESTA_Profile.h` 添加 include + 字段 + 计数 + 函数声明
+- [ ] `core/ESTA_Profile.c` 添加默认值 + ToConfig + Apply
+- [ ] `core/ESTA_Profile.json` 添加字段
+- [ ] `simulator/sim_scenario.h` 添加声明
+- [ ] `simulator/sim_scenario.c` 添加实现
+- [ ] `simulator/main.c` 添加 include + 初始化 + 循环更新
+- [ ] `src-tauri/src/models.rs` Rust 结构体字段
+- [ ] `src-tauri/src/commands.rs` default_profile + json! + ctx.insert
+- [ ] `src-tauri/templates/ESTA_Profile.c.j2` 模板字段 + ToConfig + Apply
+- [ ] `src/lib/types.ts` 类型 + 主题选项 + MAX 常量
+- [ ] `src/components/NewCompEditor.tsx` 新建
+- [ ] `src/App.tsx` 8 处修改
+- [ ] TypeScript 检查通过
+- [ ] Rust 检查通过
+- [ ] C 编译通过
+- [ ] GUI 生成测试通过
+- [ ] 模拟器运行测试通过
