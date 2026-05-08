@@ -26,7 +26,20 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_full_value_x = 100,
             .ruler_num_digits_x = 8,
             .theme_type = WAVE_THEME_LIGHT,
-            .is_auto_clear = true
+            .is_auto_clear = true,
+
+            .bar_x_origin = 10,
+            .bar_y_origin = 125,
+            .bar_x_width = 300,
+            .bar_y_width = 110,
+            .bar_display_num_min = 0,
+            .bar_display_num_max = 100,
+            .bar_count = 6,
+            .bar_width = 0,
+            .bar_spacing = 0,
+            .bar_is_display_value = true,
+            .bar_is_display_axis = true,
+            .bar_theme_type = BARCHART_THEME_DEFAULT
         }
 
     }
@@ -62,4 +75,27 @@ ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *
         return ESTA_ERROR;
     }
     return WAVE_Init(inst_idx, &config);
+}
+
+bool ESTA_Profile_ToBARCHART_Config(const ESTA_Profile_TypeDef *profile, BARCHART_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->bar_x_origin, profile->bar_y_origin,
+                                 profile->bar_x_width, profile->bar_y_width);
+    BARCHART_ConfigSetDisplayRange(out_config, profile->bar_display_num_min, profile->bar_display_num_max);
+    BARCHART_ConfigSetBarCount(out_config, profile->bar_count);
+    BARCHART_ConfigSetBarLayout(out_config, profile->bar_width, profile->bar_spacing);
+    BARCHART_ConfigSetDisplayOptions(out_config, profile->bar_is_display_value, profile->bar_is_display_axis);
+    BARCHART_ConfigSetTheme(out_config, profile->bar_theme_type);
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_TypeDef *profile) {
+    BARCHART_Config_TypeDef config;
+    if (!ESTA_Profile_ToBARCHART_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return BARCHART_Init(inst_idx, &config);
 }

@@ -22,6 +22,18 @@ pub struct EstaProfile {
     pub ruler_num_digits_x: u16,
     pub theme_type: String,
     pub is_auto_clear: bool,
+    pub bar_x_origin: u16,
+    pub bar_y_origin: u16,
+    pub bar_x_width: u16,
+    pub bar_y_width: u16,
+    pub bar_display_num_min: u16,
+    pub bar_display_num_max: u16,
+    pub bar_count: u16,
+    pub bar_width: u16,
+    pub bar_spacing: u16,
+    pub bar_is_display_value: bool,
+    pub bar_is_display_axis: bool,
+    pub bar_theme_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

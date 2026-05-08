@@ -11,6 +11,7 @@
   #include <SDL2/SDL.h>
 
   #include "WAVE.h"
+  #include "BARCHART.h"
   #include "ESTA_Profile.h"
   #include "sim_scenario.h"
   #include "esta_port_sdl2.h"
@@ -61,11 +62,25 @@
           }
       }
 
+      /* BARCHART 初始化 */
+      if (ESTA_Profile_ApplyBARCHART(BARCHART_INST(0), &profiles->profiles[0]) != ESTA_OK) {
+          printf("ESTA_Profile_ApplyBARCHART failed.\n");
+          ESTA_SDL2_Quit();
+          return 1;
+      }
+      if (BARCHART_ReDraw(BARCHART_INST(0)) != ESTA_OK) {
+          printf("BARCHART_ReDraw failed.\n");
+          ESTA_SDL2_Quit();
+          return 1;
+      }
+
       /* PC 端的主循环与事件处理 */
       bool is_running = true;
       SDL_Event event;
 
       uint16_t data_ESTA[SIM_SCENARIO_WAVE_COUNT][MAX_WAVE_CHANNEL] = {0};
+      uint16_t data_BARCHART[BARCHART_MAX_BARS] = {0};
+      uint16_t bar_count = profiles->profiles[0].bar_count;
 
       while (is_running)
       {
@@ -89,11 +104,16 @@
               }
           }
 
+          /* 更新柱状图数据 */
+          if (SimScenario_BARCHART_GetData(&scenario, data_BARCHART, bar_count)) {
+              BARCHART_UpdateAll(BARCHART_INST(0), data_BARCHART, bar_count);
+          }
+
           /* 将缓冲数据刷新到计算机屏幕 */
           ESTA_SDL2_Update();
 
           /* 调用在 Port 层封装的延时函数 */
-          ESTA_SDL2_Delay(10);
+          ESTA_SDL2_Delay(20);
 
           SimScenario_Tick(&scenario);
       }

@@ -26,7 +26,19 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_full_value_x = {{ p.ruler_full_value_x }},
             .ruler_num_digits_x = {{ p.ruler_num_digits_x }},
             .theme_type = {{ p.theme_type }},
-            .is_auto_clear = {{ p.is_auto_clear }}
+            .is_auto_clear = {{ p.is_auto_clear }},
+            .bar_x_origin = {{ p.bar_x_origin }},
+            .bar_y_origin = {{ p.bar_y_origin }},
+            .bar_x_width = {{ p.bar_x_width }},
+            .bar_y_width = {{ p.bar_y_width }},
+            .bar_display_num_min = {{ p.bar_display_num_min }},
+            .bar_display_num_max = {{ p.bar_display_num_max }},
+            .bar_count = {{ p.bar_count }},
+            .bar_width = {{ p.bar_width }},
+            .bar_spacing = {{ p.bar_spacing }},
+            .bar_is_display_value = {{ p.bar_is_display_value }},
+            .bar_is_display_axis = {{ p.bar_is_display_axis }},
+            .bar_theme_type = {{ p.bar_theme_type }}
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     }
@@ -62,4 +74,27 @@ ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *
         return ESTA_ERROR;
     }
     return WAVE_Init(inst_idx, &config);
+}
+
+bool ESTA_Profile_ToBARCHART_Config(const ESTA_Profile_TypeDef *profile, BARCHART_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->bar_x_origin, profile->bar_y_origin,
+                                 profile->bar_x_width, profile->bar_y_width);
+    BARCHART_ConfigSetDisplayRange(out_config, profile->bar_display_num_min, profile->bar_display_num_max);
+    BARCHART_ConfigSetBarCount(out_config, profile->bar_count);
+    BARCHART_ConfigSetBarLayout(out_config, profile->bar_width, profile->bar_spacing);
+    BARCHART_ConfigSetDisplayOptions(out_config, profile->bar_is_display_value, profile->bar_is_display_axis);
+    BARCHART_ConfigSetTheme(out_config, profile->bar_theme_type);
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_TypeDef *profile) {
+    BARCHART_Config_TypeDef config;
+    if (!ESTA_Profile_ToBARCHART_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return BARCHART_Init(inst_idx, &config);
 }

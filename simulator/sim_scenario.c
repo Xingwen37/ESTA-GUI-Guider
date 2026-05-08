@@ -49,3 +49,20 @@ void SimScenario_Tick(SimScenarioRuntime *runtime) {
     if (runtime == NULL || runtime->signal_len == 0) return;
     runtime->tick = (runtime->tick + 1U) % runtime->signal_len;
 }
+
+bool SimScenario_BARCHART_GetData(const SimScenarioRuntime *runtime, uint16_t bar_data[BARCHART_MAX_BARS], uint16_t bar_count) {
+    if (runtime == NULL || bar_data == NULL) return false;
+    if (bar_count > BARCHART_MAX_BARS) bar_count = BARCHART_MAX_BARS;
+
+    /* 用正弦波的多相位采样产生动态柱状图数据 */
+    size_t t = runtime->tick;
+    size_t len = runtime->signal_len;
+    for (int i = 0; i < bar_count; i++) {
+        size_t phase = (t + i * 10U) % len;
+        uint16_t raw = runtime->signal_lut[phase];
+        /* 将 12-bit 范围 0-4095 映射到 0-100 */
+        bar_data[i] = (uint16_t)(((uint32_t)raw * 100U) / 4095U);
+    }
+
+    return true;
+}

@@ -19,6 +19,18 @@
   ruler_num_digits_x: number;
   theme_type: string;
   is_auto_clear: boolean;
+  bar_x_origin: number;
+  bar_y_origin: number;
+  bar_x_width: number;
+  bar_y_width: number;
+  bar_display_num_min: number;
+  bar_display_num_max: number;
+  bar_count: number;
+  bar_width: number;
+  bar_spacing: number;
+  bar_is_display_value: boolean;
+  bar_is_display_axis: boolean;
+  bar_theme_type: string;
 }
 
 export interface ProfileSet {

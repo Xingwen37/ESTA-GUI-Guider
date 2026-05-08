@@ -5,8 +5,10 @@
 #include <stdint.h>
 
 #include "WAVE.h"
+#include "BARCHART.h"
 
 #define SIM_SCENARIO_WAVE_COUNT 2
+#define SIM_SCENARIO_BARCHART_COUNT 1
 
 typedef struct {
     const uint16_t *signal_lut;
@@ -18,5 +20,7 @@ bool SimScenario_LoadDefault(SimScenarioRuntime *runtime);
 
 bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, uint16_t data_ch[MAX_WAVE_CHANNEL]);
 void SimScenario_Tick(SimScenarioRuntime *runtime);
+
+bool SimScenario_BARCHART_GetData(const SimScenarioRuntime *runtime, uint16_t bar_data[BARCHART_MAX_BARS], uint16_t bar_count);
 
 #endif
