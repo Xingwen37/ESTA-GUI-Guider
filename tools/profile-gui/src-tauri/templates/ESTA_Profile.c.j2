@@ -100,3 +100,9 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_T
     }
     return BARCHART_Init(inst_idx, &config);
 }
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
+    (void)profile_set;
+    ESTA_EventInit();
+    return ESTA_OK;
+}
