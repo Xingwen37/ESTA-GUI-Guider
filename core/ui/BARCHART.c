@@ -12,7 +12,7 @@
 */
 
 
-#include "BARCHART.h"
+#include "ui/BARCHART.h"
 #include <string.h>
 
 BARCHART_TypeDef BARCHART_State[BARCHART_MAX_NUM];

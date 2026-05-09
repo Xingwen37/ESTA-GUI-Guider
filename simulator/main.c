@@ -10,10 +10,10 @@
   #include <stdbool.h>
   #include <SDL2/SDL.h>
 
-  #include "WAVE.h"
-  #include "BARCHART.h"
-  #include "ESTA_Profile.h"
-  #include "event.h"
+  #include "ui/WAVE.h"
+  #include "ui/BARCHART.h"
+  #include "profile/ESTA_Profile.h"
+  #include "event/event.h"
   #include "sim_scenario.h"
   #include "esta_port_sdl2.h"
   #include "btn_ui.h"

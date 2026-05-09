@@ -1,6 +1,6 @@
-#include "ui_theme.h"
-#include "WAVE.h"
-#include "BARCHART.h"
+#include "infra/ui_theme.h"
+#include "ui/WAVE.h"
+#include "ui/BARCHART.h"
 
 uint16_t UI_themeColorTable[UI_THEME_MAX][UI_COLOR_SLOT_MAX] = {
     [WAVE_THEME_DEFAULT] = {

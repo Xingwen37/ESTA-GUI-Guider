@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "WAVE.h"
-#include "BARCHART.h"
+#include "ui/WAVE.h"
+#include "ui/BARCHART.h"
 
 #define SIM_SCENARIO_WAVE_COUNT 2
 #define SIM_SCENARIO_BARCHART_COUNT 1

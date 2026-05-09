@@ -5,9 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "helper.h"
-#include "ui_base.h"
-#include "ui_theme.h"
+#include "infra/helper.h"
+#include "infra/ui_base.h"
+#include "infra/ui_theme.h"
 
 /* GLOBAL MARCO */
 // 最大示波器实例个数

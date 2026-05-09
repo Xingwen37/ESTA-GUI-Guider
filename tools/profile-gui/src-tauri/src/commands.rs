@@ -4,8 +4,8 @@ use serde_json::json;
 use tauri::State;
 use crate::models::{EstaProfile, ProfileSet};
 
-const PROFILE_JSON: &str = "core/ESTA_Profile.json";
-const PROFILE_C: &str = "core/ESTA_Profile.c";
+const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
+const PROFILE_C: &str = "core/profile/ESTA_Profile.c";
 const TEMPLATE: &str = "ESTA_Profile.c.j2";
 
 pub struct AppState {

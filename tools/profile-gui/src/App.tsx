@@ -114,7 +114,7 @@ export default function App() {
         button_count: data.button_count,
         profiles: data.profiles.slice(0, Math.max(waveCount, barCount)),
       });
-      showStatus({ type: "success", msg: "已生成 core/ESTA_Profile.c" });
+      showStatus({ type: "success", msg: "已生成 core/profile/ESTA_Profile.c" });
     } catch (e) {
       showStatus({ type: "error", msg: `保存失败: ${e}` });
     }

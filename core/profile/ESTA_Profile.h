@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "WAVE.h"
-#include "BARCHART.h"
-#include "event.h"
+#include "ui/WAVE.h"
+#include "ui/BARCHART.h"
+#include "event/event.h"
 
 #define ESTA_PROFILE_MAX_INST 2
 

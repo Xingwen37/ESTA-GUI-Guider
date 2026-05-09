@@ -15,12 +15,16 @@ find_package(SDL2 REQUIRED)
 # 包含头文件路径
 include_directories(
     ${CMAKE_SOURCE_DIR}/core
+    ${CMAKE_SOURCE_DIR}/core/ui
+    ${CMAKE_SOURCE_DIR}/core/infra
+    ${CMAKE_SOURCE_DIR}/core/profile
+    ${CMAKE_SOURCE_DIR}/core/event
     ${CMAKE_SOURCE_DIR}/port
     ${SDL2_INCLUDE_DIRS}
 )
 
 # 收集所有源文件
-file(GLOB SOURCES 
+file(GLOB_RECURSE SOURCES
     "core/*.c"
     "port/*.c"
     "simulator/*.c"
