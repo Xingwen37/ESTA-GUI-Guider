@@ -17,6 +17,29 @@
 
 BARCHART_TypeDef BARCHART_State[BARCHART_MAX_NUM];
 
+static const uint16_t BARCHART_ColorTable[BARCHART_THEME_COUNT][BARCHART_THEME_INDEX_COUNT] = {
+    [BARCHART_THEME_DEFAULT] = {
+        [BARCHART_THEME_FRAME_INDEX]      = __WHITE,
+        [BARCHART_THEME_AXIS_INDEX]       = __GRAY,
+        [BARCHART_THEME_BAR_INDEX]        = __GREEN,
+        [BARCHART_THEME_BAR_CH1_INDEX]    = __BLUE,
+        [BARCHART_THEME_BAR_CH2_INDEX]    = __ORANGE,
+        [BARCHART_THEME_BAR_CH3_INDEX]    = __RED,
+        [BARCHART_THEME_BACKGROUND_INDEX] = __BLACK,
+        [BARCHART_THEME_LABEL_INDEX]      = __WHITE,
+    },
+    [BARCHART_THEME_LIGHT] = {
+        [BARCHART_THEME_FRAME_INDEX]      = __BLACK,
+        [BARCHART_THEME_AXIS_INDEX]       = __GRAY,
+        [BARCHART_THEME_BAR_INDEX]        = __DEEP_BLUE,
+        [BARCHART_THEME_BAR_CH1_INDEX]    = __ORANGE,
+        [BARCHART_THEME_BAR_CH2_INDEX]    = __RED,
+        [BARCHART_THEME_BAR_CH3_INDEX]    = __GREEN,
+        [BARCHART_THEME_BACKGROUND_INDEX] = __WHITE,
+        [BARCHART_THEME_LABEL_INDEX]      = __BLACK,
+    },
+};
+
 /* ================== Config Setter ================== */
 
 ESTA_StatusTypeDef BARCHART_ConfigSetDisplayRange(BARCHART_Config_TypeDef *config,
@@ -223,8 +246,8 @@ ESTA_StatusTypeDef BARCHART_FrameDisplay(int inst) {
     uint16_t area_width     = BARCHART_PRIVATE_MEMBER(inst, area_width);
     uint16_t baseline_y     = BARCHART_PRIVATE_MEMBER(inst, baseline_y);
 
-    uint16_t frame_color    = ESTA_GetThemeColor(theme_type, BARCHART_THEME_FRAME_INDEX);
-    uint16_t axis_color     = ESTA_GetThemeColor(theme_type, BARCHART_THEME_AXIS_INDEX);
+    uint16_t frame_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_FRAME_INDEX);
+    uint16_t axis_color     = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_AXIS_INDEX);
 
     /* 外框 */
     SCREEN_DRAW_RECTANGLE(x_origin, y_origin,
@@ -262,9 +285,9 @@ ESTA_StatusTypeDef BARCHART_BarDisplay(int inst) {
     uint16_t baseline_y     = BARCHART_PRIVATE_MEMBER(inst, baseline_y);
 
     uint16_t display_range  = display_num_max - display_num_min;
-    uint16_t frame_color    = ESTA_GetThemeColor(theme_type, BARCHART_THEME_FRAME_INDEX);
-    uint16_t bar_color      = ESTA_GetThemeColor(theme_type, BARCHART_THEME_BAR_INDEX);
-    uint16_t label_color    = ESTA_GetThemeColor(theme_type, BARCHART_THEME_LABEL_INDEX);
+    uint16_t frame_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_FRAME_INDEX);
+    uint16_t bar_color      = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BAR_INDEX);
+    uint16_t label_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_LABEL_INDEX);
 
     uint16_t step = bw + bs;
 
@@ -326,8 +349,8 @@ ESTA_StatusTypeDef BARCHART_Clear(int inst) {
     uint16_t area_width     = BARCHART_PRIVATE_MEMBER(inst, area_width);
     uint16_t baseline_y     = BARCHART_PRIVATE_MEMBER(inst, baseline_y);
 
-    uint16_t bg_color       = ESTA_GetThemeColor(theme_type, BARCHART_THEME_BACKGROUND_INDEX);
-    uint16_t axis_color     = ESTA_GetThemeColor(theme_type, BARCHART_THEME_AXIS_INDEX);
+    uint16_t bg_color       = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BACKGROUND_INDEX);
+    uint16_t axis_color     = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_AXIS_INDEX);
 
     SCREEN_FILL(x_origin, y_origin, x_origin + x_width,
         y_origin + y_width, bg_color);
@@ -366,10 +389,10 @@ ESTA_StatusTypeDef BARCHART_UpdateBar(int inst, uint16_t bar_index, uint16_t new
     uint16_t baseline_y     = BARCHART_PRIVATE_MEMBER(inst, baseline_y);
 
     uint16_t display_range  = display_num_max - display_num_min;
-    uint16_t bg_color       = ESTA_GetThemeColor(theme_type, BARCHART_THEME_BACKGROUND_INDEX);
-    uint16_t bar_color      = ESTA_GetThemeColor(theme_type, BARCHART_THEME_BAR_INDEX);
-    uint16_t frame_color    = ESTA_GetThemeColor(theme_type, BARCHART_THEME_FRAME_INDEX);
-    uint16_t label_color    = ESTA_GetThemeColor(theme_type, BARCHART_THEME_LABEL_INDEX);
+    uint16_t bg_color       = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BACKGROUND_INDEX);
+    uint16_t bar_color      = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BAR_INDEX);
+    uint16_t frame_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_FRAME_INDEX);
+    uint16_t label_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_LABEL_INDEX);
 
     uint16_t step = bw + bs;
     uint16_t x_left  = area_ox + bar_index * step;

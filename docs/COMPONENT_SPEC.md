@@ -36,7 +36,7 @@ UI 主题层 (UI Theme)           -- core/ui_theme.h/.c   全局颜色表
 |------|------|----------|:---:|
 | Port Layer | 平台初始化/退出/延时 + 4 个绘图原语 | `port/esta_port_sdl2.*` | **否**（仅通过 `ui_base.h` 宏） |
 | UI Base | HAL 宏 (`SCREEN_DRAW_*`)、字体度量、坐标工具、RGB565 颜色 | `core/ui_base.h/.c` | **是** |
-| UI Theme | 全局 8×16 颜色表、`UI_GetThemeColor` 访问器 | `core/ui_theme.h/.c` | **是** |
+| UI Theme | `ESTA_THEME_COLOR` 宏，组件自建本地色表 | `core/infra/ui_theme.h` | **是** |
 | Helper | 通道掩码工具函数 | `core/helper.h/.c` | 按需 |
 | Component | 具体组件实现 | `core/XXX.h/.c` | —（本规范适用层） |
 | Profile | 组件配置的人性化包装 + 代码生成 | `core/ESTA_Profile.*` | **强制配套** |
@@ -261,16 +261,29 @@ typedef struct {
     {NAME}_INST_ADDR(inst).{NAME}_Private.field[idx]
 ```
 
-### 4.4 主题桥接宏
+### 4.4 主题颜色宏
 
-`ESTA_GetThemeColor` 是**全局共享**宏，定义在 `core/ui_theme.h` 中：
+`ESTA_THEME_COLOR` 是**全局共享**宏，定义在 `core/infra/ui_theme.h` 中：
 
 ```c
-#define ESTA_GetThemeColor(theme, color_index) \
-    UI_GetThemeColor((int)(theme), (int)(color_index))
+#define ESTA_THEME_COLOR(table, theme, idx) \
+    ((table)[(int)(theme)][(int)(idx)])
 ```
 
-所有组件直接使用 `ESTA_GetThemeColor`，无需各自定义桥接宏。
+每个组件在自身的 `.c` 文件中定义**本地静态色表**，通过此宏访问：
+
+```c
+// 组件 .c 文件中的本地色表
+static const uint16_t {NAME}_ColorTable[{NAME}_THEME_COUNT][{NAME}_THEME_INDEX_COUNT] = {
+    [{NAME}_THEME_DEFAULT] = { [0]=COLOR1, [1]=COLOR2, ... },
+    [{NAME}_THEME_LIGHT]  = { [0]=COLOR1, [1]=COLOR2, ... },
+};
+
+// 使用时
+uint16_t color = ESTA_THEME_COLOR({NAME}_ColorTable, theme_type, {NAME}_THEME_FRAME_INDEX);
+```
+
+颜色索引从 0 开始，各组件独立，无需全局槽位协调。
 
 ### 4.5 强制规则
 
@@ -583,69 +596,39 @@ typedef enum {
 规则：
 - 枚举值必须从 0 开始自增
 - `_COUNT` 和 `_INDEX_COUNT` 是哨兵值，必须位于枚举末尾
-- 每个组件的颜色索引数量必须 ≤ `UI_COLOR_SLOT_MAX`（16）
-- 每个组件的主题类型数量必须 ≤ `UI_THEME_MAX`（8）
+- 颜色索引为组件本地值，无需全局协调
 
-### 9.2 主题槽位分配表
+### 9.2 本地色表定义
 
-全局颜色表：`UI_themeColorTable[UI_THEME_MAX][UI_COLOR_SLOT_MAX]`
-- `UI_THEME_MAX = 8`（最多 8 种主题风格）
-- `UI_COLOR_SLOT_MAX = 16`（每个主题最多 16 个颜色槽位）
+每个组件在自身的 `.c` 文件中定义**本地静态色表**，不依赖全局表：
 
-**当前分配**：
-
-| 槽位范围 | 占用数 | 组件 | 说明 |
-|----------|:---:|------|------|
-| 0 - 6 | 7 | WAVE | FRAME, RULER, CH0, CH1, CH2, CH3, BACKGROUND |
-| 7 - 15 | 9 | **预留** | 供下一个组件使用 |
-
-**新组件加入时的操作**：
-1. 在组件头文件中定义从 0 开始的局部颜色索引枚举
-2. 在本规范中登记槽位范围（更新上表）
-3. 在 `core/ui_theme.c` 中注册颜色值（见 9.3 节）
-
-### 9.3 在 ui_theme.c 中注册颜色
-
-位置：`core/ui_theme.c` 的 `UI_themeColorTable` 定义中。
-
-当前内容：
 ```c
-#include "ui_theme.h"
-#include "WAVE.h"
-
-uint16_t UI_themeColorTable[UI_THEME_MAX][UI_COLOR_SLOT_MAX] = {
-    [WAVE_THEME_DEFAULT] = {
-        [WAVE_THEME_FRAME_INDEX]      = __WHITE,
-        [WAVE_THEME_RULER_INDEX]      = __GRAY,
-        [WAVE_THEME_WAVE_CH0_INDEX]   = __GREEN,
-        [WAVE_THEME_WAVE_CH1_INDEX]   = __GBLUE,
-        [WAVE_THEME_WAVE_CH2_INDEX]   = __YELLOW,
-        [WAVE_THEME_WAVE_CH3_INDEX]   = __RED,
-        [WAVE_THEME_BACKGROUND_INDEX] = __BLACK
+// 组件 .c 文件中，紧接在实例数组之后
+static const uint16_t {NAME}_ColorTable[{NAME}_THEME_COUNT][{NAME}_THEME_INDEX_COUNT] = {
+    [{NAME}_THEME_DEFAULT] = {
+        [{NAME}_THEME_FRAME_INDEX]      = __WHITE,
+        [{NAME}_THEME_RULER_INDEX]      = __GRAY,
+        [{NAME}_THEME_BACKGROUND_INDEX] = __BLACK,
     },
-    [WAVE_THEME_LIGHT] = {
-        [WAVE_THEME_FRAME_INDEX]      = __BLACK,
-        [WAVE_THEME_RULER_INDEX]      = __GRAY,
-        [WAVE_THEME_WAVE_CH0_INDEX]   = __ORANGE,
-        [WAVE_THEME_WAVE_CH1_INDEX]   = __DEEP_BLUE,
-        [WAVE_THEME_WAVE_CH2_INDEX]   = __RED,
-        [WAVE_THEME_WAVE_CH3_INDEX]   = __BLUE,
-        [WAVE_THEME_BACKGROUND_INDEX] = __WHITE
-    }
+    [{NAME}_THEME_LIGHT] = {
+        [{NAME}_THEME_FRAME_INDEX]      = __BLACK,
+        [{NAME}_THEME_RULER_INDEX]      = __GRAY,
+        [{NAME}_THEME_BACKGROUND_INDEX] = __WHITE,
+    },
 };
 ```
 
-新组件加入时，需要：
-1. 在文件头部添加 `#include "XXX.h"`
-2. 在 `UI_themeColorTable` 中添加对应主题的指定初始化器块
+每个组件的色表维度精确匹配其主题数 × 颜色索引数，无内存浪费。
 
-### 9.4 颜色取值方式
+**新组件加入时**：仅需在组件自身的 `.c` 文件中定义色表，无需修改任何基础设施文件。
 
-组件内部获取主题颜色：
+### 9.3 颜色取值方式
+
+通过全局宏 `ESTA_THEME_COLOR`（定义在 `core/infra/ui_theme.h`）访问：
 
 ```c
 uint16_t theme_type = {NAME}_CONFIG_MEMBER(inst, theme_type);
-uint16_t color = ESTA_GetThemeColor(theme_type, {NAME}_THEME_FRAME_INDEX);
+uint16_t color = ESTA_THEME_COLOR({NAME}_ColorTable, theme_type, {NAME}_THEME_FRAME_INDEX);
 SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, color);
 ```
 
@@ -968,11 +951,9 @@ typedef struct {
 
 ### 第 11 步：集成主题
 
-1. 定义 `XXX_theme_type` 和 `XXX_theme_color_index_type` 枚举
-2. 定义 `XXX_GetThemeColor` 桥接宏
-3. 在 `core/ui_theme.c` 中添加 `#include "XXX.h"`
-4. 在 `UI_themeColorTable` 中注册颜色值
-5. 更新本规范第九章的槽位分配表
+1. 定义 `XXX_theme_type` 和 `XXX_theme_color_index_type` 枚举（值从 0 开始）
+2. 在组件 `.c` 文件中定义本地静态色表 `XXX_ColorTable[THEME_COUNT][INDEX_COUNT]`
+3. 通过 `ESTA_THEME_COLOR(XXX_ColorTable, theme, idx)` 获取颜色
 
 ### 第 12 步：集成 Profile
 
@@ -1189,15 +1170,14 @@ XXX_StatusTypeDef XXX_ReDraw(int inst) {
 |---|------|:---:|------|
 | 1 | `core/XXX.h` | **新建** | 组件头文件 |
 | 2 | `core/XXX.c` | **新建** | 组件源文件 |
-| 3 | `core/ui_theme.c` | 修改 | 添加 `#include "XXX.h"` + 颜色注册 |
-| 4 | `core/ESTA_Profile.h` | 修改 | 在 `ESTA_Profile_TypeDef` 中添加 XXX 字段 |
-| 5 | `core/ESTA_Profile.c` | 修改 | 添加 ToConfig/Apply 对 XXX 的支持 |
-| 6 | `core/ESTA_Profile.json` | 修改 | 添加默认配置数据 |
-| 7 | `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2` | 修改 | 添加模板渲染逻辑 |
-| 8 | `tools/profile-gui/src-tauri/src/models.rs` | 修改 | 添加 Rust 结构体字段 |
-| 9 | `tools/profile-gui/src/lib/types.ts` | 修改 | 添加 TypeScript 类型字段 |
-| 10 | `simulator/sim_scenario.h` | 修改 | 添加场景测试声明 |
-| 11 | `simulator/sim_scenario.c` | 修改 | 添加场景测试实现 |
-| 12 | `docs/COMPONENT_SPEC.md` | 修改 | 更新槽位分配表和变更记录 |
+| 3 | `core/ESTA_Profile.h` | 修改 | 在 `ESTA_Profile_TypeDef` 中添加 XXX 字段 |
+| 4 | `core/ESTA_Profile.c` | 修改 | 添加 ToConfig/Apply 对 XXX 的支持 |
+| 5 | `core/ESTA_Profile.json` | 修改 | 添加默认配置数据 |
+| 6 | `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2` | 修改 | 添加模板渲染逻辑 |
+| 7 | `tools/profile-gui/src-tauri/src/models.rs` | 修改 | 添加 Rust 结构体字段 |
+| 8 | `tools/profile-gui/src/lib/types.ts` | 修改 | 添加 TypeScript 类型字段 |
+| 9 | `simulator/sim_scenario.h` | 修改 | 添加场景测试声明 |
+| 10 | `simulator/sim_scenario.c` | 修改 | 添加场景测试实现 |
+| 11 | `docs/COMPONENT_SPEC.md` | 修改 | 更新变更记录 |
 
 > **注**：`CMakeLists.txt` 使用 `file(GLOB SOURCES "core/*.c")` 自动收集源文件，第 2 步创建的新 `.c` 文件会被自动纳入构建，无需手动修改构建脚本。

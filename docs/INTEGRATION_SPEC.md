@@ -39,8 +39,6 @@
 |----|------|:---:|:---:|
 | C-组件 | `core/BARCHART.h` | **新建** | ~120 行 |
 | C-组件 | `core/BARCHART.c` | **新建** | ~300 行 |
-| C-主题 | `core/ui_theme.c` | 修改 | +16 行 |
-| C-主题 | `core/ui_theme.h` | 修改 | 视需要调 MAX |
 | C-Profile | `core/ESTA_Profile.h` | 修改 | +15 行 |
 | C-Profile | `core/ESTA_Profile.c` | 修改 | +30 行 |
 | C-Profile | `core/ESTA_Profile.json` | 修改 | +13 行 |
@@ -60,7 +58,7 @@
 - 本文以虚构组件 `NEWCOMP` 为例（前缀 `newcomp_`）
 - 字段命名：C 层 `snake_case`，Rust 层 `snake_case`，TS 层 `snake_case`
 - 实例数最大值默认 2（`MAX_NEWCOMP_INST = 2`）
-- 主题颜色从下一个可用全局槽位开始分配
+- 主题颜色：组件自建本地色表，颜色索引从 0 开始（见 `docs/COMPONENT_SPEC.md`）
 
 ---
 
@@ -78,59 +76,20 @@
 - `Init` / `DeInit` / `ReDraw` 生命周期函数
 - 组件专属显示/更新函数
 
-**颜色索引枚举值从下一个可用全局槽位开始**：
-
-```
-当前占用：WAVE 0-6, BARCHART 7-14
-下一个可用：15
-```
+**颜色索引枚举值从 0 开始**（组件本地，无需全局槽位协调）：
 
 ```c
 typedef enum {
-    NEWCOMP_THEME_FRAME_INDEX      = 15,
-    NEWCOMP_THEME_ITEM_INDEX       = 16,
-    NEWCOMP_THEME_BACKGROUND_INDEX = 17,
+    NEWCOMP_THEME_FRAME_INDEX      = 0,
+    NEWCOMP_THEME_ITEM_INDEX       = 1,
+    NEWCOMP_THEME_BACKGROUND_INDEX = 2,
     NEWCOMP_THEME_INDEX_COUNT
 } NEWCOMP_theme_color_index_type;
 ```
 
-如槽位不够，修改 `core/ui_theme.h`：
+在组件 `.c` 文件中定义本地静态色表（详见 `docs/COMPONENT_SPEC.md` 第九章），无需修改 `ui_theme.h` 或 `ui_theme.c`。
 
-```c
-#define UI_COLOR_SLOT_MAX   32   // 从 16 扩至 32
-```
-
-### 步骤 2：注册主题颜色
-
-**文件**：`core/ui_theme.c`
-
-(1) 添加 `#include "NEWCOMP.h"`：
-
-```c
-#include "ui_theme.h"
-#include "WAVE.h"
-#include "BARCHART.h"
-#include "NEWCOMP.h"          // 新增
-```
-
-(2) 在 `[WAVE_THEME_DEFAULT]` 和 `[WAVE_THEME_LIGHT]` 两个主题行中追加颜色条目：
-
-```c
-[WAVE_THEME_DEFAULT] = {
-    // ... WAVE + BARCHART 现有条目 ...
-    [NEWCOMP_THEME_FRAME_INDEX]      = __WHITE,
-    [NEWCOMP_THEME_ITEM_INDEX]       = __GREEN,
-    [NEWCOMP_THEME_BACKGROUND_INDEX] = __BLACK,
-},
-[WAVE_THEME_LIGHT] = {
-    // ... WAVE + BARCHART 现有条目 ...
-    [NEWCOMP_THEME_FRAME_INDEX]      = __BLACK,
-    [NEWCOMP_THEME_ITEM_INDEX]       = __DEEP_BLUE,
-    [NEWCOMP_THEME_BACKGROUND_INDEX] = __WHITE,
-},
-```
-
-### 步骤 3：扩展 Profile 类型
+### 步骤 2：扩展 Profile 类型
 
 **文件**：`core/ESTA_Profile.h`
 
@@ -169,7 +128,7 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
     const ESTA_Profile_TypeDef *profile);
 ```
 
-### 步骤 4：实现 Profile 函数
+### 步骤 3：实现 Profile 函数
 
 **文件**：`core/ESTA_Profile.c`
 
@@ -226,7 +185,7 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
 }
 ```
 
-### 步骤 5：更新 JSON 数据源
+### 步骤 4：更新 JSON 数据源
 
 **文件**：`core/ESTA_Profile.json`
 
@@ -254,7 +213,7 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
 }
 ```
 
-### 步骤 6：添加模拟器场景数据
+### 步骤 5：添加模拟器场景数据
 
 **文件**：`simulator/sim_scenario.h`
 
@@ -283,7 +242,7 @@ bool SimScenario_NEWCOMP_GetData(const SimScenarioRuntime *runtime,
 }
 ```
 
-### 步骤 7：修改模拟器主循环
+### 步骤 6：修改模拟器主循环
 
 **文件**：`simulator/main.c`
 
@@ -688,13 +647,16 @@ await api.saveProfile({
 
 ---
 
-## 附录 A：主题槽位分配表（持续更新）
+## 附录 A：主题色表结构
 
-| 槽位范围 | 占用数 | 组件 | 状态 |
-|----------|:---:|------|:---:|
-| 0 - 6 | 7 | WAVE | 已注册 |
-| 7 - 14 | 8 | BARCHART | 已注册 |
-| 15 - 31 | 17 | **预留** | — |
+每个组件在自身 `.c` 文件中定义独立本地色表，颜色索引从 0 开始：
+
+| 组件 | 色表 | 维度 |
+|------|------|------|
+| WAVE | `WAVE_ColorTable` | `[2][7]` (DEFAULT/LIGHT × 7 色) |
+| BARCHART | `BARCHART_ColorTable` | `[2][8]` (DEFAULT/LIGHT × 8 色) |
+
+新组件按同样模式自建色表，无需全局槽位协调。详见 `docs/COMPONENT_SPEC.md` 第九章。
 
 ## 附录 B：Profile 字段前缀约定
 
@@ -710,8 +672,6 @@ await api.saveProfile({
 
 - [ ] `core/NEWCOMP.h` 新建
 - [ ] `core/NEWCOMP.c` 新建
-- [ ] `core/ui_theme.c` 添加 include + 颜色注册
-- [ ] `core/ui_theme.h` 调整 `UI_COLOR_SLOT_MAX`（按需）
 - [ ] `core/ESTA_Profile.h` 添加 include + 字段 + 计数 + 函数声明
 - [ ] `core/ESTA_Profile.c` 添加默认值 + ToConfig + Apply
 - [ ] `core/ESTA_Profile.json` 添加字段

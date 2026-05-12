@@ -29,6 +29,27 @@
 // 你可以将其视作库函数中外设的基地址
 WAVE_TypeDef WAVE_State[MAX_WAVE_NUM];
 
+static const uint16_t WAVE_ColorTable[WAVE_THEME_COUNT][WAVE_THEME_INDEX_COUNT] = {
+    [WAVE_THEME_DEFAULT] = {
+        [WAVE_THEME_FRAME_INDEX]      = __WHITE,
+        [WAVE_THEME_RULER_INDEX]      = __GRAY,
+        [WAVE_THEME_WAVE_CH0_INDEX]   = __GREEN,
+        [WAVE_THEME_WAVE_CH1_INDEX]   = __GBLUE,
+        [WAVE_THEME_WAVE_CH2_INDEX]   = __YELLOW,
+        [WAVE_THEME_WAVE_CH3_INDEX]   = __RED,
+        [WAVE_THEME_BACKGROUND_INDEX] = __BLACK,
+    },
+    [WAVE_THEME_LIGHT] = {
+        [WAVE_THEME_FRAME_INDEX]      = __BLACK,
+        [WAVE_THEME_RULER_INDEX]      = __GRAY,
+        [WAVE_THEME_WAVE_CH0_INDEX]   = __ORANGE,
+        [WAVE_THEME_WAVE_CH1_INDEX]   = __DEEP_BLUE,
+        [WAVE_THEME_WAVE_CH2_INDEX]   = __RED,
+        [WAVE_THEME_WAVE_CH3_INDEX]   = __BLUE,
+        [WAVE_THEME_BACKGROUND_INDEX] = __WHITE,
+    },
+};
+
 ESTA_StatusTypeDef WAVE_ConfigSetDisplayRange(WAVE_Config_TypeDef *config,
                                uint16_t display_num_min, uint16_t display_num_max) {
     if(config == NULL) return ESTA_ERROR;
@@ -250,8 +271,8 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
     uint16_t ruler_full_value_x   = WAVE_CONFIG_MEMBER(OSCx, ruler_full_value_x);
     uint16_t ruler_num_digits_x   = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_x);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
-    uint16_t ruler_color = UI_GetThemeColor(theme_type, WAVE_THEME_RULER_INDEX);
+    uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_FRAME_INDEX);
+    uint16_t ruler_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_RULER_INDEX);
 
     uint16_t y_frame_width = (is_display_ruler_x) ? 
             (y_width - CHAR_PIXEL_HEIGHT) : y_width;
@@ -328,7 +349,7 @@ ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
     volatile bool is_display_ruler_x = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x);
     uint16_t ruler_num_digits_y = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
+    uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_FRAME_INDEX);
 
     uint16_t y_frame_width = (is_display_ruler_x) ? 
             (y_width - CHAR_PIXEL_HEIGHT) : y_width;
@@ -355,8 +376,8 @@ ESTA_StatusTypeDef WAVE_CurveClear(int OSCx) {
     volatile bool is_display_ruler_y = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y);
     uint16_t ruler_num_digits_y = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = UI_GetThemeColor(theme_type, WAVE_THEME_FRAME_INDEX);
-    uint16_t bg_color    = UI_GetThemeColor(theme_type, WAVE_THEME_BACKGROUND_INDEX);
+    uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_FRAME_INDEX);
+    uint16_t bg_color    = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_BACKGROUND_INDEX);
 
     SCREEN_FILL(x_origin, y_origin, x_origin + x_width, y_origin + y_width, bg_color);
     SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
@@ -413,7 +434,7 @@ ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
     uint16_t wave_CH_color[MAX_WAVE_CHANNEL] = {0};
     for(int i = 0; i < active_channel_num; i++){
         if(is_channel_enabled(channel_mask, CH0 << i)) {
-            wave_CH_color[i] = UI_GetThemeColor(theme_type, WAVE_THEME_WAVE_CH0_INDEX + i);
+            wave_CH_color[i] = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_WAVE_CH0_INDEX + i);
         }
     }
 

@@ -195,28 +195,24 @@ core/{NAME}.h + core/{NAME}.c   // 组件代码（如 WAVE.h/WAVE.c）
 11. **命名**：Config 用 `TypeDef`，Private 用 `Typedef`（有意区分 Public/Private）
 12. **通道掩码常量 CH0-CH7** 定义在 `helper.h` 中
 
-### 主题颜色槽位
+### 主题颜色系统
 
-| 槽位 | 组件 |
-|:---:|------|
-| 0-6 | WAVE (FRAME, RULER, CH0-3, BG) |
-| 7-15 | 预留 |
+各组件在自身 `.c` 文件中定义独立本地色表，通过全局宏 `ESTA_THEME_COLOR(table, theme, idx)` 访问，颜色索引从 0 开始：
 
-新组件需在 `core/ui_theme.c` 中注册颜色（指定初始化器）。
+| 组件 | 色表 | 维度 |
+|------|------|------|
+| WAVE | `WAVE_ColorTable` | `[2][7]` |
+| BARCHART | `BARCHART_ColorTable` | `[2][8]` |
 
-### 新组件集成需修改的文件（共 16 个）
+新组件自建色表，无需修改 `ui_theme.h` 或 `ui_theme.c`。详见 `docs/COMPONENT_SPEC.md` 第九章。
 
-`core/XXX.h`, `core/XXX.c`（新建），`core/ui_theme.c`, `core/ui_theme.h`, `core/ESTA_Profile.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src-tauri/src/commands.rs`, `tools/profile-gui/src/lib/types.ts`, `tools/profile-gui/src/components/XXXEditor.tsx`（新建），`tools/profile-gui/src/App.tsx`, `simulator/sim_scenario.h/.c`, `simulator/main.c`, `docs/COMPONENT_SPEC.md`
+### 新组件集成需修改的文件（共 14 个）
+
+`core/XXX.h`, `core/XXX.c`（新建），`core/ESTA_Profile.h`, `core/ESTA_Profile.c`, `core/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src-tauri/src/commands.rs`, `tools/profile-gui/src/lib/types.ts`, `tools/profile-gui/src/components/XXXEditor.tsx`（新建），`tools/profile-gui/src/App.tsx`, `simulator/sim_scenario.h/.c`, `simulator/main.c`, `docs/COMPONENT_SPEC.md`
 
 完整集成步骤参见 `docs/INTEGRATION_SPEC.md`（三层架构：C核心 → Rust后端 → TS前端，含精确修改位置和代码模板）。
 
-### 主题颜色槽位分配
-
-| 槽位 | 组件 |
-|:---:|------|
-| 0-6 | WAVE (FRAME, RULER, CH0-3, BG) |
-| 7-14 | BARCHART (FRAME, AXIS, BAR, BAR_CH1-3, BG, LABEL) |
-| 15-31 | 预留 |
+profile-gui 侧的集成模式（TS 前端 + Rust 后端 + Tera 模板）详见 `docs/PROFILE_GUI_SPEC.md`（含新组件 6 步骤、新事件 v1/v2 模式、App.tsx 核心模式、修改速查表）。
 
 ### Profile 字段前缀约定
 
