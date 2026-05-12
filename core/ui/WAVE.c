@@ -487,3 +487,75 @@ ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
 
     return ESTA_OK;
 }
+
+ESTA_StatusTypeDef WAVE_CurveDrawBatch(int OSCx, int ch_idx,
+                        const uint16_t *data, uint16_t count) {
+    if (!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
+    if (!IS_VALID_CHNUM(ch_idx)) return ESTA_ERROR;
+    if (data == NULL || count == 0) return ESTA_ERROR;
+
+    uint8_t channel_mask = WAVE_CONFIG_MEMBER(OSCx, channel_mask);
+    if (!is_channel_enabled(channel_mask, (uint8_t)(CH0 << ch_idx))) return ESTA_ERROR;
+
+    uint16_t x_origin                = WAVE_CONFIG_MEMBER(OSCx, x_origin);
+    uint16_t y_origin                = WAVE_CONFIG_MEMBER(OSCx, y_origin);
+    uint16_t y_width                 = WAVE_CONFIG_MEMBER(OSCx, y_width);
+    uint16_t x_width                 = WAVE_CONFIG_MEMBER(OSCx, x_width);
+    volatile bool is_display_ruler_x = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x);
+    volatile bool is_display_ruler_y = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y);
+    uint16_t ruler_num_digits_y      = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
+    uint16_t display_num_min         = WAVE_CONFIG_MEMBER(OSCx, display_num_min);
+    uint16_t display_num_max         = WAVE_CONFIG_MEMBER(OSCx, display_num_max);
+    uint16_t theme_type              = WAVE_CONFIG_MEMBER(OSCx, theme_type);
+    volatile bool is_auto_clear      = WAVE_CONFIG_MEMBER(OSCx, is_auto_clear);
+
+    uint16_t y_frame_width = (is_display_ruler_x) ?
+            (y_width - CHAR_PIXEL_HEIGHT) : y_width;
+    uint16_t x_frame_width = (is_display_ruler_y) ?
+            (x_width - ruler_num_digits_y * CHAR_PIXEL_WIDTH) : x_width;
+    uint16_t display_range = display_num_max - display_num_min;
+
+    uint16_t wave_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,
+                            WAVE_THEME_WAVE_CH0_INDEX + ch_idx);
+
+    uint16_t last_index  = WAVE_PRIVATE_MEMBER(OSCx, last_index);
+    uint16_t x_coor_last = WAVE_PRIVATE_MEMBER(OSCx, x_coor_last);
+    uint16_t y_coor_last = WAVE_PRIVATE_MEMBER(OSCx, y_coor_last_CH[ch_idx]);
+
+    for (uint16_t i = 0; i < count; i++) {
+        if (last_index >= x_frame_width) {
+            if (!is_auto_clear) {
+                WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
+                WAVE_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
+                return ESTA_FULL;
+            }
+            WAVE_CurveClear(OSCx);
+            last_index  = 0;
+            x_coor_last = x_origin;
+            y_coor_last = 0;
+        }
+
+        if (ui_is_out_of_bound(display_num_max, display_num_min, data[i]))
+            return ESTA_ERROR;
+
+        uint16_t y_display_value = ui_limit(display_num_max, display_num_min, data[i]);
+        uint16_t y_coor = y_origin + y_frame_width -
+                ui_coor_normal(y_frame_width, display_range, y_display_value);
+        uint16_t x_coor = x_origin + last_index;
+
+        if (last_index > 0) {
+            SCREEN_DRAW_LINE(x_coor, y_coor,
+                x_coor_last, y_coor_last, wave_color);
+        }
+
+        y_coor_last = y_coor;
+        x_coor_last = x_coor;
+        last_index++;
+    }
+
+    WAVE_PRIVATE_MEMBER(OSCx, y_coor_last_CH[ch_idx]) = y_coor_last;
+    WAVE_PRIVATE_MEMBER(OSCx, x_coor_last) = x_coor_last;
+    WAVE_PRIVATE_MEMBER(OSCx, last_index)  = last_index;
+
+    return ESTA_OK;
+}

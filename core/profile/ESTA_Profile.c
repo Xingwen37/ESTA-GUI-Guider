@@ -3,7 +3,7 @@
 #include <string.h>
 
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
-    .inst_count = 1,
+    .inst_count = 2,
     .bar_inst_count = 1,
     .button_count = 4,
     .profiles = {
@@ -16,7 +16,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .display_num_min = 0,
             .display_num_max = 4095,
             .channel_num = 4,
-            .channel_mask = CH1 | CH2 | CH3,
+            .channel_mask = CH0 | CH1 | CH2 | CH3,
             .is_display_ruler_y = true,
             .ruler_y = { 1000, 2000, 3000, 4000, 0 },
             .ruler_count_y = 4,
@@ -29,7 +29,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_num_digits_x = 8,
             .theme_type = WAVE_THEME_LIGHT,
             .is_auto_clear = true,
-            .bar_x_origin = 6,
+            .is_use_batch_draw = true,
+            .bar_x_origin = 200,
             .bar_y_origin = 125,
             .bar_x_width = 130,
             .bar_y_width = 110,
@@ -41,6 +42,42 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .bar_is_display_value = true,
             .bar_is_display_axis = true,
             .bar_theme_type = BARCHART_THEME_LIGHT
+        },
+
+        {
+            .x_origin = 0,
+            .y_origin = 125,
+            .x_width = 200,
+            .y_width = 120,
+            .display_num_min = 0,
+            .display_num_max = 4095,
+            .channel_num = 4,
+            .channel_mask = CH0 | CH1 | CH2 | CH3,
+            .is_display_ruler_y = true,
+            .ruler_y = { 1000, 2000, 3000, 4000, 0 },
+            .ruler_count_y = 4,
+            .ruler_num_digits_y = 4,
+            .is_display_ruler_x = true,
+            .ruler_x = { 30, 50, 90, 0, 0 },
+            .ruler_count_x = 3,
+            .ruler_zero_value_x = 0,
+            .ruler_full_value_x = 100,
+            .ruler_num_digits_x = 8,
+            .theme_type = WAVE_THEME_DEFAULT,
+            .is_auto_clear = true,
+            .is_use_batch_draw = true,
+            .bar_x_origin = 10,
+            .bar_y_origin = 125,
+            .bar_x_width = 300,
+            .bar_y_width = 110,
+            .bar_display_num_min = 0,
+            .bar_display_num_max = 100,
+            .bar_count = 6,
+            .bar_width = 0,
+            .bar_spacing = 0,
+            .bar_is_display_value = true,
+            .bar_is_display_axis = true,
+            .bar_theme_type = BARCHART_THEME_DEFAULT
         }
 
     }

@@ -24,6 +24,7 @@ const EMPTY_PROFILE: EstaProfile = {
   ruler_num_digits_x: 8,
   theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
+  is_use_batch_draw: false,
   bar_x_origin: 10, bar_y_origin: 125, bar_x_width: 300, bar_y_width: 110,
   bar_display_num_min: 0, bar_display_num_max: 100,
   bar_count: 6, bar_width: 0, bar_spacing: 0,

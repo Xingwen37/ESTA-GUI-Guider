@@ -153,5 +153,7 @@ ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx);
 ESTA_StatusTypeDef WAVE_CurveClear(int OSCx);
 ESTA_StatusTypeDef WAVE_ReDraw(int OSCx);
 ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]);
+ESTA_StatusTypeDef WAVE_CurveDrawBatch(int OSCx, int ch_idx,
+                        const uint16_t *data, uint16_t count);
 
 #endif

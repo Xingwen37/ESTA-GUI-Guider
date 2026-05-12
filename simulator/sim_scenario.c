@@ -45,6 +45,16 @@ bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, u
     return true;
 }
 
+bool SimScenario_GetBatchData(const SimScenarioRuntime *runtime, uint16_t *buf, uint16_t count) {
+    if (runtime == NULL || buf == NULL || count == 0) return false;
+    if (runtime->signal_lut == NULL || runtime->signal_len == 0) return false;
+
+    for (uint16_t i = 0; i < count; i++) {
+        buf[i] = runtime->signal_lut[(runtime->tick + i) % runtime->signal_len];
+    }
+    return true;
+}
+
 void SimScenario_Tick(SimScenarioRuntime *runtime) {
     if (runtime == NULL || runtime->signal_len == 0) return;
     runtime->tick = (runtime->tick + 1U) % runtime->signal_len;

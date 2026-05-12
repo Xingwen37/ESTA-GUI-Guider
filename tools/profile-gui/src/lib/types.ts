@@ -19,6 +19,7 @@
   ruler_num_digits_x: number;
   theme_type: string;
   is_auto_clear: boolean;
+  is_use_batch_draw: boolean;
   bar_x_origin: number;
   bar_y_origin: number;
   bar_x_width: number;

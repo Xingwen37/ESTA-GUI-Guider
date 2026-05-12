@@ -93,6 +93,14 @@ export default function ProfileEditor({ profile, onChange }: Props) {
             onChange={(e) => set("is_auto_clear", e.target.checked)}
           />
         </div>
+        <div className="form-row">
+          <label>is_use_batch_draw</label>
+          <input
+            type="checkbox"
+            checked={profile.is_use_batch_draw}
+            onChange={(e) => set("is_use_batch_draw", e.target.checked)}
+          />
+        </div>
       </fieldset>
 
       {/* 通道使能 */}

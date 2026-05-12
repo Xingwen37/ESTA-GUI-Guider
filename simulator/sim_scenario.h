@@ -19,6 +19,7 @@ typedef struct {
 bool SimScenario_LoadDefault(SimScenarioRuntime *runtime);
 
 bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, uint16_t data_ch[MAX_WAVE_CHANNEL]);
+bool SimScenario_GetBatchData(const SimScenarioRuntime *runtime, uint16_t *buf, uint16_t count);
 void SimScenario_Tick(SimScenarioRuntime *runtime);
 
 bool SimScenario_BARCHART_GetData(const SimScenarioRuntime *runtime, uint16_t bar_data[BARCHART_MAX_BARS], uint16_t bar_count);

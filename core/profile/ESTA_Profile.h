@@ -37,6 +37,7 @@ typedef struct {
 
     WAVE_theme_type theme_type;
     bool is_auto_clear;
+    bool is_use_batch_draw;
 
     /* ---- BARCHART 组件字段 ---- */
     uint16_t bar_x_origin;

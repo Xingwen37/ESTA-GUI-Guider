@@ -22,6 +22,7 @@ pub struct EstaProfile {
     pub ruler_num_digits_x: u16,
     pub theme_type: String,
     pub is_auto_clear: bool,
+    pub is_use_batch_draw: bool,
     pub bar_x_origin: u16,
     pub bar_y_origin: u16,
     pub bar_x_width: u16,
