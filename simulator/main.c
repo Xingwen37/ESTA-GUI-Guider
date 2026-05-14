@@ -127,17 +127,29 @@
 
       uint16_t data_ESTA[SIM_SCENARIO_WAVE_COUNT][MAX_WAVE_CHANNEL] = {0};
       uint16_t data_BARCHART[SIM_SCENARIO_BARCHART_COUNT][BARCHART_MAX_BARS] = {0};
-      /* batch 模式：每实例每通道独立缓冲区 + 游标 */
+      /* batch 模式：每实例每通道独立滑动窗口 */
       uint16_t ch_buf[SIM_SCENARIO_WAVE_COUNT][MAX_WAVE_CHANNEL][SIM_BATCH_MAX_POINTS];
-      uint16_t batch_buf_idx[SIM_SCENARIO_WAVE_COUNT];
-      bool     batch_mode_active[SIM_SCENARIO_WAVE_COUNT];
+      uint16_t batch_window_len[SIM_SCENARIO_WAVE_COUNT];
       uint16_t bar_count[SIM_SCENARIO_BARCHART_COUNT] = {0};
 
       for (int i = 0; i < SIM_SCENARIO_WAVE_COUNT; i++) {
           memset(ch_buf[i], 0, sizeof(ch_buf[i]));
-          batch_buf_idx[i] = 0;
-          batch_mode_active[i] = (i < inst_count) ?
-              profiles->wave_profiles[i].is_use_batch_draw : false;
+          batch_window_len[i] = 0;
+      }
+
+      for (int i = 0; i < inst_count; i++) {
+          uint16_t xw = WAVE_CONFIG_MEMBER(i, x_width);
+          uint16_t rndy = WAVE_CONFIG_MEMBER(i, ruler_num_digits_y);
+          volatile bool idry = WAVE_CONFIG_MEMBER(i, is_display_ruler_y);
+          uint16_t label_width = rndy * CHAR_PIXEL_WIDTH;
+          uint16_t xfw = xw;
+          if (idry) {
+              xfw = (xw > label_width) ? (xw - label_width) : 0;
+          }
+          if (xfw > SIM_BATCH_MAX_POINTS) {
+              xfw = SIM_BATCH_MAX_POINTS;
+          }
+          batch_window_len[i] = xfw;
       }
 
       for (int i = 0; i < bar_inst_count; i++) {
@@ -172,46 +184,27 @@
                   is_running = false;
                   break;
               }
-              /* 支持 batch / 增量两种绘制模式 */
-              if (batch_mode_active[i]) {
-                  uint16_t xw = WAVE_CONFIG_MEMBER(i, x_width);
-                  uint16_t rndy = WAVE_CONFIG_MEMBER(i, ruler_num_digits_y);
-                  volatile bool idry = WAVE_CONFIG_MEMBER(i, is_display_ruler_y);
-                  uint16_t label_width = rndy * CHAR_PIXEL_WIDTH;
-                  uint16_t xfw = xw;
-                  if (idry) {
-                      xfw = (xw > label_width) ? (xw - label_width) : 0;
+              uint16_t xfw = batch_window_len[i];
+              if (xfw == 0) {
+                  continue;
+              }
+
+              uint8_t mask = WAVE_CONFIG_MEMBER(i, channel_mask);
+              for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
+                  if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
+                      memmove(&ch_buf[i][ch][0], &ch_buf[i][ch][1],
+                              (xfw - 1U) * sizeof(ch_buf[i][ch][0]));
+                      ch_buf[i][ch][xfw - 1U] = data_ESTA[i][ch];
                   }
-                  if (xfw > SIM_BATCH_MAX_POINTS) {
-                      xfw = SIM_BATCH_MAX_POINTS;
-                  }
-                  if (xfw == 0) {
-                      continue;
-                  }
-                  uint8_t mask = WAVE_CONFIG_MEMBER(i, channel_mask);
-                  for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
-                      if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
-                          ch_buf[i][ch][batch_buf_idx[i]] = data_ESTA[i][ch];
-                      }
-                  }
-                  batch_buf_idx[i]++;
-                  if (batch_buf_idx[i] >= xfw) {
-                      WAVE_CurveClear(WAVE_INST(i));
-                      for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
-                          if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
-                              WAVE_WRITE_PRIVATE(i, last_index, 0);
-                              WAVE_WRITE_PRIVATE(i, x_coor_last,
-                                  WAVE_CONFIG_MEMBER(i, x_origin));
-                              WAVE_CurveDrawBatch(WAVE_INST(i), ch,
-                                  ch_buf[i][ch], batch_buf_idx[i]);
-                          }
-                      }
-                      batch_buf_idx[i] = 0;
-                  }
-              } else {
-                  if (WAVE_CurveDraw(WAVE_INST(i), data_ESTA[i]) == ESTA_ERROR) {
-                      is_running = false;
-                      break;
+              }
+
+              WAVE_CurveClear(WAVE_INST(i));
+              for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
+                  if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
+                      WAVE_WRITE_PRIVATE(i, last_index, 0);
+                      WAVE_WRITE_PRIVATE(i, x_coor_last,
+                          WAVE_CONFIG_MEMBER(i, x_origin));
+                      WAVE_CurveDrawBatch(WAVE_INST(i), ch, ch_buf[i][ch], xfw);
                   }
               }
           }
@@ -239,22 +232,6 @@
                                              ? WAVE_THEME_LIGHT : WAVE_THEME_DEFAULT;
                       WAVE_WRITE_CONFIG(0, theme_type, next);
                       WAVE_ReDraw(WAVE_INST(0));
-                  }
-                  if (evt.event_type == ESTA_EVENT_BUTTON_PRESS && evt.button_id == 1 &&
-                      inst_count > 0) {
-                      batch_mode_active[0] = !batch_mode_active[0];
-                      WAVE_CurveClear(WAVE_INST(0));
-                      batch_buf_idx[0] = 0;
-                      printf("[BTN_1] WAVE0 batch draw: %s\n",
-                             batch_mode_active[0] ? "ON" : "OFF");
-                  }
-                  if (evt.event_type == ESTA_EVENT_BUTTON_PRESS && evt.button_id == 2 &&
-                      inst_count > 1) {
-                      batch_mode_active[1] = !batch_mode_active[1];
-                      WAVE_CurveClear(WAVE_INST(1));
-                      batch_buf_idx[1] = 0;
-                      printf("[BTN_2] WAVE1 batch draw: %s\n",
-                             batch_mode_active[1] ? "ON" : "OFF");
                   }
               }
           }
