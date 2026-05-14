@@ -21,6 +21,8 @@
             ILI9341_fill(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
             ILI9341_draw_num(x, y, num, len, COLOR)
+#define SCREEN_DRAW_STRING(x, y, str, len, COLOR) \
+            ILI9341_draw_string(x, y, str, len, COLOR)
 
 #elif defined(SCREEN_USE_SDL2)
 #include "esta_port_sdl2.h"
@@ -33,6 +35,8 @@
             ESTA_SDL2_Fill(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_NUM(x, y, num, len, COLOR) \
             ESTA_SDL2_DrawNum(x, y, num, len, COLOR)
+#define SCREEN_DRAW_STRING(x, y, str, len, COLOR) \
+            ESTA_SDL2_DrawString(x, y, str, len, COLOR)
 
 #else
 // 自定义屏幕驱动
@@ -40,6 +44,7 @@
 #define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR)
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_NUM(x, y, num, len, COLOR)
+#define SCREEN_DRAW_STRING(x, y, str, len, COLOR)
 #endif
 
 /* ================== 字体度量 ================== */

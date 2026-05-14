@@ -1,6 +1,7 @@
 ﻿#include "esta_port_sdl2.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <string.h>
 #include "infra/font.h" // 引入你的字库
 
 // 内部维护的 SDL 上下文
@@ -96,13 +97,11 @@ void ESTA_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t
     SDL_RenderFillRect(g_renderer, &rect);
 }
 
-void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
-    char buf[16];
-    // 格式化为带前导零的字符串
-    snprintf(buf, sizeof(buf), "%0*u", len, num); 
-
+void ESTA_SDL2_DrawString(uint16_t x, uint16_t y, const char *str, uint8_t len, uint16_t color) {
+    if (str == NULL) return;
     for (int i = 0; i < len; i++) {
-        char c = buf[i];
+        char c = str[i];
+        if (c == '\0') break;
         if (c >= ' ' && c <= '~') { // 确保在 asc2_1608 索引范围内
             int offset = (c - ' ') * 16;
             for (int row = 0; row < 16; row++) {
@@ -117,4 +116,11 @@ void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16
         }
         x += 8; // 渲染完一个字符，X轴偏移一个字宽
     }
+}
+
+void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
+    char buf[16];
+    // 格式化为带前导零的字符串
+    snprintf(buf, sizeof(buf), "%0*u", len, num);
+    ESTA_SDL2_DrawString(x, y, buf, (uint8_t)strlen(buf), color);
 }

@@ -1,4 +1,4 @@
-﻿mod commands;
+mod commands;
 mod models;
 
 use commands::AppState;
@@ -6,7 +6,12 @@ use commands::AppState;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let repo_root = commands::repo_root();
-    let template_path = repo_root.join("tools").join("profile-gui").join("src-tauri").join("templates").join("*.j2");
+    let template_path = repo_root
+        .join("tools")
+        .join("profile-gui")
+        .join("src-tauri")
+        .join("templates")
+        .join("*.j2");
     let template_glob = template_path.to_string_lossy().to_string();
 
     let tera = match tera::Tera::new(&template_glob) {

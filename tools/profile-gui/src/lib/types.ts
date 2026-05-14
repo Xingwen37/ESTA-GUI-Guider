@@ -37,12 +37,43 @@ export interface BarChartProfile {
   theme_type: string;
 }
 
+export interface TableRowProfile {
+  label: string;
+  value_kind: string;
+  number_type: string;
+  unit: string;
+  precision: number;
+  default_u32: number;
+  default_float: number;
+  default_text: string;
+}
+
+export interface TableProfile {
+  x_origin: number;
+  y_origin: number;
+  x_width: number;
+  y_width: number;
+  row_count: number;
+  row_height: number;
+  label_col_width: number;
+  value_col_width: number;
+  unit_col_width: number;
+  is_auto_col_width: boolean;
+  is_show_frame: boolean;
+  is_show_row_line: boolean;
+  is_fill_background: boolean;
+  theme_type: string;
+  rows: TableRowProfile[];
+}
+
 export interface ProfileSet {
   wave_inst_count: number;
   bar_inst_count: number;
+  table_inst_count: number;
   button_count: number;
   wave_profiles: WaveProfile[];
   bar_profiles: BarChartProfile[];
+  table_profiles: TableProfile[];
 }
 
 export const WAVE_THEME_OPTIONS = [
@@ -55,9 +86,27 @@ export const BAR_THEME_OPTIONS = [
   ["BARCHART_THEME_LIGHT", "Light"],
 ] as const;
 
+export const TABLE_THEME_OPTIONS = [
+  ["TABLE_THEME_DEFAULT", "Default"],
+  ["TABLE_THEME_LIGHT", "Light"],
+] as const;
+
+export const TABLE_VALUE_KIND_OPTIONS = [
+  ["TABLE_VALUE_NUMBER", "Number"],
+  ["TABLE_VALUE_TEXT", "Text"],
+] as const;
+
+export const TABLE_NUMBER_TYPE_OPTIONS = [
+  ["TABLE_NUMBER_UINT32", "UInt32"],
+  ["TABLE_NUMBER_FLOAT", "Float"],
+] as const;
+
 export const MAX_WAVE_INST = 4;
 export const MAX_BAR_INST = 4;
+export const MAX_TABLE_INST = 4;
 export const MAX_BUTTON_COUNT = 8;
 export const MAX_WAVE_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 5;
 export const MAX_RULER_Y_NUM = 5;
+export const MAX_TABLE_ROWS = 8;
+export const MAX_TABLE_STRING_LEN = 16;

@@ -4,7 +4,7 @@ use std::process::Command;
 use serde_json::json;
 use tauri::State;
 
-use crate::models::{BarChartProfile, ProfileSet, WaveProfile};
+use crate::models::{BarChartProfile, ProfileSet, TableProfile, TableRowProfile, WaveProfile};
 
 const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
 const PROFILE_C: &str = "core/profile/ESTA_Profile.c";
@@ -95,12 +95,54 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         })
         .collect();
 
+    let table_profiles_for_template: Vec<serde_json::Value> = data
+        .table_profiles
+        .iter()
+        .map(|p| {
+            let rows: Vec<serde_json::Value> = p
+                .rows
+                .iter()
+                .map(|row| {
+                    json!({
+                        "label": c_string_literal(&row.label),
+                        "value_kind": row.value_kind,
+                        "number_type": row.number_type,
+                        "unit": c_string_literal(&row.unit),
+                        "precision": row.precision,
+                        "default_u32": row.default_u32,
+                        "default_float": row.default_float,
+                        "default_text": c_string_literal(&row.default_text),
+                    })
+                })
+                .collect();
+            json!({
+                "x_origin": p.x_origin,
+                "y_origin": p.y_origin,
+                "x_width": p.x_width,
+                "y_width": p.y_width,
+                "row_count": p.row_count,
+                "row_height": p.row_height,
+                "label_col_width": p.label_col_width,
+                "value_col_width": p.value_col_width,
+                "unit_col_width": p.unit_col_width,
+                "is_auto_col_width": p.is_auto_col_width,
+                "is_show_frame": p.is_show_frame,
+                "is_show_row_line": p.is_show_row_line,
+                "is_fill_background": p.is_fill_background,
+                "theme_type": p.theme_type,
+                "rows": rows,
+            })
+        })
+        .collect();
+
     let mut ctx = tera::Context::new();
     ctx.insert("wave_inst_count", &data.wave_inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
+    ctx.insert("table_inst_count", &data.table_inst_count);
     ctx.insert("button_count", &data.button_count);
     ctx.insert("wave_profiles", &wave_profiles_for_template);
     ctx.insert("bar_profiles", &bar_profiles_for_template);
+    ctx.insert("table_profiles", &table_profiles_for_template);
 
     let c_code = state
         .tera
@@ -118,6 +160,23 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     std::fs::write(&json_path, json).map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+fn c_string_literal(value: &str) -> String {
+    let mut out = String::from("\"");
+    for ch in value.chars().take(16) {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_ascii_graphic() || c == ' ' => out.push(c),
+            _ => out.push('?'),
+        }
+    }
+    out.push('"');
+    out
 }
 
 #[tauri::command]
@@ -164,6 +223,7 @@ fn default_profile() -> ProfileSet {
     ProfileSet {
         wave_inst_count: 2,
         bar_inst_count: 1,
+        table_inst_count: 1,
         button_count: 4,
         wave_profiles: vec![
             default_wave_profile(10, 0, "WAVE_THEME_LIGHT", true),
@@ -178,6 +238,7 @@ fn default_profile() -> ProfileSet {
             20,
             "BARCHART_THEME_LIGHT",
         )],
+        table_profiles: vec![default_table_profile()],
     }
 }
 
@@ -209,6 +270,57 @@ fn default_wave_profile(
         theme_type: theme_type.into(),
         is_auto_clear: true,
         is_use_batch_draw,
+    }
+}
+
+fn default_table_profile() -> TableProfile {
+    TableProfile {
+        x_origin: 210,
+        y_origin: 0,
+        x_width: 110,
+        y_width: 72,
+        row_count: 3,
+        row_height: 20,
+        label_col_width: 32,
+        value_col_width: 48,
+        unit_col_width: 24,
+        is_auto_col_width: true,
+        is_show_frame: true,
+        is_show_row_line: false,
+        is_fill_background: true,
+        theme_type: "TABLE_THEME_LIGHT".into(),
+        rows: vec![
+            TableRowProfile {
+                label: "Vpp".into(),
+                value_kind: "TABLE_VALUE_NUMBER".into(),
+                number_type: "TABLE_NUMBER_UINT32".into(),
+                unit: "mV".into(),
+                precision: 0,
+                default_u32: 1000,
+                default_float: 0.0,
+                default_text: "".into(),
+            },
+            TableRowProfile {
+                label: "Fre".into(),
+                value_kind: "TABLE_VALUE_NUMBER".into(),
+                number_type: "TABLE_NUMBER_UINT32".into(),
+                unit: "Hz".into(),
+                precision: 0,
+                default_u32: 1230,
+                default_float: 0.0,
+                default_text: "".into(),
+            },
+            TableRowProfile {
+                label: "Mode".into(),
+                value_kind: "TABLE_VALUE_TEXT".into(),
+                number_type: "TABLE_NUMBER_UINT32".into(),
+                unit: "".into(),
+                precision: 0,
+                default_u32: 0,
+                default_float: 0.0,
+                default_text: "AUTO".into(),
+            },
+        ],
     }
 }
 

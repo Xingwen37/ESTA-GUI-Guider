@@ -81,6 +81,14 @@
           bar_inst_count = ESTA_PROFILE_MAX_BARCHART_INST;
       }
 
+      int table_inst_count = profiles->table_inst_count;
+      if (table_inst_count > TABLE_MAX_NUM) {
+          table_inst_count = TABLE_MAX_NUM;
+      }
+      if (table_inst_count > ESTA_PROFILE_MAX_TABLE_INST) {
+          table_inst_count = ESTA_PROFILE_MAX_TABLE_INST;
+      }
+
       /* BARCHART 初始化 */
       for (int i = 0; i < bar_inst_count; i++) {
           if (ESTA_Profile_ApplyBARCHART(BARCHART_INST(i), &profiles->bar_profiles[i]) != ESTA_OK) {
@@ -90,6 +98,20 @@
           }
           if (BARCHART_ReDraw(BARCHART_INST(i)) != ESTA_OK) {
               printf("BARCHART_ReDraw failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
+              return 1;
+          }
+      }
+
+      /* TABLE 初始化 */
+      for (int i = 0; i < table_inst_count; i++) {
+          if (ESTA_Profile_ApplyTABLE(TABLE_INST(i), &profiles->table_profiles[i]) != ESTA_OK) {
+              printf("ESTA_Profile_ApplyTABLE failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
+              return 1;
+          }
+          if (TABLE_ReDraw(TABLE_INST(i)) != ESTA_OK) {
+              printf("TABLE_ReDraw failed at inst=%d.\n", i);
               ESTA_SDL2_Quit();
               return 1;
           }
@@ -199,6 +221,11 @@
               if (SimScenario_BARCHART_GetData(&scenario, data_BARCHART[i], bar_count[i])) {
                   BARCHART_UpdateAll(BARCHART_INST(i), data_BARCHART[i], bar_count[i]);
               }
+          }
+
+          for (int i = 0; i < table_inst_count; i++) {
+              TABLE_UpdateUInt32(TABLE_INST(i), 0, data_ESTA[0][0]);
+              TABLE_UpdateUInt32(TABLE_INST(i), 1, (uint32_t)(1000U + scenario.tick * 10U));
           }
 
           /* 消费事件队列：组件响应外部按键 */

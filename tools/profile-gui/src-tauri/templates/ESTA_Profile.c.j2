@@ -5,6 +5,7 @@
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .wave_inst_count = {{ wave_inst_count }},
     .bar_inst_count = {{ bar_inst_count }},
+    .table_inst_count = {{ table_inst_count }},
     .button_count = {{ button_count }},
     .wave_profiles = {
 {% for p in wave_profiles %}
@@ -48,6 +49,40 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .is_display_value = {{ p.is_display_value }},
             .is_display_axis = {{ p.is_display_axis }},
             .theme_type = {{ p.theme_type }}
+        }{% if not loop.last %},{% endif %}
+{% endfor %}
+    },
+    .table_profiles = {
+{% for p in table_profiles %}
+        {
+            .x_origin = {{ p.x_origin }},
+            .y_origin = {{ p.y_origin }},
+            .x_width = {{ p.x_width }},
+            .y_width = {{ p.y_width }},
+            .row_count = {{ p.row_count }},
+            .row_height = {{ p.row_height }},
+            .label_col_width = {{ p.label_col_width }},
+            .value_col_width = {{ p.value_col_width }},
+            .unit_col_width = {{ p.unit_col_width }},
+            .is_auto_col_width = {{ p.is_auto_col_width }},
+            .is_show_frame = {{ p.is_show_frame }},
+            .is_show_row_line = {{ p.is_show_row_line }},
+            .is_fill_background = {{ p.is_fill_background }},
+            .theme_type = {{ p.theme_type }},
+            .rows = {
+{% for row in p.rows %}
+                {
+                    .label = {{ row.label }},
+                    .value_kind = {{ row.value_kind }},
+                    .number_type = {{ row.number_type }},
+                    .unit = {{ row.unit }},
+                    .precision = {{ row.precision }},
+                    .default_u32 = {{ row.default_u32 }},
+                    .default_float = {{ row.default_float }},
+                    .default_text = {{ row.default_text }}
+                }{% if not loop.last %},{% endif %}
+{% endfor %}
+            }
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     }
@@ -116,6 +151,35 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx,
         return ESTA_ERROR;
     }
     return BARCHART_Init(inst_idx, &config);
+}
+
+bool ESTA_Profile_ToTABLE_Config(const ESTA_TableProfile_TypeDef *profile,
+                                 TABLE_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    if (ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->x_origin,
+                                      profile->y_origin, profile->x_width,
+                                      profile->y_width) != ESTA_OK) return false;
+    if (TABLE_ConfigSetRows(out_config, profile->rows, profile->row_count) != ESTA_OK) return false;
+    if (TABLE_ConfigSetLayout(out_config, profile->row_height, profile->label_col_width,
+                              profile->value_col_width, profile->unit_col_width,
+                              profile->is_auto_col_width) != ESTA_OK) return false;
+    if (TABLE_ConfigSetDisplayOptions(out_config, profile->is_show_frame,
+                                      profile->is_show_row_line,
+                                      profile->is_fill_background) != ESTA_OK) return false;
+    if (TABLE_ConfigSetTheme(out_config, profile->theme_type) != ESTA_OK) return false;
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyTABLE(int inst_idx,
+                                           const ESTA_TableProfile_TypeDef *profile) {
+    TABLE_Config_TypeDef config;
+    if (!ESTA_Profile_ToTABLE_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return TABLE_Init(inst_idx, &config);
 }
 
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {

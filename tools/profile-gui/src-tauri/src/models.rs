@@ -42,12 +42,47 @@ pub struct BarChartProfile {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TableRowProfile {
+    pub label: String,
+    pub value_kind: String,
+    pub number_type: String,
+    pub unit: String,
+    pub precision: u8,
+    pub default_u32: u32,
+    pub default_float: f32,
+    pub default_text: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TableProfile {
+    pub x_origin: u16,
+    pub y_origin: u16,
+    pub x_width: u16,
+    pub y_width: u16,
+    pub row_count: u16,
+    pub row_height: u16,
+    pub label_col_width: u16,
+    pub value_col_width: u16,
+    pub unit_col_width: u16,
+    pub is_auto_col_width: bool,
+    pub is_show_frame: bool,
+    pub is_show_row_line: bool,
+    pub is_fill_background: bool,
+    pub theme_type: String,
+    pub rows: Vec<TableRowProfile>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProfileSet {
     pub wave_inst_count: u16,
     pub bar_inst_count: u16,
+    #[serde(default)]
+    pub table_inst_count: u16,
     pub button_count: u16,
     pub wave_profiles: Vec<WaveProfile>,
     pub bar_profiles: Vec<BarChartProfile>,
+    #[serde(default)]
+    pub table_profiles: Vec<TableProfile>,
 }
 
 impl WaveProfile {

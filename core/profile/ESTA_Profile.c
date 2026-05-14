@@ -3,8 +3,9 @@
 #include <string.h>
 
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
-    .wave_inst_count = 2,
+    .wave_inst_count = 1,
     .bar_inst_count = 1,
+    .table_inst_count = 1,
     .button_count = 4,
     .wave_profiles = {
 
@@ -30,30 +31,6 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .theme_type = WAVE_THEME_LIGHT,
             .is_auto_clear = true,
             .is_use_batch_draw = true
-        },
-
-        {
-            .x_origin = 0,
-            .y_origin = 125,
-            .x_width = 200,
-            .y_width = 120,
-            .display_num_min = 0,
-            .display_num_max = 4095,
-            .channel_num = 4,
-            .channel_mask = CH0 | CH1 | CH2 | CH3,
-            .is_display_ruler_y = true,
-            .ruler_y = { 1000, 2000, 3000, 4000, 0 },
-            .ruler_count_y = 4,
-            .ruler_num_digits_y = 4,
-            .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0 },
-            .ruler_count_x = 3,
-            .ruler_zero_value_x = 0,
-            .ruler_full_value_x = 100,
-            .ruler_num_digits_x = 8,
-            .theme_type = WAVE_THEME_DEFAULT,
-            .is_auto_clear = true,
-            .is_use_batch_draw = false
         }
 
     },
@@ -72,6 +49,51 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .is_display_value = true,
             .is_display_axis = true,
             .theme_type = BARCHART_THEME_LIGHT
+        }
+
+    },
+    .table_profiles = {
+
+        {
+            .x_origin = 210,
+            .y_origin = 0,
+            .x_width = 110,
+            .y_width = 72,
+            .row_count = 2,
+            .row_height = 20,
+            .label_col_width = 32,
+            .value_col_width = 48,
+            .unit_col_width = 24,
+            .is_auto_col_width = true,
+            .is_show_frame = true,
+            .is_show_row_line = false,
+            .is_fill_background = true,
+            .theme_type = TABLE_THEME_DEFAULT,
+            .rows = {
+
+                {
+                    .label = "Vpp",
+                    .value_kind = TABLE_VALUE_NUMBER,
+                    .number_type = TABLE_NUMBER_UINT32,
+                    .unit = "mV",
+                    .precision = 0,
+                    .default_u32 = 1000,
+                    .default_float = 0,
+                    .default_text = ""
+                },
+
+                {
+                    .label = "Fre",
+                    .value_kind = TABLE_VALUE_NUMBER,
+                    .number_type = TABLE_NUMBER_UINT32,
+                    .unit = "Hz",
+                    .precision = 0,
+                    .default_u32 = 1230,
+                    .default_float = 0,
+                    .default_text = ""
+                }
+
+            }
         }
 
     }
@@ -140,6 +162,35 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx,
         return ESTA_ERROR;
     }
     return BARCHART_Init(inst_idx, &config);
+}
+
+bool ESTA_Profile_ToTABLE_Config(const ESTA_TableProfile_TypeDef *profile,
+                                 TABLE_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    if (ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->x_origin,
+                                      profile->y_origin, profile->x_width,
+                                      profile->y_width) != ESTA_OK) return false;
+    if (TABLE_ConfigSetRows(out_config, profile->rows, profile->row_count) != ESTA_OK) return false;
+    if (TABLE_ConfigSetLayout(out_config, profile->row_height, profile->label_col_width,
+                              profile->value_col_width, profile->unit_col_width,
+                              profile->is_auto_col_width) != ESTA_OK) return false;
+    if (TABLE_ConfigSetDisplayOptions(out_config, profile->is_show_frame,
+                                      profile->is_show_row_line,
+                                      profile->is_fill_background) != ESTA_OK) return false;
+    if (TABLE_ConfigSetTheme(out_config, profile->theme_type) != ESTA_OK) return false;
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyTABLE(int inst_idx,
+                                           const ESTA_TableProfile_TypeDef *profile) {
+    TABLE_Config_TypeDef config;
+    if (!ESTA_Profile_ToTABLE_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return TABLE_Init(inst_idx, &config);
 }
 
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
