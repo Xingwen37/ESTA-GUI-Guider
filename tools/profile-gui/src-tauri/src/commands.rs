@@ -1,8 +1,10 @@
-﻿use std::path::PathBuf;
+use std::path::PathBuf;
 use std::process::Command;
+
 use serde_json::json;
 use tauri::State;
-use crate::models::{EstaProfile, ProfileSet};
+
+use crate::models::{BarChartProfile, ProfileSet, WaveProfile};
 
 const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
 const PROFILE_C: &str = "core/profile/ESTA_Profile.c";
@@ -42,9 +44,8 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     let json_path = state.repo_root.join(PROFILE_JSON);
     let c_path = state.repo_root.join(PROFILE_C);
 
-    // Build template context using serde_json::Value
-    let profiles_for_template: Vec<serde_json::Value> = data
-        .profiles
+    let wave_profiles_for_template: Vec<serde_json::Value> = data
+        .wave_profiles
         .iter()
         .map(|p| {
             json!({
@@ -69,44 +70,50 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "theme_type": p.theme_type,
                 "is_auto_clear": p.is_auto_clear,
                 "is_use_batch_draw": p.is_use_batch_draw,
-                "bar_x_origin": p.bar_x_origin,
-                "bar_y_origin": p.bar_y_origin,
-                "bar_x_width": p.bar_x_width,
-                "bar_y_width": p.bar_y_width,
-                "bar_display_num_min": p.bar_display_num_min,
-                "bar_display_num_max": p.bar_display_num_max,
+            })
+        })
+        .collect();
+
+    let bar_profiles_for_template: Vec<serde_json::Value> = data
+        .bar_profiles
+        .iter()
+        .map(|p| {
+            json!({
+                "x_origin": p.x_origin,
+                "y_origin": p.y_origin,
+                "x_width": p.x_width,
+                "y_width": p.y_width,
+                "display_num_min": p.display_num_min,
+                "display_num_max": p.display_num_max,
                 "bar_count": p.bar_count,
                 "bar_width": p.bar_width,
                 "bar_spacing": p.bar_spacing,
-                "bar_is_display_value": p.bar_is_display_value,
-                "bar_is_display_axis": p.bar_is_display_axis,
-                "bar_theme_type": p.bar_theme_type,
+                "is_display_value": p.is_display_value,
+                "is_display_axis": p.is_display_axis,
+                "theme_type": p.theme_type,
             })
         })
         .collect();
 
     let mut ctx = tera::Context::new();
-    ctx.insert("inst_count", &data.inst_count);
+    ctx.insert("wave_inst_count", &data.wave_inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
     ctx.insert("button_count", &data.button_count);
-    ctx.insert("profiles", &profiles_for_template);
+    ctx.insert("wave_profiles", &wave_profiles_for_template);
+    ctx.insert("bar_profiles", &bar_profiles_for_template);
 
-    // Render C code from template
     let c_code = state
         .tera
         .render(TEMPLATE, &ctx)
         .map_err(|e| format!("模板渲染失败: {}", e))?;
 
-    // Backup existing C file
     if c_path.exists() {
         let backup = c_path.with_extension("c.bak");
         std::fs::copy(&c_path, &backup).map_err(|e| e.to_string())?;
     }
 
-    // Write C file
     std::fs::write(&c_path, c_code).map_err(|e| e.to_string())?;
 
-    // Write JSON
     let json = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
     std::fs::write(&json_path, json).map_err(|e| e.to_string())?;
 
@@ -155,64 +162,77 @@ pub fn run_simulator(state: State<AppState>) -> Result<(), String> {
 
 fn default_profile() -> ProfileSet {
     ProfileSet {
-        inst_count: 2,
+        wave_inst_count: 2,
         bar_inst_count: 1,
-        button_count: 2,
-        profiles: vec![
-            EstaProfile {
-                x_origin: 10, y_origin: 0, x_width: 200, y_width: 120,
-                display_num_min: 0, display_num_max: 4095,
-                channel_num: 4, channel_mask: 0b00001001,
-                is_display_ruler_y: true,
-                ruler_y: [1000, 2000, 3000, 4000, 0],
-                ruler_count_y: 4, ruler_num_digits_y: 4,
-                is_display_ruler_x: true,
-                ruler_x: [30, 50, 90, 0, 0],
-                ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
-                ruler_num_digits_x: 8,
-                theme_type: "WAVE_THEME_DEFAULT".into(),
-                is_auto_clear: true,
-                is_use_batch_draw: false,
-                bar_x_origin: 10,
-                bar_y_origin: 125,
-                bar_x_width: 300,
-                bar_y_width: 110,
-                bar_display_num_min: 0,
-                bar_display_num_max: 100,
-                bar_count: 6,
-                bar_width: 0,
-                bar_spacing: 0,
-                bar_is_display_value: true,
-                bar_is_display_axis: true,
-                bar_theme_type: "BARCHART_THEME_DEFAULT".into(),
-            },
-            EstaProfile {
-                x_origin: 0, y_origin: 120, x_width: 200, y_width: 120,
-                display_num_min: 0, display_num_max: 4095,
-                channel_num: 4, channel_mask: 0b00001111,
-                is_display_ruler_y: true,
-                ruler_y: [1000, 2000, 3000, 4000, 0],
-                ruler_count_y: 4, ruler_num_digits_y: 4,
-                is_display_ruler_x: true,
-                ruler_x: [30, 50, 90, 0, 0],
-                ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
-                ruler_num_digits_x: 8,
-                theme_type: "WAVE_THEME_LIGHT".into(),
-                is_auto_clear: true,
-                is_use_batch_draw: false,
-                bar_x_origin: 10,
-                bar_y_origin: 125,
-                bar_x_width: 300,
-                bar_y_width: 110,
-                bar_display_num_min: 0,
-                bar_display_num_max: 100,
-                bar_count: 6,
-                bar_width: 0,
-                bar_spacing: 0,
-                bar_is_display_value: true,
-                bar_is_display_axis: true,
-                bar_theme_type: "BARCHART_THEME_DEFAULT".into(),
-            },
+        button_count: 4,
+        wave_profiles: vec![
+            default_wave_profile(10, 0, "WAVE_THEME_LIGHT", true),
+            default_wave_profile(0, 125, "WAVE_THEME_DEFAULT", true),
         ],
+        bar_profiles: vec![default_bar_profile(
+            200,
+            125,
+            130,
+            110,
+            120,
+            20,
+            "BARCHART_THEME_LIGHT",
+        )],
+    }
+}
+
+fn default_wave_profile(
+    x_origin: u16,
+    y_origin: u16,
+    theme_type: &str,
+    is_use_batch_draw: bool,
+) -> WaveProfile {
+    WaveProfile {
+        x_origin,
+        y_origin,
+        x_width: 200,
+        y_width: 120,
+        display_num_min: 0,
+        display_num_max: 4095,
+        channel_num: 4,
+        channel_mask: 0b00001111,
+        is_display_ruler_y: true,
+        ruler_y: [1000, 2000, 3000, 4000, 0],
+        ruler_count_y: 4,
+        ruler_num_digits_y: 4,
+        is_display_ruler_x: true,
+        ruler_x: [30, 50, 90, 0, 0],
+        ruler_count_x: 3,
+        ruler_zero_value_x: 0,
+        ruler_full_value_x: 100,
+        ruler_num_digits_x: 8,
+        theme_type: theme_type.into(),
+        is_auto_clear: true,
+        is_use_batch_draw,
+    }
+}
+
+fn default_bar_profile(
+    x_origin: u16,
+    y_origin: u16,
+    x_width: u16,
+    y_width: u16,
+    display_num_max: u16,
+    bar_width: u16,
+    theme_type: &str,
+) -> BarChartProfile {
+    BarChartProfile {
+        x_origin,
+        y_origin,
+        x_width,
+        y_width,
+        display_num_min: 0,
+        display_num_max,
+        bar_count: 6,
+        bar_width,
+        bar_spacing: 0,
+        is_display_value: true,
+        is_display_axis: true,
+        theme_type: theme_type.into(),
     }
 }

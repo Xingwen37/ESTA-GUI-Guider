@@ -1,9 +1,9 @@
-﻿import type { EstaProfile } from "../lib/types";
+﻿import type { WaveProfile } from "../lib/types";
 import { WAVE_THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_WAVE_CHANNEL } from "../lib/types";
 
 interface Props {
-  profile: EstaProfile;
-  onChange: (p: EstaProfile) => void;
+  profile: WaveProfile;
+  onChange: (p: WaveProfile) => void;
 }
 
 function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
@@ -19,7 +19,7 @@ function spin(value: number, min: number, max: number, onChange: (v: number) => 
 }
 
 export default function ProfileEditor({ profile, onChange }: Props) {
-  const set = (key: keyof EstaProfile, value: unknown) =>
+  const set = (key: keyof WaveProfile, value: unknown) =>
     onChange({ ...profile, [key]: value });
 
   const toggleChannel = (bit: number) => {
@@ -41,7 +41,6 @@ export default function ProfileEditor({ profile, onChange }: Props) {
 
   return (
     <div>
-      {/* 基础参数 */}
       <fieldset className="group-box">
         <legend>基础参数</legend>
         <div className="form-row">
@@ -103,7 +102,6 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         </div>
       </fieldset>
 
-      {/* 通道使能 */}
       <fieldset className="group-box">
         <legend>通道使能</legend>
         <div className="ch-row">
@@ -120,7 +118,6 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         </div>
       </fieldset>
 
-      {/* Y 标尺 */}
       <fieldset className="group-box">
         <legend>Y 标尺</legend>
         <div className="form-row">
@@ -156,7 +153,6 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         </div>
       </fieldset>
 
-      {/* X 标尺 */}
       <fieldset className="group-box">
         <legend>X 标尺</legend>
         <div className="form-row">

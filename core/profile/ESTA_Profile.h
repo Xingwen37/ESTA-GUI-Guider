@@ -8,10 +8,10 @@
 #include "ui/BARCHART.h"
 #include "event/event.h"
 
-#define ESTA_PROFILE_MAX_INST 2
+#define ESTA_PROFILE_MAX_WAVE_INST 4
+#define ESTA_PROFILE_MAX_BARCHART_INST 4
 
 typedef struct {
-    /* ---- WAVE 组件字段 ---- */
     uint16_t x_origin;
     uint16_t y_origin;
     uint16_t x_width;
@@ -38,38 +38,40 @@ typedef struct {
     WAVE_theme_type theme_type;
     bool is_auto_clear;
     bool is_use_batch_draw;
+} ESTA_WaveProfile_TypeDef;
 
-    /* ---- BARCHART 组件字段 ---- */
-    uint16_t bar_x_origin;
-    uint16_t bar_y_origin;
-    uint16_t bar_x_width;
-    uint16_t bar_y_width;
+typedef struct {
+    uint16_t x_origin;
+    uint16_t y_origin;
+    uint16_t x_width;
+    uint16_t y_width;
 
-    uint16_t bar_display_num_min;
-    uint16_t bar_display_num_max;
+    uint16_t display_num_min;
+    uint16_t display_num_max;
 
     uint16_t bar_count;
     uint16_t bar_width;
     uint16_t bar_spacing;
 
-    bool bar_is_display_value;
-    bool bar_is_display_axis;
+    bool is_display_value;
+    bool is_display_axis;
 
-    BARCHART_theme_type bar_theme_type;
-} ESTA_Profile_TypeDef;
+    BARCHART_theme_type theme_type;
+} ESTA_BarChartProfile_TypeDef;
 
 typedef struct {
-    uint16_t inst_count;
+    uint16_t wave_inst_count;
     uint16_t bar_inst_count;
     uint16_t button_count;
-    ESTA_Profile_TypeDef profiles[ESTA_PROFILE_MAX_INST];
+    ESTA_WaveProfile_TypeDef wave_profiles[ESTA_PROFILE_MAX_WAVE_INST];
+    ESTA_BarChartProfile_TypeDef bar_profiles[ESTA_PROFILE_MAX_BARCHART_INST];
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);
-bool ESTA_Profile_ToConfig(const ESTA_Profile_TypeDef *profile, WAVE_Config_TypeDef *out_config);
-ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_Profile_TypeDef *profile);
-bool ESTA_Profile_ToBARCHART_Config(const ESTA_Profile_TypeDef *profile, BARCHART_Config_TypeDef *out_config);
-ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_Profile_TypeDef *profile);
+bool ESTA_Profile_ToConfig(const ESTA_WaveProfile_TypeDef *profile, WAVE_Config_TypeDef *out_config);
+ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_WaveProfile_TypeDef *profile);
+bool ESTA_Profile_ToBARCHART_Config(const ESTA_BarChartProfile_TypeDef *profile, BARCHART_Config_TypeDef *out_config);
+ESTA_StatusTypeDef ESTA_Profile_ApplyBARCHART(int inst_idx, const ESTA_BarChartProfile_TypeDef *profile);
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set);
 
 #endif

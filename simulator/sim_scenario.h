@@ -7,8 +7,8 @@
 #include "ui/WAVE.h"
 #include "ui/BARCHART.h"
 
-#define SIM_SCENARIO_WAVE_COUNT 2
-#define SIM_SCENARIO_BARCHART_COUNT 1
+#define SIM_SCENARIO_WAVE_COUNT 4
+#define SIM_SCENARIO_BARCHART_COUNT 4
 
 typedef struct {
     const uint16_t *signal_lut;

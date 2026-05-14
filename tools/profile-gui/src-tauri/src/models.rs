@@ -1,7 +1,7 @@
-﻿use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct EstaProfile {
+pub struct WaveProfile {
     pub x_origin: u16,
     pub y_origin: u16,
     pub x_width: u16,
@@ -23,29 +23,34 @@ pub struct EstaProfile {
     pub theme_type: String,
     pub is_auto_clear: bool,
     pub is_use_batch_draw: bool,
-    pub bar_x_origin: u16,
-    pub bar_y_origin: u16,
-    pub bar_x_width: u16,
-    pub bar_y_width: u16,
-    pub bar_display_num_min: u16,
-    pub bar_display_num_max: u16,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BarChartProfile {
+    pub x_origin: u16,
+    pub y_origin: u16,
+    pub x_width: u16,
+    pub y_width: u16,
+    pub display_num_min: u16,
+    pub display_num_max: u16,
     pub bar_count: u16,
     pub bar_width: u16,
     pub bar_spacing: u16,
-    pub bar_is_display_value: bool,
-    pub bar_is_display_axis: bool,
-    pub bar_theme_type: String,
+    pub is_display_value: bool,
+    pub is_display_axis: bool,
+    pub theme_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProfileSet {
-    pub inst_count: u16,
+    pub wave_inst_count: u16,
     pub bar_inst_count: u16,
     pub button_count: u16,
-    pub profiles: Vec<EstaProfile>,
+    pub wave_profiles: Vec<WaveProfile>,
+    pub bar_profiles: Vec<BarChartProfile>,
 }
 
-impl EstaProfile {
+impl WaveProfile {
     pub fn channel_mask_expr(&self) -> String {
         let terms: Vec<String> = (0..8)
             .filter(|i| (self.channel_mask & (1u8 << i)) != 0)

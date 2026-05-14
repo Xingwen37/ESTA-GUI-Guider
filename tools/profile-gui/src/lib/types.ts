@@ -1,4 +1,4 @@
-﻿export interface EstaProfile {
+export interface WaveProfile {
   x_origin: number;
   y_origin: number;
   x_width: number;
@@ -20,25 +20,29 @@
   theme_type: string;
   is_auto_clear: boolean;
   is_use_batch_draw: boolean;
-  bar_x_origin: number;
-  bar_y_origin: number;
-  bar_x_width: number;
-  bar_y_width: number;
-  bar_display_num_min: number;
-  bar_display_num_max: number;
+}
+
+export interface BarChartProfile {
+  x_origin: number;
+  y_origin: number;
+  x_width: number;
+  y_width: number;
+  display_num_min: number;
+  display_num_max: number;
   bar_count: number;
   bar_width: number;
   bar_spacing: number;
-  bar_is_display_value: boolean;
-  bar_is_display_axis: boolean;
-  bar_theme_type: string;
+  is_display_value: boolean;
+  is_display_axis: boolean;
+  theme_type: string;
 }
 
 export interface ProfileSet {
-  inst_count: number;
+  wave_inst_count: number;
   bar_inst_count: number;
   button_count: number;
-  profiles: EstaProfile[];
+  wave_profiles: WaveProfile[];
+  bar_profiles: BarChartProfile[];
 }
 
 export const WAVE_THEME_OPTIONS = [
@@ -51,8 +55,8 @@ export const BAR_THEME_OPTIONS = [
   ["BARCHART_THEME_LIGHT", "Light"],
 ] as const;
 
-export const MAX_WAVE_INST = 2;
-export const MAX_BAR_INST = 2;
+export const MAX_WAVE_INST = 4;
+export const MAX_BAR_INST = 4;
 export const MAX_BUTTON_COUNT = 8;
 export const MAX_WAVE_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 5;

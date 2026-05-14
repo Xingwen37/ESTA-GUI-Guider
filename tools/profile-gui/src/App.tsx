@@ -1,8 +1,8 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ProfileEditor from "./components/ProfileEditor";
 import BarChartEditor from "./components/BarChartEditor";
 import * as api from "./lib/tauri-api";
-import type { ProfileSet, EstaProfile } from "./lib/types";
+import type { ProfileSet, WaveProfile, BarChartProfile } from "./lib/types";
 import {
   MAX_WAVE_INST,
   MAX_BAR_INST,
@@ -11,7 +11,7 @@ import {
   MAX_RULER_Y_NUM,
 } from "./lib/types";
 
-const EMPTY_PROFILE: EstaProfile = {
+const EMPTY_WAVE_PROFILE: WaveProfile = {
   x_origin: 0, y_origin: 0, x_width: 200, y_width: 120,
   display_num_min: 0, display_num_max: 4095,
   channel_num: 4, channel_mask: 0b00001111,
@@ -25,14 +25,37 @@ const EMPTY_PROFILE: EstaProfile = {
   theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
   is_use_batch_draw: false,
-  bar_x_origin: 10, bar_y_origin: 125, bar_x_width: 300, bar_y_width: 110,
-  bar_display_num_min: 0, bar_display_num_max: 100,
-  bar_count: 6, bar_width: 0, bar_spacing: 0,
-  bar_is_display_value: true, bar_is_display_axis: true,
-  bar_theme_type: "BARCHART_THEME_DEFAULT",
 };
 
-function validateWave(profiles: EstaProfile[], count: number): string | null {
+const EMPTY_BAR_PROFILE: BarChartProfile = {
+  x_origin: 10, y_origin: 125, x_width: 300, y_width: 110,
+  display_num_min: 0, display_num_max: 100,
+  bar_count: 6, bar_width: 0, bar_spacing: 0,
+  is_display_value: true, is_display_axis: true,
+  theme_type: "BARCHART_THEME_DEFAULT",
+};
+
+function cloneWaveProfile(): WaveProfile {
+  return {
+    ...EMPTY_WAVE_PROFILE,
+    ruler_y: [...EMPTY_WAVE_PROFILE.ruler_y],
+    ruler_x: [...EMPTY_WAVE_PROFILE.ruler_x],
+  };
+}
+
+function cloneBarProfile(): BarChartProfile {
+  return { ...EMPTY_BAR_PROFILE };
+}
+
+function ensureCount<T>(items: T[], count: number, makeDefault: () => T): T[] {
+  const next = items.slice(0, count);
+  while (next.length < count) {
+    next.push(makeDefault());
+  }
+  return next;
+}
+
+function validateWave(profiles: WaveProfile[], count: number): string | null {
   for (let i = 0; i < count; i++) {
     const p = profiles[i];
     if (p.display_num_min >= p.display_num_max)
@@ -45,11 +68,11 @@ function validateWave(profiles: EstaProfile[], count: number): string | null {
   return null;
 }
 
-function validateBar(profiles: EstaProfile[], count: number): string | null {
+function validateBar(profiles: BarChartProfile[], count: number): string | null {
   for (let i = 0; i < count; i++) {
     const p = profiles[i];
-    if (p.bar_display_num_min >= p.bar_display_num_max)
-      return `BARCHART${i}: bar_display_num_min 必须小于 bar_display_num_max`;
+    if (p.display_num_min >= p.display_num_max)
+      return `BARCHART${i}: display_num_min 必须小于 display_num_max`;
     if (p.bar_count < 1 || p.bar_count > 32)
       return `BARCHART${i}: bar_count 必须在 1-32 之间`;
   }
@@ -90,31 +113,68 @@ export default function App() {
     );
   }
 
-  const waveCount = data.inst_count;
+  const waveCount = data.wave_inst_count;
   const barCount = data.bar_inst_count;
   const totalTabs = waveCount + barCount;
-  const isWaveTab = activeTab < waveCount;
-  const profileIndex = isWaveTab ? activeTab : activeTab - waveCount;
-  const currentProfile = data.profiles[profileIndex] ?? EMPTY_PROFILE;
+  const activeSafeTab = totalTabs > 0 ? Math.min(activeTab, totalTabs - 1) : 0;
+  const isWaveTab = activeSafeTab < waveCount;
+  const profileIndex = isWaveTab ? activeSafeTab : activeSafeTab - waveCount;
+  const currentWaveProfile = data.wave_profiles[profileIndex] ?? cloneWaveProfile();
+  const currentBarProfile = data.bar_profiles[profileIndex] ?? cloneBarProfile();
 
-  const updateProfile = (p: EstaProfile) => {
-    const profiles = [...data.profiles];
-    profiles[profileIndex] = p;
-    setData({ ...data, profiles });
+  const setWaveCount = (count: number) => {
+    const wave_inst_count = Math.max(0, Math.min(MAX_WAVE_INST, count));
+    const nextTotal = wave_inst_count + data.bar_inst_count;
+    setActiveTab((tab) => (nextTotal > 0 ? Math.min(tab, nextTotal - 1) : 0));
+    setData({
+      ...data,
+      wave_inst_count,
+      wave_profiles: ensureCount(data.wave_profiles, wave_inst_count, cloneWaveProfile),
+    });
+  };
+
+  const setBarCount = (count: number) => {
+    const bar_inst_count = Math.max(0, Math.min(MAX_BAR_INST, count));
+    const nextTotal = data.wave_inst_count + bar_inst_count;
+    setActiveTab((tab) => (nextTotal > 0 ? Math.min(tab, nextTotal - 1) : 0));
+    setData({
+      ...data,
+      bar_inst_count,
+      bar_profiles: ensureCount(data.bar_profiles, bar_inst_count, cloneBarProfile),
+    });
+  };
+
+  const updateWaveProfile = (p: WaveProfile) => {
+    const wave_profiles = ensureCount(data.wave_profiles, waveCount, cloneWaveProfile);
+    wave_profiles[profileIndex] = p;
+    setData({ ...data, wave_profiles });
+  };
+
+  const updateBarProfile = (p: BarChartProfile) => {
+    const bar_profiles = ensureCount(data.bar_profiles, barCount, cloneBarProfile);
+    bar_profiles[profileIndex] = p;
+    setData({ ...data, bar_profiles });
+  };
+
+  const buildSavePayload = (): ProfileSet => ({
+    wave_inst_count: waveCount,
+    bar_inst_count: barCount,
+    button_count: data.button_count,
+    wave_profiles: ensureCount(data.wave_profiles, waveCount, cloneWaveProfile),
+    bar_profiles: ensureCount(data.bar_profiles, barCount, cloneBarProfile),
+  });
+
+  const validateAll = (): string | null => {
+    const payload = buildSavePayload();
+    return validateWave(payload.wave_profiles, waveCount) ||
+      validateBar(payload.bar_profiles, barCount);
   };
 
   const handleGenerate = async () => {
-    const waveErr = validateWave(data.profiles, waveCount);
-    if (waveErr) { showStatus({ type: "error", msg: waveErr }); return; }
-    const barErr = validateBar(data.profiles, barCount);
-    if (barErr) { showStatus({ type: "error", msg: barErr }); return; }
+    const err = validateAll();
+    if (err) { showStatus({ type: "error", msg: err }); return; }
     try {
-      await api.saveProfile({
-        inst_count: waveCount,
-        bar_inst_count: barCount,
-        button_count: data.button_count,
-        profiles: data.profiles.slice(0, Math.max(waveCount, barCount)),
-      });
+      await api.saveProfile(buildSavePayload());
       showStatus({ type: "success", msg: "已生成 core/profile/ESTA_Profile.c" });
     } catch (e) {
       showStatus({ type: "error", msg: `保存失败: ${e}` });
@@ -122,17 +182,10 @@ export default function App() {
   };
 
   const handleBuildRun = async () => {
-    const waveErr = validateWave(data.profiles, waveCount);
-    if (waveErr) { showStatus({ type: "error", msg: waveErr }); return; }
-    const barErr = validateBar(data.profiles, barCount);
-    if (barErr) { showStatus({ type: "error", msg: barErr }); return; }
+    const err = validateAll();
+    if (err) { showStatus({ type: "error", msg: err }); return; }
     try {
-      await api.saveProfile({
-        inst_count: waveCount,
-        bar_inst_count: barCount,
-        button_count: data.button_count,
-        profiles: data.profiles.slice(0, Math.max(waveCount, barCount)),
-      });
+      await api.saveProfile(buildSavePayload());
       showStatus({ type: "success", msg: "已保存，开始编译..." });
       const msg = await api.buildSimulator();
       showStatus({ type: "success", msg: msg });
@@ -145,20 +198,14 @@ export default function App() {
 
   return (
     <>
-      {/* Toolbar */}
       <div className="toolbar">
         <label>WAVE</label>
         <input
           type="number"
-          value={data.inst_count}
+          value={data.wave_inst_count}
           min={0}
           max={MAX_WAVE_INST}
-          onChange={(e) =>
-            setData({
-              ...data,
-              inst_count: Math.max(0, Math.min(MAX_WAVE_INST, Number(e.target.value) || 0)),
-            })
-          }
+          onChange={(e) => setWaveCount(Number(e.target.value) || 0)}
         />
         <label style={{ marginLeft: 12 }}>BARCHART</label>
         <input
@@ -166,12 +213,7 @@ export default function App() {
           value={data.bar_inst_count}
           min={0}
           max={MAX_BAR_INST}
-          onChange={(e) =>
-            setData({
-              ...data,
-              bar_inst_count: Math.max(0, Math.min(MAX_BAR_INST, Number(e.target.value) || 0)),
-            })
-          }
+          onChange={(e) => setBarCount(Number(e.target.value) || 0)}
         />
         <label style={{ marginLeft: 12 }}>BUTTON</label>
         <input
@@ -198,12 +240,11 @@ export default function App() {
         )}
       </div>
 
-      {/* Tabs */}
       <div className="tabs">
         {Array.from({ length: waveCount }, (_, i) => (
           <button
             key={`w${i}`}
-            className={`tab ${activeTab === i ? "active" : ""}`}
+            className={`tab ${activeSafeTab === i ? "active" : ""}`}
             onClick={() => setActiveTab(i)}
           >
             WAVE{i}
@@ -213,7 +254,7 @@ export default function App() {
         {Array.from({ length: barCount }, (_, i) => (
           <button
             key={`b${i}`}
-            className={`tab ${activeTab === waveCount + i ? "active" : ""}`}
+            className={`tab ${activeSafeTab === waveCount + i ? "active" : ""}`}
             onClick={() => setActiveTab(waveCount + i)}
           >
             BARCHART{i}
@@ -221,14 +262,13 @@ export default function App() {
         ))}
       </div>
 
-      {/* Editor */}
       <div className="editor-scroll">
         {totalTabs === 0 ? (
           <div style={{ color: "#999", padding: 24 }}>请设置 WAVE 或 BARCHART 数量</div>
         ) : isWaveTab ? (
-          <ProfileEditor profile={currentProfile} onChange={updateProfile} />
+          <ProfileEditor profile={currentWaveProfile} onChange={updateWaveProfile} />
         ) : (
-          <BarChartEditor profile={currentProfile} onChange={updateProfile} />
+          <BarChartEditor profile={currentBarProfile} onChange={updateBarProfile} />
         )}
       </div>
     </>
