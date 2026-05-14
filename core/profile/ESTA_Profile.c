@@ -13,31 +13,31 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .x_origin = 10,
             .y_origin = 0,
             .x_width = 200,
-            .y_width = 120,
+            .y_width = 256,
             .display_num_min = 0,
             .display_num_max = 4095,
             .channel_num = 4,
             .channel_mask = CH0 | CH1 | CH2 | CH3,
             .is_display_ruler_y = true,
-            .ruler_y = { 1000, 2000, 3000, 4000, 0 },
-            .ruler_count_y = 4,
+            .ruler_y = { 0, 400, 800, 1200, 1600, 2000, 2400, 2800, 3200, 3600 },
+            .ruler_count_y = 10,
             .ruler_num_digits_y = 4,
             .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 70, 120, 0 },
-            .ruler_count_x = 4,
+            .ruler_x = { 30, 50, 70, 120, 200, 0, 0, 0, 0, 0 },
+            .ruler_count_x = 5,
             .ruler_zero_value_x = 0,
-            .ruler_full_value_x = 100,
+            .ruler_full_value_x = 200,
             .ruler_num_digits_x = 8,
             .theme_type = WAVE_THEME_LIGHT,
             .is_auto_clear = true,
-            .is_use_batch_draw = true
+            .is_use_batch_draw = false
         }
 
     },
     .bar_profiles = {
 
         {
-            .x_origin = 200,
+            .x_origin = 300,
             .y_origin = 125,
             .x_width = 130,
             .y_width = 110,

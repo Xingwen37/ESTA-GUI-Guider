@@ -18,8 +18,8 @@
 #define MAX_WAVE_CHANNEL     4
 
 // 最大标尺个数，标尺过多且宽度不足可能导致标尺重叠
-#define WAVE_MAX_RULER_Y_NUM   5
-#define WAVE_MAX_RULER_X_NUM   5
+#define WAVE_MAX_RULER_Y_NUM   10
+#define WAVE_MAX_RULER_X_NUM   10
 
 
 /* USER MARCO OR ENUM */
