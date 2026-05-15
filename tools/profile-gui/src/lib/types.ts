@@ -53,15 +53,17 @@ export interface BarChartProfile {
   theme_type: string;
 }
 
-export interface TableRowProfile {
-  label: string;
-  value_kind: string;
-  number_type: string;
-  unit: string;
+export interface TableColProfile {
+  header: string;
+  cell_type: string;
+  width: number;
   precision: number;
-  default_u32: number;
-  default_float: number;
-  default_text: string;
+}
+
+export interface TableCellProfile {
+  text: string;
+  u32: number;
+  f32: number;
 }
 
 export interface TableProfile {
@@ -70,27 +72,52 @@ export interface TableProfile {
   x_width: number;
   y_width: number;
   row_count: number;
+  col_count: number;
   row_height: number;
-  label_col_width: number;
-  value_col_width: number;
-  unit_col_width: number;
-  is_auto_col_width: boolean;
+  is_show_header: boolean;
   is_show_frame: boolean;
   is_show_row_line: boolean;
+  is_show_col_line: boolean;
   is_fill_background: boolean;
   font_size: string;
   theme_type: string;
-  rows: TableRowProfile[];
+  cols: TableColProfile[];
+  cells: TableCellProfile[][];
+}
+
+export interface MenuItemProfile {
+  label: string;
+  parent_idx: number;
+  is_submenu: boolean;
+  event_id: number;
+}
+
+export interface MenuProfile {
+  x_origin: number;
+  y_origin: number;
+  x_width: number;
+  y_width: number;
+  item_count: number;
+  item_height: number;
+  breadcrumb_height: number;
+  is_show_frame: boolean;
+  is_show_breadcrumb: boolean;
+  is_fill_background: boolean;
+  font_size: string;
+  theme_type: string;
+  items: MenuItemProfile[];
 }
 
 export interface ProfileSet {
   wave_inst_count: number;
   bar_inst_count: number;
   table_inst_count: number;
+  menu_inst_count: number;
   button_count: number;
   wave_profiles: WaveProfile[];
   bar_profiles: BarChartProfile[];
   table_profiles: TableProfile[];
+  menu_profiles: MenuProfile[];
 }
 
 export const WAVE_THEME_OPTIONS = [
@@ -129,12 +156,28 @@ export const TABLE_NUMBER_TYPE_OPTIONS = [
   ["TABLE_NUMBER_FLOAT", "Float"],
 ] as const;
 
+export const TABLE_CELL_TYPE_OPTIONS = [
+  ["TABLE_CELL_TEXT", "Text"],
+  ["TABLE_CELL_UINT32", "UInt32"],
+  ["TABLE_CELL_FLOAT", "Float"],
+] as const;
+
+export const MENU_THEME_OPTIONS = [
+  ["MENU_THEME_DEFAULT", "Default"],
+  ["MENU_THEME_LIGHT", "Light"],
+] as const;
+
 export const MAX_WAVE_INST = 4;
 export const MAX_BAR_INST = 4;
 export const MAX_TABLE_INST = 4;
+export const MAX_MENU_INST = 4;
 export const MAX_BUTTON_COUNT = 8;
 export const MAX_WAVE_CHANNEL = 4;
 export const MAX_RULER_X_NUM = 10;
 export const MAX_RULER_Y_NUM = 10;
 export const MAX_TABLE_ROWS = 8;
+export const MAX_TABLE_COLS = 6;
 export const MAX_TABLE_STRING_LEN = 16;
+export const MAX_MENU_ITEMS = 32;
+export const MAX_MENU_STRING_LEN = 16;
+export const MAX_MENU_DEPTH = 8;

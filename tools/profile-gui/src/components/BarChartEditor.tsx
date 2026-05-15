@@ -6,6 +6,12 @@ interface Props {
   onChange: (p: BarChartProfile) => void;
 }
 
+const FONT_METRICS: Record<string, { w: number; h: number }> = {
+  "ESTA_FONT_1206": { w: 6, h: 12 },
+  "ESTA_FONT_1608": { w: 8, h: 16 },
+  "ESTA_FONT_2412": { w: 12, h: 24 },
+};
+
 function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
   return (
     <input
@@ -22,10 +28,40 @@ export default function BarChartEditor({ profile, onChange }: Props) {
   const set = (key: keyof BarChartProfile, value: unknown) =>
     onChange({ ...profile, [key]: value });
 
+  const handleAutoCalc = () => {
+    const metrics = FONT_METRICS[profile.font_size] ?? FONT_METRICS["ESTA_FONT_1608"];
+    const barCount = Math.max(1, profile.bar_count);
+
+    let bw = profile.bar_width;
+    let bs = profile.bar_spacing;
+    if (bw === 0 && bs === 0) {
+      bw = 10;
+      bs = 5;
+    }
+
+    const x_width = barCount * bw + (barCount - 1) * bs + 8;
+
+    let y_height = 60;
+    if (profile.is_display_value) {
+      y_height += metrics.h + 2;
+    }
+    if (profile.is_display_axis) {
+      y_height += 2;
+    }
+
+    onChange({
+      ...profile,
+      x_width,
+      y_width: y_height,
+      bar_width: bw,
+      bar_spacing: bs,
+    });
+  };
+
   return (
     <div>
       <fieldset className="group-box">
-        <legend>位置与尺寸</legend>
+        <legend>Position & Layout</legend>
         <div className="form-row">
           <label>x_origin</label>
           {spin(profile.x_origin, 0, 65535, (v) => set("x_origin", v))}
@@ -42,10 +78,21 @@ export default function BarChartEditor({ profile, onChange }: Props) {
           <label>y_width</label>
           {spin(profile.y_width, 1, 65535, (v) => set("y_width", v))}
         </div>
+        <div className="form-row">
+          <label>bar_width</label>
+          {spin(profile.bar_width, 0, 65535, (v) => set("bar_width", v))}
+          <span className="hint">(0=auto)</span>
+        </div>
+        <div className="form-row">
+          <label>bar_spacing</label>
+          {spin(profile.bar_spacing, 0, 65535, (v) => set("bar_spacing", v))}
+          <span className="hint">(0=auto)</span>
+        </div>
+        <button className="btn-auto-calc" onClick={handleAutoCalc} type="button">自动计算尺寸</button>
       </fieldset>
 
       <fieldset className="group-box">
-        <legend>数据与柱体</legend>
+        <legend>Data</legend>
         <div className="form-row">
           <label>display_num_min</label>
           {spin(profile.display_num_min, 0, 65535, (v) => set("display_num_min", v))}
@@ -61,21 +108,7 @@ export default function BarChartEditor({ profile, onChange }: Props) {
       </fieldset>
 
       <fieldset className="group-box">
-        <legend>柱体布局</legend>
-        <div className="form-row">
-          <label>bar_width</label>
-          {spin(profile.bar_width, 0, 65535, (v) => set("bar_width", v))}
-          <span className="hint">(0=自动)</span>
-        </div>
-        <div className="form-row">
-          <label>bar_spacing</label>
-          {spin(profile.bar_spacing, 0, 65535, (v) => set("bar_spacing", v))}
-          <span className="hint">(0=自动)</span>
-        </div>
-      </fieldset>
-
-      <fieldset className="group-box">
-        <legend>显示选项</legend>
+        <legend>Display</legend>
         <div className="form-row">
           <label>is_display_value</label>
           <input

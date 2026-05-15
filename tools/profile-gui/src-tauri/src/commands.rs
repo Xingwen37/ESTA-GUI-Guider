@@ -5,8 +5,8 @@ use serde_json::json;
 use tauri::State;
 
 use crate::models::{
-    BarChartProfile, ProfileSet, TableProfile, TableRowProfile, WaveProfile,
-    WaveRulerLabelProfile,
+    BarChartProfile, MenuItemProfile, MenuProfile, ProfileSet, TableProfile, TableColProfile,
+    TableCellProfile, WaveProfile, WaveRulerLabelProfile,
 };
 
 const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
@@ -117,20 +117,37 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         .table_profiles
         .iter()
         .map(|p| {
-            let rows: Vec<serde_json::Value> = p
-                .rows
+            let cols: Vec<serde_json::Value> = p
+                .cols
                 .iter()
-                .map(|row| {
+                .map(|col| {
                     json!({
-                        "label": c_string_literal(&row.label),
-                        "value_kind": row.value_kind,
-                        "number_type": row.number_type,
-                        "unit": c_string_literal(&row.unit),
-                        "precision": row.precision,
-                        "default_u32": row.default_u32,
-                        "default_float": row.default_float,
-                        "default_text": c_string_literal(&row.default_text),
+                        "header": c_string_literal(&col.header),
+                        "cell_type": col.cell_type,
+                        "width": col.width,
+                        "precision": col.precision,
                     })
+                })
+                .collect();
+            let cells: Vec<serde_json::Value> = p
+                .cells
+                .iter()
+                .enumerate()
+                .map(|(_r, row)| {
+                    let row_cells: Vec<serde_json::Value> = row
+                        .iter()
+                        .enumerate()
+                        .map(|(c, cell)| {
+                            let col_type = p.cols.get(c).map(|co| co.cell_type.as_str()).unwrap_or("TABLE_CELL_TEXT");
+                            let (active_field, active_value) = match col_type {
+                                "TABLE_CELL_UINT32" => ("u32".to_string(), format!("{}", cell.u32)),
+                                "TABLE_CELL_FLOAT" => ("f32".to_string(), format!("{:.6}", cell.f32)),
+                                _ => ("text".to_string(), c_string_literal(&cell.text)),
+                            };
+                            json!({ "active_field": active_field, "active_value": active_value })
+                        })
+                        .collect();
+                    json!(row_cells)
                 })
                 .collect();
             json!({
@@ -139,17 +156,51 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "x_width": p.x_width,
                 "y_width": p.y_width,
                 "row_count": p.row_count,
+                "col_count": p.col_count,
                 "row_height": p.row_height,
-                "label_col_width": p.label_col_width,
-                "value_col_width": p.value_col_width,
-                "unit_col_width": p.unit_col_width,
-                "is_auto_col_width": p.is_auto_col_width,
+                "is_show_header": p.is_show_header,
                 "is_show_frame": p.is_show_frame,
                 "is_show_row_line": p.is_show_row_line,
+                "is_show_col_line": p.is_show_col_line,
                 "is_fill_background": p.is_fill_background,
                 "font_size": p.font_size,
                 "theme_type": p.theme_type,
-                "rows": rows,
+                "cols": cols,
+                "cells": cells,
+            })
+        })
+        .collect();
+
+    let menu_profiles_for_template: Vec<serde_json::Value> = data
+        .menu_profiles
+        .iter()
+        .map(|p| {
+            let items: Vec<serde_json::Value> = p
+                .items
+                .iter()
+                .map(|item| {
+                    json!({
+                        "label": c_string_literal(&item.label),
+                        "parent_idx": item.parent_idx,
+                        "is_submenu": item.is_submenu,
+                        "event_id": item.event_id,
+                    })
+                })
+                .collect();
+            json!({
+                "x_origin": p.x_origin,
+                "y_origin": p.y_origin,
+                "x_width": p.x_width,
+                "y_width": p.y_width,
+                "item_count": p.item_count,
+                "item_height": p.item_height,
+                "breadcrumb_height": p.breadcrumb_height,
+                "is_show_frame": p.is_show_frame,
+                "is_show_breadcrumb": p.is_show_breadcrumb,
+                "is_fill_background": p.is_fill_background,
+                "font_size": p.font_size,
+                "theme_type": p.theme_type,
+                "items": items,
             })
         })
         .collect();
@@ -158,10 +209,12 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     ctx.insert("wave_inst_count", &data.wave_inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
     ctx.insert("table_inst_count", &data.table_inst_count);
+    ctx.insert("menu_inst_count", &data.menu_inst_count);
     ctx.insert("button_count", &data.button_count);
     ctx.insert("wave_profiles", &wave_profiles_for_template);
     ctx.insert("bar_profiles", &bar_profiles_for_template);
     ctx.insert("table_profiles", &table_profiles_for_template);
+    ctx.insert("menu_profiles", &menu_profiles_for_template);
 
     let c_code = state
         .tera
@@ -287,6 +340,7 @@ fn default_profile() -> ProfileSet {
         wave_inst_count: 2,
         bar_inst_count: 1,
         table_inst_count: 1,
+        menu_inst_count: 1,
         button_count: 4,
         wave_profiles: vec![
             default_wave_profile(10, 0, "WAVE_THEME_LIGHT", true),
@@ -302,6 +356,7 @@ fn default_profile() -> ProfileSet {
             "BARCHART_THEME_LIGHT",
         )],
         table_profiles: vec![default_table_profile()],
+        menu_profiles: vec![default_menu_profile()],
     }
 }
 
@@ -353,47 +408,86 @@ fn default_table_profile() -> TableProfile {
         y_origin: 0,
         x_width: 110,
         y_width: 72,
-        row_count: 3,
+        row_count: 2,
+        col_count: 3,
         row_height: 20,
-        label_col_width: 32,
-        value_col_width: 48,
-        unit_col_width: 24,
-        is_auto_col_width: true,
+        is_show_header: false,
         is_show_frame: true,
         is_show_row_line: false,
+        is_show_col_line: false,
         is_fill_background: true,
         font_size: "ESTA_FONT_1608".into(),
         theme_type: "TABLE_THEME_LIGHT".into(),
-        rows: vec![
-            TableRowProfile {
-                label: "Vpp".into(),
-                value_kind: "TABLE_VALUE_NUMBER".into(),
-                number_type: "TABLE_NUMBER_UINT32".into(),
-                unit: "mV".into(),
-                precision: 0,
-                default_u32: 1000,
-                default_float: 0.0,
-                default_text: "".into(),
+        cols: vec![
+            TableColProfile { header: "Name".into(), cell_type: "TABLE_CELL_TEXT".into(), width: 0, precision: 0 },
+            TableColProfile { header: "Value".into(), cell_type: "TABLE_CELL_UINT32".into(), width: 0, precision: 0 },
+            TableColProfile { header: "Unit".into(), cell_type: "TABLE_CELL_TEXT".into(), width: 0, precision: 0 },
+        ],
+        cells: vec![
+            vec![
+                TableCellProfile { text: "Vpp".into(), u32: 0, f32: 0.0 },
+                TableCellProfile { text: "".into(), u32: 1000, f32: 0.0 },
+                TableCellProfile { text: "mV".into(), u32: 0, f32: 0.0 },
+            ],
+            vec![
+                TableCellProfile { text: "Fre".into(), u32: 0, f32: 0.0 },
+                TableCellProfile { text: "".into(), u32: 1230, f32: 0.0 },
+                TableCellProfile { text: "Hz".into(), u32: 0, f32: 0.0 },
+            ],
+        ],
+    }
+}
+
+fn default_menu_profile() -> MenuProfile {
+    MenuProfile {
+        x_origin: 10,
+        y_origin: 10,
+        x_width: 160,
+        y_width: 200,
+        item_count: 6,
+        item_height: 30,
+        breadcrumb_height: 20,
+        is_show_frame: true,
+        is_show_breadcrumb: true,
+        is_fill_background: true,
+        font_size: "ESTA_FONT_1608".into(),
+        theme_type: "MENU_THEME_DEFAULT".into(),
+        items: vec![
+            MenuItemProfile {
+                label: "Settings".into(),
+                parent_idx: 0xFF,
+                is_submenu: true,
+                event_id: 0,
             },
-            TableRowProfile {
-                label: "Fre".into(),
-                value_kind: "TABLE_VALUE_NUMBER".into(),
-                number_type: "TABLE_NUMBER_UINT32".into(),
-                unit: "Hz".into(),
-                precision: 0,
-                default_u32: 1230,
-                default_float: 0.0,
-                default_text: "".into(),
+            MenuItemProfile {
+                label: "Display".into(),
+                parent_idx: 0,
+                is_submenu: true,
+                event_id: 0,
             },
-            TableRowProfile {
-                label: "Mode".into(),
-                value_kind: "TABLE_VALUE_TEXT".into(),
-                number_type: "TABLE_NUMBER_UINT32".into(),
-                unit: "".into(),
-                precision: 0,
-                default_u32: 0,
-                default_float: 0.0,
-                default_text: "AUTO".into(),
+            MenuItemProfile {
+                label: "Brightness".into(),
+                parent_idx: 1,
+                is_submenu: false,
+                event_id: 10,
+            },
+            MenuItemProfile {
+                label: "Backlight".into(),
+                parent_idx: 1,
+                is_submenu: false,
+                event_id: 11,
+            },
+            MenuItemProfile {
+                label: "Calibrate".into(),
+                parent_idx: 0xFF,
+                is_submenu: false,
+                event_id: 20,
+            },
+            MenuItemProfile {
+                label: "About".into(),
+                parent_idx: 0xFF,
+                is_submenu: false,
+                event_id: 30,
             },
         ],
     }

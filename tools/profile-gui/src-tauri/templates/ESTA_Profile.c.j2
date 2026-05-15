@@ -6,6 +6,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .wave_inst_count = {{ wave_inst_count }},
     .bar_inst_count = {{ bar_inst_count }},
     .table_inst_count = {{ table_inst_count }},
+    .menu_inst_count = {{ menu_inst_count }},
     .button_count = {{ button_count }},
     .wave_profiles = {
 {% for p in wave_profiles %}
@@ -78,27 +79,50 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .x_width = {{ p.x_width }},
             .y_width = {{ p.y_width }},
             .row_count = {{ p.row_count }},
+            .col_count = {{ p.col_count }},
             .row_height = {{ p.row_height }},
-            .label_col_width = {{ p.label_col_width }},
-            .value_col_width = {{ p.value_col_width }},
-            .unit_col_width = {{ p.unit_col_width }},
-            .is_auto_col_width = {{ p.is_auto_col_width }},
+            .is_show_header = {{ p.is_show_header }},
             .is_show_frame = {{ p.is_show_frame }},
             .is_show_row_line = {{ p.is_show_row_line }},
+            .is_show_col_line = {{ p.is_show_col_line }},
             .is_fill_background = {{ p.is_fill_background }},
             .font_size = {{ p.font_size }},
             .theme_type = {{ p.theme_type }},
-            .rows = {
-{% for row in p.rows %}
+            .cols = {
+{% for col in p.cols %}
+                { .header = {{ col.header }}, .cell_type = {{ col.cell_type }}, .width = {{ col.width }}, .precision = {{ col.precision }} }{% if not loop.last %},{% endif %}
+{% endfor %}
+            },
+            .default_cells = {
+{% for row in p.cells %}
+                { {% for cell in row %}{ .{{ cell.active_field }} = {{ cell.active_value }} }{% if not loop.last %}, {% endif %}{% endfor %} }{% if not loop.last %},{% endif %}
+{% endfor %}
+            }
+        }{% if not loop.last %},{% endif %}
+{% endfor %}
+    },
+    .menu_profiles = {
+{% for p in menu_profiles %}
+        {
+            .x_origin = {{ p.x_origin }},
+            .y_origin = {{ p.y_origin }},
+            .x_width = {{ p.x_width }},
+            .y_width = {{ p.y_width }},
+            .item_count = {{ p.item_count }},
+            .item_height = {{ p.item_height }},
+            .breadcrumb_height = {{ p.breadcrumb_height }},
+            .is_show_frame = {{ p.is_show_frame }},
+            .is_show_breadcrumb = {{ p.is_show_breadcrumb }},
+            .is_fill_background = {{ p.is_fill_background }},
+            .font_size = {{ p.font_size }},
+            .theme_type = {{ p.theme_type }},
+            .items = {
+{% for item in p.items %}
                 {
-                    .label = {{ row.label }},
-                    .value_kind = {{ row.value_kind }},
-                    .number_type = {{ row.number_type }},
-                    .unit = {{ row.unit }},
-                    .precision = {{ row.precision }},
-                    .default_u32 = {{ row.default_u32 }},
-                    .default_float = {{ row.default_float }},
-                    .default_text = {{ row.default_text }}
+                    .label = {{ item.label }},
+                    .parent_idx = {{ item.parent_idx }},
+                    .is_submenu = {{ item.is_submenu }},
+                    .event_id = {{ item.event_id }}
                 }{% if not loop.last %},{% endif %}
 {% endfor %}
             }
@@ -190,12 +214,12 @@ bool ESTA_Profile_ToTABLE_Config(const ESTA_TableProfile_TypeDef *profile,
     if (ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->x_origin,
                                       profile->y_origin, profile->x_width,
                                       profile->y_width) != ESTA_OK) return false;
-    if (TABLE_ConfigSetRows(out_config, profile->rows, profile->row_count) != ESTA_OK) return false;
-    if (TABLE_ConfigSetLayout(out_config, profile->row_height, profile->label_col_width,
-                              profile->value_col_width, profile->unit_col_width,
-                              profile->is_auto_col_width) != ESTA_OK) return false;
-    if (TABLE_ConfigSetDisplayOptions(out_config, profile->is_show_frame,
-                                      profile->is_show_row_line,
+    if (TABLE_ConfigSetCols(out_config, profile->cols, profile->col_count) != ESTA_OK) return false;
+    if (TABLE_ConfigSetRowCount(out_config, profile->row_count) != ESTA_OK) return false;
+    if (TABLE_ConfigSetRowHeight(out_config, profile->row_height) != ESTA_OK) return false;
+    if (TABLE_ConfigSetDisplayOptions(out_config, profile->is_show_header,
+                                      profile->is_show_frame, profile->is_show_row_line,
+                                      profile->is_show_col_line,
                                       profile->is_fill_background) != ESTA_OK) return false;
     if (TABLE_ConfigSetFontSize(out_config, profile->font_size) != ESTA_OK) return false;
     if (TABLE_ConfigSetTheme(out_config, profile->theme_type) != ESTA_OK) return false;
@@ -209,7 +233,44 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyTABLE(int inst_idx,
     if (!ESTA_Profile_ToTABLE_Config(profile, &config)) {
         return ESTA_ERROR;
     }
-    return TABLE_Init(inst_idx, &config);
+    ESTA_StatusTypeDef ret = TABLE_Init(inst_idx, &config);
+    if (ret != ESTA_OK) return ret;
+
+    for (uint16_t r = 0; r < profile->row_count; r++) {
+        for (uint16_t c = 0; c < profile->col_count; c++) {
+            TABLE_UpdateCell(inst_idx, r, c, &profile->default_cells[r][c]);
+        }
+    }
+    return ESTA_OK;
+}
+
+bool ESTA_Profile_ToMENU_Config(const ESTA_MenuProfile_TypeDef *profile,
+                                MENU_Config_TypeDef *out_config) {
+    if (profile == NULL || out_config == NULL) return false;
+    memset(out_config, 0, sizeof(*out_config));
+
+    if (ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config, profile->x_origin,
+                                      profile->y_origin, profile->x_width,
+                                      profile->y_width) != ESTA_OK) return false;
+    if (MENU_ConfigSetItems(out_config, profile->items, profile->item_count) != ESTA_OK) return false;
+    if (MENU_ConfigSetItemHeight(out_config, profile->item_height) != ESTA_OK) return false;
+    if (MENU_ConfigSetBreadcrumbHeight(out_config, profile->breadcrumb_height) != ESTA_OK) return false;
+    if (MENU_ConfigSetDisplayOptions(out_config, profile->is_show_frame,
+                                     profile->is_show_breadcrumb,
+                                     profile->is_fill_background) != ESTA_OK) return false;
+    if (MENU_ConfigSetFontSize(out_config, profile->font_size) != ESTA_OK) return false;
+    if (MENU_ConfigSetTheme(out_config, profile->theme_type) != ESTA_OK) return false;
+
+    return true;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx,
+                                           const ESTA_MenuProfile_TypeDef *profile) {
+    MENU_Config_TypeDef config;
+    if (!ESTA_Profile_ToMENU_Config(profile, &config)) {
+        return ESTA_ERROR;
+    }
+    return MENU_Init(inst_idx, &config);
 }
 
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {

@@ -93,15 +93,23 @@ pub struct BarChartProfile {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TableRowProfile {
-    pub label: String,
-    pub value_kind: String,
-    pub number_type: String,
-    pub unit: String,
+pub struct TableColProfile {
+    pub header: String,
+    pub cell_type: String,
+    #[serde(default)]
+    pub width: u16,
+    #[serde(default)]
     pub precision: u8,
-    pub default_u32: u32,
-    pub default_float: f32,
-    pub default_text: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TableCellProfile {
+    #[serde(default)]
+    pub text: String,
+    #[serde(default)]
+    pub u32: u32,
+    #[serde(default)]
+    pub f32: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -111,18 +119,52 @@ pub struct TableProfile {
     pub x_width: u16,
     pub y_width: u16,
     pub row_count: u16,
+    pub col_count: u16,
     pub row_height: u16,
-    pub label_col_width: u16,
-    pub value_col_width: u16,
-    pub unit_col_width: u16,
-    pub is_auto_col_width: bool,
+    #[serde(default)]
+    pub is_show_header: bool,
     pub is_show_frame: bool,
     pub is_show_row_line: bool,
+    #[serde(default)]
+    pub is_show_col_line: bool,
     pub is_fill_background: bool,
     #[serde(default = "default_font_size")]
     pub font_size: String,
     pub theme_type: String,
-    pub rows: Vec<TableRowProfile>,
+    pub cols: Vec<TableColProfile>,
+    #[serde(default)]
+    pub cells: Vec<Vec<TableCellProfile>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MenuItemProfile {
+    pub label: String,
+    pub parent_idx: u8,
+    pub is_submenu: bool,
+    pub event_id: u8,
+}
+
+fn default_menu_items() -> Vec<MenuItemProfile> {
+    Vec::new()
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MenuProfile {
+    pub x_origin: u16,
+    pub y_origin: u16,
+    pub x_width: u16,
+    pub y_width: u16,
+    pub item_count: u16,
+    pub item_height: u16,
+    pub breadcrumb_height: u16,
+    pub is_show_frame: bool,
+    pub is_show_breadcrumb: bool,
+    pub is_fill_background: bool,
+    #[serde(default = "default_font_size")]
+    pub font_size: String,
+    pub theme_type: String,
+    #[serde(default = "default_menu_items")]
+    pub items: Vec<MenuItemProfile>,
 }
 
 fn default_font_size() -> String {
@@ -135,11 +177,15 @@ pub struct ProfileSet {
     pub bar_inst_count: u16,
     #[serde(default)]
     pub table_inst_count: u16,
+    #[serde(default)]
+    pub menu_inst_count: u16,
     pub button_count: u16,
     pub wave_profiles: Vec<WaveProfile>,
     pub bar_profiles: Vec<BarChartProfile>,
     #[serde(default)]
     pub table_profiles: Vec<TableProfile>,
+    #[serde(default)]
+    pub menu_profiles: Vec<MenuProfile>,
 }
 
 impl WaveProfile {

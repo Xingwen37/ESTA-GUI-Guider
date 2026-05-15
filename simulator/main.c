@@ -13,6 +13,7 @@
 
   #include "ui/WAVE.h"
   #include "ui/BARCHART.h"
+  #include "ui/MENU.h"
   #include "profile/ESTA_Profile.h"
   #include "event/event.h"
   #include "sim_scenario.h"
@@ -117,6 +118,28 @@
           }
       }
 
+      /* MENU 初始化 */
+      int menu_inst_count = profiles->menu_inst_count;
+      if (menu_inst_count > MENU_MAX_NUM) {
+          menu_inst_count = MENU_MAX_NUM;
+      }
+      if (menu_inst_count > ESTA_PROFILE_MAX_MENU_INST) {
+          menu_inst_count = ESTA_PROFILE_MAX_MENU_INST;
+      }
+
+      for (int i = 0; i < menu_inst_count; i++) {
+          if (ESTA_Profile_ApplyMENU(MENU_INST(i), &profiles->menu_profiles[i]) != ESTA_OK) {
+              printf("ESTA_Profile_ApplyMENU failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
+              return 1;
+          }
+          if (MENU_ReDraw(MENU_INST(i)) != ESTA_OK) {
+              printf("MENU_ReDraw failed at inst=%d.\n", i);
+              ESTA_SDL2_Quit();
+              return 1;
+          }
+      }
+
       /* 事件系统与仿真按键窗口初始化 */
       ESTA_Profile_ApplyEvents(profiles);
       BTN_UI_Init(profiles->button_count);
@@ -210,15 +233,22 @@
           }
 
           for (int i = 0; i < table_inst_count; i++) {
-              TABLE_UpdateUInt32(TABLE_INST(i), 0, data_ESTA[0][0]);
-              TABLE_UpdateUInt32(TABLE_INST(i), 1, (uint32_t)(1000U + scenario.tick * 10U));
+              TABLE_UpdateUInt32(TABLE_INST(i), 0, 1, data_ESTA[0][0]);
+              TABLE_UpdateUInt32(TABLE_INST(i), 1, 1, (uint32_t)(1000U + scenario.tick * 10U));
           }
 
           /* 消费事件队列：组件响应外部按键 */
           {
+              /* MENU 组件优先处理输入 */
+              for (int i = 0; i < menu_inst_count; i++) {
+                  MENU_ProcessInput(MENU_INST(i));
+              }
+
               ESTA_EventTypeDef evt;
               while (ESTA_EventPoll(&evt)) {
-                  if (evt.event_type == ESTA_EVENT_BUTTON_PRESS && evt.button_id == 0 &&
+                  if (evt.event_type == ESTA_EVENT_MENU_SELECT) {
+                      printf("MENU SELECT: event_id=%d\n", evt.button_id);
+                  } else if (evt.event_type == ESTA_EVENT_BUTTON_PRESS && evt.button_id == 0 &&
                       inst_count > 0) {
                       WAVE_theme_type cur = WAVE_CONFIG_MEMBER(0, theme_type);
                       WAVE_theme_type next = (cur == WAVE_THEME_DEFAULT)

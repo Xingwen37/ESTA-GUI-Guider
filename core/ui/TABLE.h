@@ -8,8 +8,15 @@
 #include "infra/ui_base.h"
 #include "infra/ui_theme.h"
 
+#ifndef TABLE_MAX_NUM
 #define TABLE_MAX_NUM            4
+#endif
+#ifndef TABLE_MAX_ROWS
 #define TABLE_MAX_ROWS           8
+#endif
+#ifndef TABLE_MAX_COLS
+#define TABLE_MAX_COLS           6
+#endif
 #define TABLE_MAX_STRING_LEN     16
 
 #define TABLE_INST(i)                   (i)
@@ -24,35 +31,31 @@ typedef enum {
 typedef enum {
     TABLE_THEME_FRAME_INDEX = 0,
     TABLE_THEME_BACKGROUND_INDEX,
-    TABLE_THEME_LABEL_INDEX,
-    TABLE_THEME_VALUE_INDEX,
-    TABLE_THEME_UNIT_INDEX,
+    TABLE_THEME_HEADER_INDEX,
+    TABLE_THEME_TEXT_INDEX,
     TABLE_THEME_LINE_INDEX,
     TABLE_THEME_INDEX_COUNT
 } TABLE_theme_color_index_type;
 
 typedef enum {
-    TABLE_VALUE_TEXT = 0,
-    TABLE_VALUE_NUMBER,
-    TABLE_VALUE_KIND_COUNT
-} TABLE_ValueKind;
-
-typedef enum {
-    TABLE_NUMBER_UINT32 = 0,
-    TABLE_NUMBER_FLOAT,
-    TABLE_NUMBER_TYPE_COUNT
-} TABLE_NumberType;
+    TABLE_CELL_TEXT = 0,
+    TABLE_CELL_UINT32,
+    TABLE_CELL_FLOAT,
+    TABLE_CELL_TYPE_COUNT
+} TABLE_CellType;
 
 typedef struct {
-    char label[TABLE_MAX_STRING_LEN + 1];
-    TABLE_ValueKind value_kind;
-    TABLE_NumberType number_type;
-    char unit[TABLE_MAX_STRING_LEN + 1];
+    char header[TABLE_MAX_STRING_LEN + 1];
+    TABLE_CellType cell_type;
+    uint16_t width;
     uint8_t precision;
-    uint32_t default_u32;
-    float default_float;
-    char default_text[TABLE_MAX_STRING_LEN + 1];
-} TABLE_RowConfig_TypeDef;
+} TABLE_ColConfig_TypeDef;
+
+typedef union {
+    uint32_t u32;
+    float f32;
+    char text[TABLE_MAX_STRING_LEN + 1];
+} TABLE_CellValue;
 
 #define TABLE_CONFIG_MEMBER(inst, reg_name)  \
             TABLE_INST_ADDR(inst).TABLE_Config.reg_name
@@ -75,6 +78,7 @@ typedef struct {
 #define IS_VALID_TABLE_INST(x)  ((int)(x) < TABLE_MAX_NUM && (int)(x) >= 0)
 #define IS_VALID_TABLE_THEME(x) ((int)(x) < TABLE_THEME_COUNT && (int)(x) >= 0)
 #define IS_VALID_TABLE_ROW(x)   ((uint16_t)(x) < TABLE_MAX_ROWS)
+#define IS_VALID_TABLE_COL(x)   ((uint16_t)(x) < TABLE_MAX_COLS)
 
 typedef struct {
     uint16_t       x_origin;
@@ -83,32 +87,23 @@ typedef struct {
     uint16_t       y_width;
 
     uint16_t       row_count;
+    uint16_t       col_count;
     uint16_t       row_height;
-    uint16_t       label_col_width;
-    uint16_t       value_col_width;
-    uint16_t       unit_col_width;
-    volatile bool  is_auto_col_width;
+    volatile bool  is_show_header;
     volatile bool  is_show_frame;
     volatile bool  is_show_row_line;
+    volatile bool  is_show_col_line;
     volatile bool  is_fill_background;
 
-    const TABLE_RowConfig_TypeDef *rows;
-    ESTA_FontSize font_size;
+    const TABLE_ColConfig_TypeDef *cols;
+    ESTA_FontSize  font_size;
     TABLE_theme_type theme_type;
 } TABLE_Config_TypeDef;
 
-typedef union {
-    uint32_t u32;
-    float f32;
-    char text[TABLE_MAX_STRING_LEN + 1];
-} TABLE_CellValue;
-
 typedef struct {
-    TABLE_RowConfig_TypeDef rows[TABLE_MAX_ROWS];
-    TABLE_CellValue values[TABLE_MAX_ROWS];
-    uint16_t label_col_width_actual;
-    uint16_t value_col_width_actual;
-    uint16_t unit_col_width_actual;
+    TABLE_ColConfig_TypeDef cols[TABLE_MAX_COLS];
+    TABLE_CellValue cells[TABLE_MAX_ROWS][TABLE_MAX_COLS];
+    uint16_t col_width_actual[TABLE_MAX_COLS];
 } TABLE_Private_Typedef;
 
 typedef struct {
@@ -118,14 +113,15 @@ typedef struct {
 
 extern TABLE_TypeDef TABLE_State[TABLE_MAX_NUM];
 
-ESTA_StatusTypeDef TABLE_ConfigSetRows(TABLE_Config_TypeDef *config,
-    const TABLE_RowConfig_TypeDef *rows, uint16_t row_count);
-ESTA_StatusTypeDef TABLE_ConfigSetLayout(TABLE_Config_TypeDef *config,
-    uint16_t row_height, uint16_t label_col_width,
-    uint16_t value_col_width, uint16_t unit_col_width,
-    bool is_auto_col_width);
+ESTA_StatusTypeDef TABLE_ConfigSetCols(TABLE_Config_TypeDef *config,
+    const TABLE_ColConfig_TypeDef *cols, uint16_t col_count);
+ESTA_StatusTypeDef TABLE_ConfigSetRowCount(TABLE_Config_TypeDef *config,
+    uint16_t row_count);
+ESTA_StatusTypeDef TABLE_ConfigSetRowHeight(TABLE_Config_TypeDef *config,
+    uint16_t row_height);
 ESTA_StatusTypeDef TABLE_ConfigSetDisplayOptions(TABLE_Config_TypeDef *config,
-    bool is_show_frame, bool is_show_row_line, bool is_fill_background);
+    bool is_show_header, bool is_show_frame, bool is_show_row_line,
+    bool is_show_col_line, bool is_fill_background);
 ESTA_StatusTypeDef TABLE_ConfigSetFontSize(TABLE_Config_TypeDef *config,
     ESTA_FontSize font_size);
 ESTA_StatusTypeDef TABLE_ConfigSetTheme(TABLE_Config_TypeDef *config,
@@ -136,8 +132,13 @@ ESTA_StatusTypeDef TABLE_DeInit(int inst);
 ESTA_StatusTypeDef TABLE_Clear(int inst);
 ESTA_StatusTypeDef TABLE_ReDraw(int inst);
 
-ESTA_StatusTypeDef TABLE_UpdateUInt32(int inst, uint16_t row, uint32_t value);
-ESTA_StatusTypeDef TABLE_UpdateFloat(int inst, uint16_t row, float value);
-ESTA_StatusTypeDef TABLE_UpdateText(int inst, uint16_t row, const char *value);
+ESTA_StatusTypeDef TABLE_UpdateCell(int inst, uint16_t row, uint16_t col,
+    const TABLE_CellValue *value);
+ESTA_StatusTypeDef TABLE_UpdateUInt32(int inst, uint16_t row, uint16_t col,
+    uint32_t value);
+ESTA_StatusTypeDef TABLE_UpdateFloat(int inst, uint16_t row, uint16_t col,
+    float value);
+ESTA_StatusTypeDef TABLE_UpdateText(int inst, uint16_t row, uint16_t col,
+    const char *value);
 
 #endif

@@ -8,7 +8,8 @@
 
 typedef enum {
     ESTA_EVENT_BUTTON_PRESS   = 0,
-    ESTA_EVENT_BUTTON_RELEASE = 1
+    ESTA_EVENT_BUTTON_RELEASE = 1,
+    ESTA_EVENT_MENU_SELECT    = 2
 } ESTA_EventType;
 
 typedef struct {
