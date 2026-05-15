@@ -17,6 +17,10 @@
 
 BARCHART_TypeDef BARCHART_State[BARCHART_MAX_NUM];
 
+static bool BARCHART_IsValidFontSize(ESTA_FontSize font_size) {
+    return (int)font_size >= 0 && font_size < ESTA_FONT_SIZE_COUNT;
+}
+
 static const uint16_t BARCHART_ColorTable[BARCHART_THEME_COUNT][BARCHART_THEME_INDEX_COUNT] = {
     [BARCHART_THEME_DEFAULT] = {
         [BARCHART_THEME_FRAME_INDEX]      = __WHITE,
@@ -81,6 +85,14 @@ ESTA_StatusTypeDef BARCHART_ConfigSetDisplayOptions(BARCHART_Config_TypeDef *con
     return ESTA_OK;
 }
 
+ESTA_StatusTypeDef BARCHART_ConfigSetFontSize(BARCHART_Config_TypeDef *config,
+    ESTA_FontSize font_size) {
+    if (config == NULL) return ESTA_ERROR;
+    if (!BARCHART_IsValidFontSize(font_size)) return ESTA_ERROR;
+    config->font_size = font_size;
+    return ESTA_OK;
+}
+
 ESTA_StatusTypeDef BARCHART_ConfigSetTheme(BARCHART_Config_TypeDef *config,
     BARCHART_theme_type theme_type) {
     if (config == NULL) return ESTA_ERROR;
@@ -133,6 +145,8 @@ ESTA_StatusTypeDef BARCHART_Init(int inst, BARCHART_Config_TypeDef *BARCHART_Ini
 
     BARCHART_WRITE_CONFIG_INIT(inst, is_display_value);
     BARCHART_WRITE_CONFIG_INIT(inst, is_display_axis);
+    if (!BARCHART_IsValidFontSize(BARCHART_Init->font_size)) return ESTA_ERROR;
+    BARCHART_WRITE_CONFIG_INIT(inst, font_size);
 
     if (!IS_VALID_BARCHART_THEME(BARCHART_CONFIG_MEMBER(inst, theme_type)))
         return ESTA_ERROR;
@@ -145,11 +159,14 @@ ESTA_StatusTypeDef BARCHART_Init(int inst, BARCHART_Config_TypeDef *BARCHART_Ini
     uint16_t area_height = BARCHART_Init->y_width;
 
     if (BARCHART_Init->is_display_value) {
-        area_oy     += CHAR_PIXEL_HEIGHT + 2;
-        area_height -= CHAR_PIXEL_HEIGHT + 2;
+        uint16_t font_height = ui_font_height(BARCHART_Init->font_size);
+        uint16_t label_area_height = (uint16_t)(font_height + 2);
+        area_oy += label_area_height;
+        area_height = (area_height > label_area_height) ?
+            (area_height - label_area_height) : 0;
     }
     if (BARCHART_Init->is_display_axis) {
-        area_height -= 2;
+        area_height = (area_height > 2) ? (uint16_t)(area_height - 2) : 0;
     }
 
     uint16_t baseline_y = area_oy + area_height;
@@ -208,6 +225,7 @@ ESTA_StatusTypeDef BARCHART_DeInit(int inst) {
     BARCHART_WRITE_CONFIG(inst, data_values, NULL);
     BARCHART_WRITE_CONFIG(inst, is_display_value, false);
     BARCHART_WRITE_CONFIG(inst, is_display_axis, false);
+    BARCHART_WRITE_CONFIG(inst, font_size, ESTA_FONT_1608);
     BARCHART_WRITE_CONFIG(inst, theme_type, BARCHART_THEME_DEFAULT);
 
     memset(BARCHART_INST_ADDR(inst).BARCHART_Private.data_buff, 0,
@@ -275,6 +293,7 @@ ESTA_StatusTypeDef BARCHART_BarDisplay(int inst) {
     uint16_t display_num_min   = BARCHART_CONFIG_MEMBER(inst, display_num_min);
     uint16_t display_num_max   = BARCHART_CONFIG_MEMBER(inst, display_num_max);
     volatile bool is_display_value = BARCHART_CONFIG_MEMBER(inst, is_display_value);
+    ESTA_FontSize font_size    = BARCHART_CONFIG_MEMBER(inst, font_size);
     uint16_t theme_type        = BARCHART_CONFIG_MEMBER(inst, theme_type);
 
     uint16_t area_ox        = BARCHART_PRIVATE_MEMBER(inst, area_ox);
@@ -288,6 +307,8 @@ ESTA_StatusTypeDef BARCHART_BarDisplay(int inst) {
     uint16_t frame_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_FRAME_INDEX);
     uint16_t bar_color      = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BAR_INDEX);
     uint16_t label_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_LABEL_INDEX);
+    uint16_t font_width     = ui_font_width(font_size);
+    uint16_t font_height    = ui_font_height(font_size);
 
     uint16_t step = bw + bs;
 
@@ -307,10 +328,12 @@ ESTA_StatusTypeDef BARCHART_BarDisplay(int inst) {
         if (is_display_value) {
             uint16_t digits = ui_num_digits(value);
             if (digits == 0) digits = 1;
-            uint16_t label_x = x_left + (bw - digits * CHAR_PIXEL_WIDTH) / 2;
-            uint16_t label_y = (y_top >= CHAR_PIXEL_HEIGHT)
-                ? y_top - CHAR_PIXEL_HEIGHT : 0;
-            SCREEN_DRAW_NUM(label_x, label_y, value, digits, label_color);
+            uint16_t label_width = (uint16_t)(digits * font_width);
+            uint16_t label_x = (bw > label_width) ?
+                (uint16_t)(x_left + (bw - label_width) / 2) : x_left;
+            uint16_t label_y = (y_top >= font_height)
+                ? (uint16_t)(y_top - font_height) : 0;
+            SCREEN_DRAW_NUM_FONT(label_x, label_y, value, digits, font_size, label_color);
         }
     }
 
@@ -380,6 +403,7 @@ ESTA_StatusTypeDef BARCHART_UpdateBar(int inst, uint16_t bar_index, uint16_t new
     uint16_t display_num_min   = BARCHART_CONFIG_MEMBER(inst, display_num_min);
     uint16_t display_num_max   = BARCHART_CONFIG_MEMBER(inst, display_num_max);
     volatile bool is_display_value = BARCHART_CONFIG_MEMBER(inst, is_display_value);
+    ESTA_FontSize font_size    = BARCHART_CONFIG_MEMBER(inst, font_size);
     uint16_t theme_type        = BARCHART_CONFIG_MEMBER(inst, theme_type);
 
     uint16_t area_ox        = BARCHART_PRIVATE_MEMBER(inst, area_ox);
@@ -393,6 +417,8 @@ ESTA_StatusTypeDef BARCHART_UpdateBar(int inst, uint16_t bar_index, uint16_t new
     uint16_t bar_color      = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_BAR_INDEX);
     uint16_t frame_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_FRAME_INDEX);
     uint16_t label_color    = ESTA_THEME_COLOR(BARCHART_ColorTable, theme_type,BARCHART_THEME_LABEL_INDEX);
+    uint16_t font_width     = ui_font_width(font_size);
+    uint16_t font_height    = ui_font_height(font_size);
 
     uint16_t step = bw + bs;
     uint16_t x_left  = area_ox + bar_index * step;
@@ -417,10 +443,12 @@ ESTA_StatusTypeDef BARCHART_UpdateBar(int inst, uint16_t bar_index, uint16_t new
     if (is_display_value) {
         uint16_t digits = ui_num_digits(new_value);
         if (digits == 0) digits = 1;
-        uint16_t label_x = x_left + (bw - digits * CHAR_PIXEL_WIDTH) / 2;
-        uint16_t label_y = (y_top >= CHAR_PIXEL_HEIGHT)
-            ? y_top - CHAR_PIXEL_HEIGHT : 0;
-        SCREEN_DRAW_NUM(label_x, label_y, new_value, digits, label_color);
+        uint16_t label_width = (uint16_t)(digits * font_width);
+        uint16_t label_x = (bw > label_width) ?
+            (uint16_t)(x_left + (bw - label_width) / 2) : x_left;
+        uint16_t label_y = (y_top >= font_height)
+            ? (uint16_t)(y_top - font_height) : 0;
+        SCREEN_DRAW_NUM_FONT(label_x, label_y, new_value, digits, font_size, label_color);
     }
 
     return ESTA_OK;

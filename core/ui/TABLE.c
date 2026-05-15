@@ -116,6 +116,8 @@ static void TABLE_CalcColumns(int inst) {
     uint16_t label_w = TABLE_CONFIG_MEMBER(inst, label_col_width);
     uint16_t value_w = TABLE_CONFIG_MEMBER(inst, value_col_width);
     uint16_t unit_w = TABLE_CONFIG_MEMBER(inst, unit_col_width);
+    ESTA_FontSize font_size = TABLE_CONFIG_MEMBER(inst, font_size);
+    uint16_t font_width = ui_font_width(font_size);
 
     if (TABLE_CONFIG_MEMBER(inst, is_auto_col_width)) {
         uint8_t max_label = 1;
@@ -132,9 +134,9 @@ static void TABLE_CalcColumns(int inst) {
             if (value_len > max_value) max_value = value_len;
             if (unit_len > max_unit) max_unit = unit_len;
         }
-        label_w = (uint16_t)((max_label + 1U) * CHAR_PIXEL_WIDTH);
-        value_w = (uint16_t)((max_value + 1U) * CHAR_PIXEL_WIDTH);
-        unit_w = (uint16_t)((max_unit + 1U) * CHAR_PIXEL_WIDTH);
+        label_w = (uint16_t)((max_label + 1U) * font_width);
+        value_w = (uint16_t)((max_value + 1U) * font_width);
+        unit_w = (uint16_t)((max_unit + 1U) * font_width);
         uint16_t total = label_w + value_w + unit_w;
         uint16_t x_width = TABLE_CONFIG_MEMBER(inst, x_width);
         if (total < x_width) {
@@ -179,6 +181,14 @@ ESTA_StatusTypeDef TABLE_ConfigSetDisplayOptions(TABLE_Config_TypeDef *config,
     return ESTA_OK;
 }
 
+ESTA_StatusTypeDef TABLE_ConfigSetFontSize(TABLE_Config_TypeDef *config,
+    ESTA_FontSize font_size) {
+    if (config == NULL) return ESTA_ERROR;
+    if ((int)font_size < 0 || font_size >= ESTA_FONT_SIZE_COUNT) return ESTA_ERROR;
+    config->font_size = font_size;
+    return ESTA_OK;
+}
+
 ESTA_StatusTypeDef TABLE_ConfigSetTheme(TABLE_Config_TypeDef *config,
     TABLE_theme_type theme_type) {
     if (config == NULL) return ESTA_ERROR;
@@ -206,6 +216,7 @@ ESTA_StatusTypeDef TABLE_Init(int inst, TABLE_Config_TypeDef *TABLE_Init) {
     TABLE_WRITE_CONFIG_INIT(inst, is_show_frame);
     TABLE_WRITE_CONFIG_INIT(inst, is_show_row_line);
     TABLE_WRITE_CONFIG_INIT(inst, is_fill_background);
+    TABLE_WRITE_CONFIG_INIT(inst, font_size);
     TABLE_WRITE_CONFIG_INIT(inst, theme_type);
     TABLE_WRITE_CONFIG(inst, rows, NULL);
 
@@ -260,6 +271,8 @@ ESTA_StatusTypeDef TABLE_ReDraw(int inst) {
     uint16_t row_h = TABLE_CONFIG_MEMBER(inst, row_height);
     uint16_t rows = TABLE_CONFIG_MEMBER(inst, row_count);
     uint16_t theme = TABLE_CONFIG_MEMBER(inst, theme_type);
+    ESTA_FontSize font_size = TABLE_CONFIG_MEMBER(inst, font_size);
+    uint16_t font_height = ui_font_height(font_size);
 
     uint16_t frame = ESTA_THEME_COLOR(TABLE_ColorTable, theme, TABLE_THEME_FRAME_INDEX);
     uint16_t bg = ESTA_THEME_COLOR(TABLE_ColorTable, theme, TABLE_THEME_BACKGROUND_INDEX);
@@ -280,13 +293,16 @@ ESTA_StatusTypeDef TABLE_ReDraw(int inst) {
     char value_buf[TABLE_MAX_STRING_LEN + 1];
 
     for (uint16_t i = 0; i < rows; i++) {
-        uint16_t row_y = (uint16_t)(y + i * row_h + ((row_h > CHAR_PIXEL_HEIGHT) ?
-                         (row_h - CHAR_PIXEL_HEIGHT) / 2 : 0));
+        uint16_t row_y = (uint16_t)(y + i * row_h + ((row_h > font_height) ?
+                         (row_h - font_height) / 2 : 0));
         TABLE_RowConfig_TypeDef *row = &TABLE_PRIVATE_MEMBER_ARRAY(inst, rows, i);
         TABLE_FormatValue(inst, i, value_buf, sizeof(value_buf));
-        SCREEN_DRAW_STRING(x + 2, row_y, row->label, TABLE_StrLen16(row->label), label);
-        SCREEN_DRAW_STRING(x + label_w, row_y, value_buf, TABLE_StrLen16(value_buf), value);
-        SCREEN_DRAW_STRING(x + label_w + value_w, row_y, row->unit, TABLE_StrLen16(row->unit), unit);
+        SCREEN_DRAW_STRING_FONT(x + 2, row_y, row->label, TABLE_StrLen16(row->label),
+                                font_size, label);
+        SCREEN_DRAW_STRING_FONT(x + label_w, row_y, value_buf, TABLE_StrLen16(value_buf),
+                                font_size, value);
+        SCREEN_DRAW_STRING_FONT(x + label_w + value_w, row_y, row->unit, TABLE_StrLen16(row->unit),
+                                font_size, unit);
         if (TABLE_CONFIG_MEMBER(inst, is_show_row_line) && i + 1 < rows) {
             uint16_t line_y = (uint16_t)(y + (i + 1) * row_h);
             SCREEN_DRAW_LINE(x, line_y, x + w, line_y, line);

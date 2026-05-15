@@ -1,5 +1,5 @@
 import type { BarChartProfile } from "../lib/types";
-import { BAR_THEME_OPTIONS } from "../lib/types";
+import { BAR_THEME_OPTIONS, UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 interface Props {
   profile: BarChartProfile;
@@ -91,6 +91,14 @@ export default function BarChartEditor({ profile, onChange }: Props) {
             checked={profile.is_display_axis}
             onChange={(e) => set("is_display_axis", e.target.checked)}
           />
+        </div>
+        <div className="form-row">
+          <label>font_size</label>
+          <select value={profile.font_size} onChange={(e) => set("font_size", e.target.value)}>
+            {UI_FONT_SIZE_OPTIONS.map(([value, text]) => (
+              <option key={value} value={value}>{text}</option>
+            ))}
+          </select>
         </div>
         <div className="form-row">
           <label>theme_type</label>

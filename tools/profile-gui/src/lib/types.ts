@@ -1,3 +1,9 @@
+export interface WaveRulerLabel {
+  value_type: string;
+  int_value: number;
+  float_value: number;
+}
+
 export interface WaveProfile {
   x_origin: number;
   y_origin: number;
@@ -5,18 +11,27 @@ export interface WaveProfile {
   y_width: number;
   display_num_min: number;
   display_num_max: number;
+  x_scale: number;
   channel_num: number;
   channel_mask: number;
   is_display_ruler_y: boolean;
   ruler_y: number[];
+  ruler_label_y: WaveRulerLabel[];
+  ruler_unit_y: string;
+  ruler_precision_y: number;
   ruler_count_y: number;
   ruler_num_digits_y: number;
+  ruler_font_size_y: string;
   is_display_ruler_x: boolean;
   ruler_x: number[];
+  ruler_label_x: WaveRulerLabel[];
+  ruler_unit_x: string;
+  ruler_precision_x: number;
   ruler_count_x: number;
   ruler_zero_value_x: number;
   ruler_full_value_x: number;
   ruler_num_digits_x: number;
+  ruler_font_size_x: string;
   theme_type: string;
   is_auto_clear: boolean;
   is_use_batch_draw: boolean;
@@ -34,6 +49,7 @@ export interface BarChartProfile {
   bar_spacing: number;
   is_display_value: boolean;
   is_display_axis: boolean;
+  font_size: string;
   theme_type: string;
 }
 
@@ -62,6 +78,7 @@ export interface TableProfile {
   is_show_frame: boolean;
   is_show_row_line: boolean;
   is_fill_background: boolean;
+  font_size: string;
   theme_type: string;
   rows: TableRowProfile[];
 }
@@ -89,6 +106,17 @@ export const BAR_THEME_OPTIONS = [
 export const TABLE_THEME_OPTIONS = [
   ["TABLE_THEME_DEFAULT", "Default"],
   ["TABLE_THEME_LIGHT", "Light"],
+] as const;
+
+export const UI_FONT_SIZE_OPTIONS = [
+  ["ESTA_FONT_1206", "6x12"],
+  ["ESTA_FONT_1608", "8x16"],
+  ["ESTA_FONT_2412", "12x24"],
+] as const;
+
+export const WAVE_RULER_LABEL_TYPE_OPTIONS = [
+  ["WAVE_RULER_LABEL_INT", "Integer"],
+  ["WAVE_RULER_LABEL_FLOAT", "Float"],
 ] as const;
 
 export const TABLE_VALUE_KIND_OPTIONS = [

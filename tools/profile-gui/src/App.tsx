@@ -14,17 +14,35 @@ import {
   MAX_TABLE_ROWS,
 } from "./lib/types";
 
+const labelFromPosition = (value: number) => ({
+  value_type: "WAVE_RULER_LABEL_INT",
+  int_value: value,
+  float_value: value,
+});
+
+const DEFAULT_RULER_Y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0];
+const DEFAULT_RULER_X = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0];
+
 const EMPTY_WAVE_PROFILE: WaveProfile = {
   x_origin: 0, y_origin: 0, x_width: 200, y_width: 120,
   display_num_min: 0, display_num_max: 4095,
+  x_scale: 1,
   channel_num: 4, channel_mask: 0b00001111,
   is_display_ruler_y: true,
-  ruler_y: [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0],
+  ruler_y: DEFAULT_RULER_Y,
+  ruler_label_y: DEFAULT_RULER_Y.map(labelFromPosition),
+  ruler_unit_y: "",
+  ruler_precision_y: 0,
   ruler_count_y: 4, ruler_num_digits_y: 4,
+  ruler_font_size_y: "ESTA_FONT_1608",
   is_display_ruler_x: true,
-  ruler_x: [30, 50, 90, 0, 0, 0, 0, 0, 0, 0],
+  ruler_x: DEFAULT_RULER_X,
+  ruler_label_x: DEFAULT_RULER_X.map(labelFromPosition),
+  ruler_unit_x: "",
+  ruler_precision_x: 0,
   ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
   ruler_num_digits_x: 8,
+  ruler_font_size_x: "ESTA_FONT_1608",
   theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
   is_use_batch_draw: false,
@@ -35,6 +53,7 @@ const EMPTY_BAR_PROFILE: BarChartProfile = {
   display_num_min: 0, display_num_max: 100,
   bar_count: 6, bar_width: 0, bar_spacing: 0,
   is_display_value: true, is_display_axis: true,
+  font_size: "ESTA_FONT_1608",
   theme_type: "BARCHART_THEME_DEFAULT",
 };
 
@@ -46,6 +65,7 @@ const EMPTY_TABLE_PROFILE: TableProfile = {
   is_show_frame: true,
   is_show_row_line: false,
   is_fill_background: true,
+  font_size: "ESTA_FONT_1608",
   theme_type: "TABLE_THEME_LIGHT",
   rows: [
     { label: "Vpp", value_kind: "TABLE_VALUE_NUMBER", number_type: "TABLE_NUMBER_UINT32", unit: "mV", precision: 0, default_u32: 1000, default_float: 0, default_text: "" },
@@ -59,6 +79,8 @@ function cloneWaveProfile(): WaveProfile {
     ...EMPTY_WAVE_PROFILE,
     ruler_y: [...EMPTY_WAVE_PROFILE.ruler_y],
     ruler_x: [...EMPTY_WAVE_PROFILE.ruler_x],
+    ruler_label_y: EMPTY_WAVE_PROFILE.ruler_label_y.map((label) => ({ ...label })),
+    ruler_label_x: EMPTY_WAVE_PROFILE.ruler_label_x.map((label) => ({ ...label })),
   };
 }
 
@@ -86,6 +108,8 @@ function validateWave(profiles: WaveProfile[], count: number): string | null {
     const p = profiles[i];
     if (p.display_num_min >= p.display_num_max)
       return `WAVE${i}: display_num_min 必须小于 display_num_max`;
+    if (p.x_scale < 1)
+      return `WAVE${i}: x_scale 必须大于等于 1`;
     if (p.ruler_count_x > MAX_RULER_X_NUM)
       return `WAVE${i}: ruler_count_x 超过上限`;
     if (p.ruler_count_y > MAX_RULER_Y_NUM)

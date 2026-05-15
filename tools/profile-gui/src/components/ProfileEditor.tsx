@@ -1,5 +1,12 @@
-﻿import type { WaveProfile } from "../lib/types";
-import { WAVE_THEME_OPTIONS, MAX_RULER_X_NUM, MAX_RULER_Y_NUM, MAX_WAVE_CHANNEL } from "../lib/types";
+import type { WaveProfile, WaveRulerLabel } from "../lib/types";
+import {
+  MAX_RULER_X_NUM,
+  MAX_RULER_Y_NUM,
+  MAX_WAVE_CHANNEL,
+  UI_FONT_SIZE_OPTIONS,
+  WAVE_RULER_LABEL_TYPE_OPTIONS,
+  WAVE_THEME_OPTIONS,
+} from "../lib/types";
 
 interface Props {
   profile: WaveProfile;
@@ -17,6 +24,12 @@ function spin(value: number, min: number, max: number, onChange: (v: number) => 
     />
   );
 }
+
+const emptyLabel = (): WaveRulerLabel => ({
+  value_type: "WAVE_RULER_LABEL_INT",
+  int_value: 0,
+  float_value: 0,
+});
 
 export default function ProfileEditor({ profile, onChange }: Props) {
   const set = (key: keyof WaveProfile, value: unknown) =>
@@ -38,6 +51,74 @@ export default function ProfileEditor({ profile, onChange }: Props) {
     arr[idx] = val;
     set("ruler_x", arr);
   };
+
+  const setRulerLabelY = (idx: number, patch: Partial<WaveRulerLabel>) => {
+    const arr = [...profile.ruler_label_y];
+    arr[idx] = { ...(arr[idx] ?? emptyLabel()), ...patch };
+    set("ruler_label_y", arr);
+  };
+
+  const setRulerLabelX = (idx: number, patch: Partial<WaveRulerLabel>) => {
+    const arr = [...profile.ruler_label_x];
+    arr[idx] = { ...(arr[idx] ?? emptyLabel()), ...patch };
+    set("ruler_label_x", arr);
+  };
+
+  const rulerLabelEditor = (
+    axis: "x" | "y",
+    max: number,
+    positions: number[],
+    labels: WaveRulerLabel[],
+    onPos: (idx: number, value: number) => void,
+    onLabel: (idx: number, patch: Partial<WaveRulerLabel>) => void,
+  ) => (
+    <div className="ruler-label-grid">
+      <div className="ruler-label-row ruler-label-head">
+        <span>{axis.toUpperCase()}</span>
+        <span>pos</span>
+        <span>type</span>
+        <span>int</span>
+        <span>float</span>
+      </div>
+      {Array.from({ length: max }, (_, i) => {
+        const label = labels[i] ?? emptyLabel();
+        return (
+          <div className="ruler-label-row" key={`${axis}-${i}`}>
+            <span>#{i}</span>
+            <input
+              type="number"
+              title="tick position"
+              value={positions[i] ?? 0}
+              min={0}
+              max={65535}
+              onChange={(e) => onPos(i, Number(e.target.value) || 0)}
+            />
+            <select
+              value={label.value_type}
+              onChange={(e) => onLabel(i, { value_type: e.target.value })}
+            >
+              {WAVE_RULER_LABEL_TYPE_OPTIONS.map(([value, text]) => (
+                <option key={value} value={value}>{text}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              title="integer label"
+              value={label.int_value}
+              onChange={(e) => onLabel(i, { int_value: Number(e.target.value) || 0 })}
+            />
+            <input
+              type="number"
+              title="float label"
+              step="0.01"
+              value={label.float_value}
+              onChange={(e) => onLabel(i, { float_value: Number(e.target.value) || 0 })}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div>
@@ -68,19 +149,18 @@ export default function ProfileEditor({ profile, onChange }: Props) {
           {spin(profile.display_num_max, 0, 65535, (v) => set("display_num_max", v))}
         </div>
         <div className="form-row">
+          <label>x_scale</label>
+          {spin(profile.x_scale, 1, 16, (v) => set("x_scale", v < 1 ? 1 : v))}
+        </div>
+        <div className="form-row">
           <label>channel_num</label>
           {spin(profile.channel_num, 1, MAX_WAVE_CHANNEL, (v) => set("channel_num", v))}
         </div>
         <div className="form-row">
           <label>theme_type</label>
-          <select
-            value={profile.theme_type}
-            onChange={(e) => set("theme_type", e.target.value)}
-          >
+          <select value={profile.theme_type} onChange={(e) => set("theme_type", e.target.value)}>
             {WAVE_THEME_OPTIONS.map(([value, text]) => (
-              <option key={value} value={value}>
-                {text}
-              </option>
+              <option key={value} value={value}>{text}</option>
             ))}
           </select>
         </div>
@@ -129,19 +209,25 @@ export default function ProfileEditor({ profile, onChange }: Props) {
           />
         </div>
         <div className="form-row">
-          <label>ruler_y[]</label>
-          <div className="ruler-values">
-            {Array.from({ length: MAX_RULER_Y_NUM }, (_, i) => (
-              <input
-                key={i}
-                type="number"
-                value={profile.ruler_y[i] ?? 0}
-                min={0}
-                max={65535}
-                onChange={(e) => setRulerY(i, Number(e.target.value) || 0)}
-              />
-            ))}
-          </div>
+          <label>unit / precision</label>
+          <input
+            type="text"
+            value={profile.ruler_unit_y}
+            maxLength={16}
+            onChange={(e) => set("ruler_unit_y", e.target.value)}
+          />
+          {spin(profile.ruler_precision_y, 0, 4, (v) => set("ruler_precision_y", v))}
+        </div>
+        <div className="form-row">
+          <label>Y ticks / labels</label>
+          {rulerLabelEditor(
+            "y",
+            MAX_RULER_Y_NUM,
+            profile.ruler_y,
+            profile.ruler_label_y,
+            setRulerY,
+            setRulerLabelY,
+          )}
         </div>
         <div className="form-row">
           <label>ruler_count_y</label>
@@ -150,6 +236,14 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         <div className="form-row">
           <label>ruler_num_digits_y</label>
           {spin(profile.ruler_num_digits_y, 0, 16, (v) => set("ruler_num_digits_y", v))}
+        </div>
+        <div className="form-row">
+          <label>ruler_font_size_y</label>
+          <select value={profile.ruler_font_size_y} onChange={(e) => set("ruler_font_size_y", e.target.value)}>
+            {UI_FONT_SIZE_OPTIONS.map(([value, text]) => (
+              <option key={value} value={value}>{text}</option>
+            ))}
+          </select>
         </div>
       </fieldset>
 
@@ -164,19 +258,25 @@ export default function ProfileEditor({ profile, onChange }: Props) {
           />
         </div>
         <div className="form-row">
-          <label>ruler_x[]</label>
-          <div className="ruler-values">
-            {Array.from({ length: MAX_RULER_X_NUM }, (_, i) => (
-              <input
-                key={i}
-                type="number"
-                value={profile.ruler_x[i] ?? 0}
-                min={0}
-                max={65535}
-                onChange={(e) => setRulerX(i, Number(e.target.value) || 0)}
-              />
-            ))}
-          </div>
+          <label>unit / precision</label>
+          <input
+            type="text"
+            value={profile.ruler_unit_x}
+            maxLength={16}
+            onChange={(e) => set("ruler_unit_x", e.target.value)}
+          />
+          {spin(profile.ruler_precision_x, 0, 4, (v) => set("ruler_precision_x", v))}
+        </div>
+        <div className="form-row">
+          <label>X ticks / labels</label>
+          {rulerLabelEditor(
+            "x",
+            MAX_RULER_X_NUM,
+            profile.ruler_x,
+            profile.ruler_label_x,
+            setRulerX,
+            setRulerLabelX,
+          )}
         </div>
         <div className="form-row">
           <label>ruler_count_x</label>
@@ -193,6 +293,14 @@ export default function ProfileEditor({ profile, onChange }: Props) {
         <div className="form-row">
           <label>ruler_num_digits_x</label>
           {spin(profile.ruler_num_digits_x, 0, 16, (v) => set("ruler_num_digits_x", v))}
+        </div>
+        <div className="form-row">
+          <label>ruler_font_size_x</label>
+          <select value={profile.ruler_font_size_x} onChange={(e) => set("ruler_font_size_x", e.target.value)}>
+            {UI_FONT_SIZE_OPTIONS.map(([value, text]) => (
+              <option key={value} value={value}>{text}</option>
+            ))}
+          </select>
         </div>
       </fieldset>
     </div>

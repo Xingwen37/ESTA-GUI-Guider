@@ -138,14 +138,7 @@
       }
 
       for (int i = 0; i < inst_count; i++) {
-          uint16_t xw = WAVE_CONFIG_MEMBER(i, x_width);
-          uint16_t rndy = WAVE_CONFIG_MEMBER(i, ruler_num_digits_y);
-          volatile bool idry = WAVE_CONFIG_MEMBER(i, is_display_ruler_y);
-          uint16_t label_width = rndy * CHAR_PIXEL_WIDTH;
-          uint16_t xfw = xw;
-          if (idry) {
-              xfw = (xw > label_width) ? (xw - label_width) : 0;
-          }
+          uint16_t xfw = WAVE_GetSampleCapacity(WAVE_INST(i));
           if (xfw > SIM_BATCH_MAX_POINTS) {
               xfw = SIM_BATCH_MAX_POINTS;
           }

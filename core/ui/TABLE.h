@@ -93,6 +93,7 @@ typedef struct {
     volatile bool  is_fill_background;
 
     const TABLE_RowConfig_TypeDef *rows;
+    ESTA_FontSize font_size;
     TABLE_theme_type theme_type;
 } TABLE_Config_TypeDef;
 
@@ -125,6 +126,8 @@ ESTA_StatusTypeDef TABLE_ConfigSetLayout(TABLE_Config_TypeDef *config,
     bool is_auto_col_width);
 ESTA_StatusTypeDef TABLE_ConfigSetDisplayOptions(TABLE_Config_TypeDef *config,
     bool is_show_frame, bool is_show_row_line, bool is_fill_background);
+ESTA_StatusTypeDef TABLE_ConfigSetFontSize(TABLE_Config_TypeDef *config,
+    ESTA_FontSize font_size);
 ESTA_StatusTypeDef TABLE_ConfigSetTheme(TABLE_Config_TypeDef *config,
     TABLE_theme_type theme_type);
 

@@ -81,6 +81,7 @@ typedef struct {
     /* 显示选项 */
     volatile bool  is_display_value;
     volatile bool  is_display_axis;
+    ESTA_FontSize  font_size;
     /* 主题 */
     BARCHART_theme_type theme_type;
 } BARCHART_Config_TypeDef;
@@ -119,6 +120,8 @@ ESTA_StatusTypeDef BARCHART_ConfigSetData(BARCHART_Config_TypeDef *config,
     uint16_t *data_values, uint16_t data_count);
 ESTA_StatusTypeDef BARCHART_ConfigSetDisplayOptions(BARCHART_Config_TypeDef *config,
     bool is_display_value, bool is_display_axis);
+ESTA_StatusTypeDef BARCHART_ConfigSetFontSize(BARCHART_Config_TypeDef *config,
+    ESTA_FontSize font_size);
 ESTA_StatusTypeDef BARCHART_ConfigSetTheme(BARCHART_Config_TypeDef *config,
     BARCHART_theme_type theme_type);
 

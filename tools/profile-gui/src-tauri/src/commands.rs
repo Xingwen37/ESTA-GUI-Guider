@@ -4,7 +4,10 @@ use std::process::Command;
 use serde_json::json;
 use tauri::State;
 
-use crate::models::{BarChartProfile, ProfileSet, TableProfile, TableRowProfile, WaveProfile};
+use crate::models::{
+    BarChartProfile, ProfileSet, TableProfile, TableRowProfile, WaveProfile,
+    WaveRulerLabelProfile,
+};
 
 const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
 const PROFILE_C: &str = "core/profile/ESTA_Profile.c";
@@ -33,7 +36,12 @@ pub fn load_profile(state: State<AppState>) -> Result<ProfileSet, String> {
         if content.starts_with('\u{FEFF}') {
             content.remove(0);
         }
-        serde_json::from_str(&content).map_err(|e| format!("JSON 解析失败: {}", e))
+        let has_ruler_label_y = content.contains("\"ruler_label_y\"");
+        let has_ruler_label_x = content.contains("\"ruler_label_x\"");
+        let mut profile: ProfileSet =
+            serde_json::from_str(&content).map_err(|e| format!("JSON 解析失败: {}", e))?;
+        normalize_wave_ruler_labels(&mut profile, has_ruler_label_y, has_ruler_label_x);
+        Ok(profile)
     } else {
         Ok(default_profile())
     }
@@ -55,18 +63,27 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "y_width": p.y_width,
                 "display_num_min": p.display_num_min,
                 "display_num_max": p.display_num_max,
+                "x_scale": p.x_scale,
                 "channel_num": p.channel_num,
                 "channel_mask_expr": p.channel_mask_expr(),
                 "is_display_ruler_y": p.is_display_ruler_y,
                 "ruler_y": p.ruler_y,
+                "ruler_label_y": wave_labels_for_template(&p.ruler_label_y),
+                "ruler_unit_y": c_string_literal(&p.ruler_unit_y),
+                "ruler_precision_y": p.ruler_precision_y,
                 "ruler_count_y": p.ruler_count_y,
                 "ruler_num_digits_y": p.ruler_num_digits_y,
+                "ruler_font_size_y": p.ruler_font_size_y,
                 "is_display_ruler_x": p.is_display_ruler_x,
                 "ruler_x": p.ruler_x,
+                "ruler_label_x": wave_labels_for_template(&p.ruler_label_x),
+                "ruler_unit_x": c_string_literal(&p.ruler_unit_x),
+                "ruler_precision_x": p.ruler_precision_x,
                 "ruler_count_x": p.ruler_count_x,
                 "ruler_zero_value_x": p.ruler_zero_value_x,
                 "ruler_full_value_x": p.ruler_full_value_x,
                 "ruler_num_digits_x": p.ruler_num_digits_x,
+                "ruler_font_size_x": p.ruler_font_size_x,
                 "theme_type": p.theme_type,
                 "is_auto_clear": p.is_auto_clear,
                 "is_use_batch_draw": p.is_use_batch_draw,
@@ -90,6 +107,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "bar_spacing": p.bar_spacing,
                 "is_display_value": p.is_display_value,
                 "is_display_axis": p.is_display_axis,
+                "font_size": p.font_size,
                 "theme_type": p.theme_type,
             })
         })
@@ -129,6 +147,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "is_show_frame": p.is_show_frame,
                 "is_show_row_line": p.is_show_row_line,
                 "is_fill_background": p.is_fill_background,
+                "font_size": p.font_size,
                 "theme_type": p.theme_type,
                 "rows": rows,
             })
@@ -177,6 +196,50 @@ fn c_string_literal(value: &str) -> String {
     }
     out.push('"');
     out
+}
+
+fn wave_label_from_u16(value: u16) -> WaveRulerLabelProfile {
+    WaveRulerLabelProfile {
+        value_type: "WAVE_RULER_LABEL_INT".into(),
+        int_value: i32::from(value),
+        float_value: f32::from(value),
+    }
+}
+
+fn wave_labels_from_positions(values: &[u16; 10]) -> [WaveRulerLabelProfile; 10] {
+    std::array::from_fn(|i| wave_label_from_u16(values[i]))
+}
+
+fn wave_labels_for_template(labels: &[WaveRulerLabelProfile; 10]) -> Vec<serde_json::Value> {
+    labels
+        .iter()
+        .map(|label| {
+            json!({
+                "value_type": label.value_type.clone(),
+                "int_value": label.int_value,
+                "float_value": label.float_value,
+            })
+        })
+        .collect()
+}
+
+fn normalize_wave_ruler_labels(
+    profile: &mut ProfileSet,
+    has_ruler_label_y: bool,
+    has_ruler_label_x: bool,
+) {
+    for wave in &mut profile.wave_profiles {
+        if !has_ruler_label_y {
+            wave.ruler_label_y = wave_labels_from_positions(&wave.ruler_y);
+            wave.ruler_unit_y.clear();
+            wave.ruler_precision_y = 0;
+        }
+        if !has_ruler_label_x {
+            wave.ruler_label_x = wave_labels_from_positions(&wave.ruler_x);
+            wave.ruler_unit_x.clear();
+            wave.ruler_precision_x = 0;
+        }
+    }
 }
 
 #[tauri::command]
@@ -248,6 +311,8 @@ fn default_wave_profile(
     theme_type: &str,
     is_use_batch_draw: bool,
 ) -> WaveProfile {
+    let ruler_y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0];
+    let ruler_x = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0];
     WaveProfile {
         x_origin,
         y_origin,
@@ -255,18 +320,27 @@ fn default_wave_profile(
         y_width: 120,
         display_num_min: 0,
         display_num_max: 4095,
+        x_scale: 1,
         channel_num: 4,
         channel_mask: 0b00001111,
         is_display_ruler_y: true,
-        ruler_y: [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0],
+        ruler_y,
+        ruler_label_y: wave_labels_from_positions(&ruler_y),
+        ruler_unit_y: "".into(),
+        ruler_precision_y: 0,
         ruler_count_y: 4,
         ruler_num_digits_y: 4,
+        ruler_font_size_y: "ESTA_FONT_1608".into(),
         is_display_ruler_x: true,
-        ruler_x: [30, 50, 90, 0, 0, 0, 0, 0, 0, 0],
+        ruler_x,
+        ruler_label_x: wave_labels_from_positions(&ruler_x),
+        ruler_unit_x: "".into(),
+        ruler_precision_x: 0,
         ruler_count_x: 3,
         ruler_zero_value_x: 0,
         ruler_full_value_x: 100,
         ruler_num_digits_x: 8,
+        ruler_font_size_x: "ESTA_FONT_1608".into(),
         theme_type: theme_type.into(),
         is_auto_clear: true,
         is_use_batch_draw,
@@ -288,6 +362,7 @@ fn default_table_profile() -> TableProfile {
         is_show_frame: true,
         is_show_row_line: false,
         is_fill_background: true,
+        font_size: "ESTA_FONT_1608".into(),
         theme_type: "TABLE_THEME_LIGHT".into(),
         rows: vec![
             TableRowProfile {
@@ -345,6 +420,7 @@ fn default_bar_profile(
         bar_spacing: 0,
         is_display_value: true,
         is_display_axis: true,
+        font_size: "ESTA_FONT_1608".into(),
         theme_type: theme_type.into(),
     }
 }

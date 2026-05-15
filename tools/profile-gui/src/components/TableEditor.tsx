@@ -5,6 +5,7 @@ import {
   TABLE_NUMBER_TYPE_OPTIONS,
   TABLE_THEME_OPTIONS,
   TABLE_VALUE_KIND_OPTIONS,
+  UI_FONT_SIZE_OPTIONS,
 } from "../lib/types";
 
 interface Props {
@@ -83,6 +84,12 @@ export default function TableEditor({ profile, onChange }: Props) {
         <div className="form-row"><label>show_frame</label><input type="checkbox" checked={profile.is_show_frame} onChange={(e) => set("is_show_frame", e.target.checked)} /></div>
         <div className="form-row"><label>show_row_line</label><input type="checkbox" checked={profile.is_show_row_line} onChange={(e) => set("is_show_row_line", e.target.checked)} /></div>
         <div className="form-row"><label>fill_background</label><input type="checkbox" checked={profile.is_fill_background} onChange={(e) => set("is_fill_background", e.target.checked)} /></div>
+        <div className="form-row">
+          <label>font_size</label>
+          <select value={profile.font_size} onChange={(e) => set("font_size", e.target.value)}>
+            {UI_FONT_SIZE_OPTIONS.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+          </select>
+        </div>
         <div className="form-row">
           <label>theme_type</label>
           <select value={profile.theme_type} onChange={(e) => set("theme_type", e.target.value)}>

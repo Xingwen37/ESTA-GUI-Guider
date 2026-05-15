@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 /* 模拟屏幕的分辨率定义 */
-#define SIMULATOR_SCREEN_WIDTH  800
-#define SIMULATOR_SCREEN_HEIGHT 480
+#define SIMULATOR_SCREEN_WIDTH  400
+#define SIMULATOR_SCREEN_HEIGHT 320
 
 /* 供 main() 调用的系统级函数 */
 void ESTA_SDL2_Init(void);
@@ -19,6 +19,10 @@ void ESTA_SDL2_DrawRectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 void ESTA_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color);
 void ESTA_SDL2_DrawString(uint16_t x, uint16_t y, const char *str, uint8_t len, uint16_t color);
+void ESTA_SDL2_DrawNumFont(uint16_t x, uint16_t y, uint32_t num, uint8_t len,
+                           uint8_t font_size, uint16_t color);
+void ESTA_SDL2_DrawStringFont(uint16_t x, uint16_t y, const char *str, uint8_t len,
+                              uint8_t font_size, uint16_t color);
 void ESTA_SDL2_Delay(uint32_t ms);
 uint32_t ESTA_SDL2_GetWindowID(void);
 

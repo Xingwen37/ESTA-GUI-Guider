@@ -5,12 +5,13 @@
   "button_count": 4,
   "wave_profiles": [
     {
-      "x_origin": 10,
+      "x_origin": 0,
       "y_origin": 0,
-      "x_width": 200,
+      "x_width": 400,
       "y_width": 256,
       "display_num_min": 0,
       "display_num_max": 256,
+      "x_scale": 2,
       "channel_num": 4,
       "channel_mask": 15,
       "is_display_ruler_y": true,
@@ -26,8 +27,63 @@
         256,
         0
       ],
+      "ruler_label_y": [
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": -128,
+          "float_value": -128.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": -96,
+          "float_value": -96.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": -64,
+          "float_value": -64.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": -32,
+          "float_value": -32.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 0,
+          "float_value": 0.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 32,
+          "float_value": 32.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 64,
+          "float_value": 64.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 96,
+          "float_value": 96.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 128,
+          "float_value": 128.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_INT",
+          "int_value": 0,
+          "float_value": 0.0
+        }
+      ],
+      "ruler_unit_y": "mV",
+      "ruler_precision_y": 0,
       "ruler_count_y": 9,
       "ruler_num_digits_y": 4,
+      "ruler_font_size_y": "ESTA_FONT_1206",
       "is_display_ruler_x": true,
       "ruler_x": [
         20,
@@ -41,10 +97,65 @@
         180,
         200
       ],
+      "ruler_label_x": [
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": -1.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": -0.75
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": -0.5
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": -0.25
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 0.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 0.25
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 0.5
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 0.75
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 1.0
+        },
+        {
+          "value_type": "WAVE_RULER_LABEL_FLOAT",
+          "int_value": 0,
+          "float_value": 1.25
+        }
+      ],
+      "ruler_unit_x": "ms",
+      "ruler_precision_x": 2,
       "ruler_count_x": 10,
       "ruler_zero_value_x": 0,
       "ruler_full_value_x": 200,
       "ruler_num_digits_x": 3,
+      "ruler_font_size_x": "ESTA_FONT_1206",
       "theme_type": "WAVE_THEME_LIGHT",
       "is_auto_clear": true,
       "is_use_batch_draw": false
@@ -53,7 +164,7 @@
   "bar_profiles": [
     {
       "x_origin": 300,
-      "y_origin": 125,
+      "y_origin": 301,
       "x_width": 130,
       "y_width": 110,
       "display_num_min": 0,
@@ -63,13 +174,14 @@
       "bar_spacing": 0,
       "is_display_value": true,
       "is_display_axis": true,
+      "font_size": "ESTA_FONT_1608",
       "theme_type": "BARCHART_THEME_LIGHT"
     }
   ],
   "table_profiles": [
     {
       "x_origin": 210,
-      "y_origin": 0,
+      "y_origin": 300,
       "x_width": 110,
       "y_width": 72,
       "row_count": 2,
@@ -81,6 +193,7 @@
       "is_show_frame": true,
       "is_show_row_line": false,
       "is_fill_background": true,
+      "font_size": "ESTA_FONT_1206",
       "theme_type": "TABLE_THEME_DEFAULT",
       "rows": [
         {

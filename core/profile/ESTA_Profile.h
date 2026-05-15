@@ -21,21 +21,30 @@ typedef struct {
 
     uint16_t display_num_min;
     uint16_t display_num_max;
+    uint16_t x_scale;
 
     uint16_t channel_num;
     uint8_t channel_mask;
 
     bool is_display_ruler_y;
     uint16_t ruler_y[WAVE_MAX_RULER_Y_NUM];
+    WAVE_RulerLabel_TypeDef ruler_label_y[WAVE_MAX_RULER_Y_NUM];
+    char ruler_unit_y[WAVE_MAX_RULER_UNIT_LEN + 1];
+    uint8_t ruler_precision_y;
     uint16_t ruler_count_y;
     uint16_t ruler_num_digits_y;
+    ESTA_FontSize ruler_font_size_y;
 
     bool is_display_ruler_x;
     uint16_t ruler_x[WAVE_MAX_RULER_X_NUM];
+    WAVE_RulerLabel_TypeDef ruler_label_x[WAVE_MAX_RULER_X_NUM];
+    char ruler_unit_x[WAVE_MAX_RULER_UNIT_LEN + 1];
+    uint8_t ruler_precision_x;
     uint16_t ruler_count_x;
     uint16_t ruler_zero_value_x;
     uint16_t ruler_full_value_x;
     uint16_t ruler_num_digits_x;
+    ESTA_FontSize ruler_font_size_x;
 
     WAVE_theme_type theme_type;
     bool is_auto_clear;
@@ -57,6 +66,7 @@ typedef struct {
 
     bool is_display_value;
     bool is_display_axis;
+    ESTA_FontSize font_size;
 
     BARCHART_theme_type theme_type;
 } ESTA_BarChartProfile_TypeDef;
@@ -76,6 +86,7 @@ typedef struct {
     bool is_show_frame;
     bool is_show_row_line;
     bool is_fill_background;
+    ESTA_FontSize font_size;
     TABLE_theme_type theme_type;
     TABLE_RowConfig_TypeDef rows[TABLE_MAX_ROWS];
 } ESTA_TableProfile_TypeDef;

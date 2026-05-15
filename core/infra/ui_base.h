@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef enum {
+    ESTA_FONT_1206 = 0,
+    ESTA_FONT_1608,
+    ESTA_FONT_2412,
+    ESTA_FONT_SIZE_COUNT
+} ESTA_FontSize;
+
 /* ================== 硬件抽象层 ================== */
 // 选择底层屏幕驱动
 // #define SCREEN_USE_ILI9341
@@ -23,6 +30,10 @@
             ILI9341_draw_num(x, y, num, len, COLOR)
 #define SCREEN_DRAW_STRING(x, y, str, len, COLOR) \
             ILI9341_draw_string(x, y, str, len, COLOR)
+#define SCREEN_DRAW_NUM_FONT(x, y, num, len, font, COLOR) \
+            ILI9341_draw_num(x, y, num, len, COLOR)
+#define SCREEN_DRAW_STRING_FONT(x, y, str, len, font, COLOR) \
+            ILI9341_draw_string(x, y, str, len, COLOR)
 
 #elif defined(SCREEN_USE_SDL2)
 #include "esta_port_sdl2.h"
@@ -37,6 +48,10 @@
             ESTA_SDL2_DrawNum(x, y, num, len, COLOR)
 #define SCREEN_DRAW_STRING(x, y, str, len, COLOR) \
             ESTA_SDL2_DrawString(x, y, str, len, COLOR)
+#define SCREEN_DRAW_NUM_FONT(x, y, num, len, font, COLOR) \
+            ESTA_SDL2_DrawNumFont(x, y, num, len, (uint8_t)(font), COLOR)
+#define SCREEN_DRAW_STRING_FONT(x, y, str, len, font, COLOR) \
+            ESTA_SDL2_DrawStringFont(x, y, str, len, (uint8_t)(font), COLOR)
 
 #else
 // 自定义屏幕驱动
@@ -45,6 +60,8 @@
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_NUM(x, y, num, len, COLOR)
 #define SCREEN_DRAW_STRING(x, y, str, len, COLOR)
+#define SCREEN_DRAW_NUM_FONT(x, y, num, len, font, COLOR)
+#define SCREEN_DRAW_STRING_FONT(x, y, str, len, font, COLOR)
 #endif
 
 /* ================== 字体度量 ================== */
@@ -98,5 +115,7 @@ uint16_t ui_coor_normal(uint16_t coor_width, uint16_t value_max_range, uint16_t 
 uint16_t ui_limit(uint16_t max, uint16_t min, uint16_t value);
 bool ui_is_out_of_bound(uint16_t max, uint16_t min, uint16_t value);
 uint16_t ui_num_digits(uint16_t x);
+uint16_t ui_font_width(ESTA_FontSize font_size);
+uint16_t ui_font_height(ESTA_FontSize font_size);
 
 #endif

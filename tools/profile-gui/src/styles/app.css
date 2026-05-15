@@ -149,6 +149,7 @@ body {
 }
 
 .form-row input[type="number"],
+.form-row input[type="text"],
 .form-row select {
   width: 120px;
   padding: 3px 6px;
@@ -183,6 +184,30 @@ body {
 
 .ruler-values input {
   width: 70px;
+}
+
+.ruler-label-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 560px;
+}
+
+.ruler-label-row {
+  display: grid;
+  grid-template-columns: 32px 76px 110px 86px 86px;
+  gap: 6px;
+  align-items: center;
+}
+
+.ruler-label-head {
+  color: #9cdcfe;
+  font-size: 12px;
+}
+
+.ruler-label-row input[type="number"],
+.ruler-label-row select {
+  width: 100%;
 }
 
 /* Toast */

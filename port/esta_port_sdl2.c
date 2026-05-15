@@ -25,6 +25,28 @@ static void draw_pixel(uint16_t x, uint16_t y, uint16_t color) {
     SDL_RenderDrawPoint(g_renderer, x, y);
 }
 
+static void draw_glyph_columns(uint16_t x, uint16_t y, char c, const unsigned char *font,
+                               uint8_t width, uint8_t height, uint8_t bytes_per_col,
+                               uint16_t color) {
+    if (c < ' ' || c > '~') return;
+    int offset = (c - ' ') * width * bytes_per_col;
+    const unsigned char *glyph = font + offset;
+    for (int col = 0; col < width; col++) {
+        for (int byte_idx = 0; byte_idx < bytes_per_col; byte_idx++) {
+            uint8_t line_data = glyph[col * bytes_per_col + byte_idx];
+            for (int bit = 0; bit < 8; bit++) {
+                uint8_t row = (uint8_t)(byte_idx * 8 + bit);
+                if (row >= height) {
+                    break;
+                }
+                if (line_data & (0x80 >> bit)) {
+                    draw_pixel((uint16_t)(x + col), (uint16_t)(y + row), color);
+                }
+            }
+        }
+    }
+}
+
 /* ================== 系统级控制 ================== */
 
 void ESTA_SDL2_Init(void) {
@@ -97,30 +119,39 @@ void ESTA_SDL2_Fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t
     SDL_RenderFillRect(g_renderer, &rect);
 }
 
-void ESTA_SDL2_DrawString(uint16_t x, uint16_t y, const char *str, uint8_t len, uint16_t color) {
+void ESTA_SDL2_DrawStringFont(uint16_t x, uint16_t y, const char *str, uint8_t len,
+                              uint8_t font_size, uint16_t color) {
     if (str == NULL) return;
+    uint8_t width = 8;
     for (int i = 0; i < len; i++) {
         char c = str[i];
         if (c == '\0') break;
-        if (c >= ' ' && c <= '~') { // 确保在 asc2_1608 索引范围内
-            int offset = (c - ' ') * 16;
-            for (int row = 0; row < 16; row++) {
-                uint8_t line_data = asc2_1608[offset + row];
-                for (int col = 0; col < 8; col++) {
-                    if (line_data & (0x01 << col)) { 
-                        draw_pixel(x + col, y + row, color);
-                    }
-                    
-                }
-            }
+        if (font_size == 0) {
+            width = 6;
+            draw_glyph_columns(x, y, c, (const unsigned char *)asc2_1206, 6, 12, 2, color);
+        } else if (font_size == 2) {
+            width = 12;
+            draw_glyph_columns(x, y, c, (const unsigned char *)asc2_2412, 12, 24, 3, color);
+        } else {
+            width = 8;
+            draw_glyph_columns(x, y, c, (const unsigned char *)asc2_1608, 8, 16, 2, color);
         }
-        x += 8; // 渲染完一个字符，X轴偏移一个字宽
+        x += width; // 渲染完一个字符，X轴偏移一个字宽
     }
 }
 
-void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
+void ESTA_SDL2_DrawString(uint16_t x, uint16_t y, const char *str, uint8_t len, uint16_t color) {
+    ESTA_SDL2_DrawStringFont(x, y, str, len, 1, color);
+}
+
+void ESTA_SDL2_DrawNumFont(uint16_t x, uint16_t y, uint32_t num, uint8_t len,
+                           uint8_t font_size, uint16_t color) {
     char buf[16];
     // 格式化为带前导零的字符串
     snprintf(buf, sizeof(buf), "%0*u", len, num);
-    ESTA_SDL2_DrawString(x, y, buf, (uint8_t)strlen(buf), color);
+    ESTA_SDL2_DrawStringFont(x, y, buf, (uint8_t)strlen(buf), font_size, color);
+}
+
+void ESTA_SDL2_DrawNum(uint16_t x, uint16_t y, uint32_t num, uint8_t len, uint16_t color) {
+    ESTA_SDL2_DrawNumFont(x, y, num, len, 1, color);
 }

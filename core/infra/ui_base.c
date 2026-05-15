@@ -33,3 +33,21 @@ uint16_t ui_num_digits(uint16_t x) {
     }
     return count;
 }
+
+uint16_t ui_font_width(ESTA_FontSize font_size) {
+    switch (font_size) {
+        case ESTA_FONT_1206: return 6;
+        case ESTA_FONT_2412: return 12;
+        case ESTA_FONT_1608:
+        default: return CHAR_PIXEL_WIDTH;
+    }
+}
+
+uint16_t ui_font_height(ESTA_FontSize font_size) {
+    switch (font_size) {
+        case ESTA_FONT_1206: return 12;
+        case ESTA_FONT_2412: return 24;
+        case ESTA_FONT_1608:
+        default: return CHAR_PIXEL_HEIGHT;
+    }
+}
