@@ -119,4 +119,7 @@ ESTA_StatusTypeDef MENU_Clear(int inst);
 ESTA_StatusTypeDef MENU_ReDraw(int inst);
 void              MENU_ProcessInput(int inst);
 
+#include "event/event.h"
+bool              MENU_HandleEvent(int inst, const ESTA_Event *event);
+
 #endif

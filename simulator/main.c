@@ -47,7 +47,17 @@ typedef struct {
 
 static SimState g_sim;
 
-static void on_button_press(const ESTA_Event *evt, void *user_data) {
+static bool on_menu_button(const ESTA_Event *evt, void *user_data) {
+    SimState *sim = (SimState *)user_data;
+    uint8_t active = App_GetActivePage(&sim->page_state);
+    for (int i = 0; i < sim->menu_inst_count; i++) {
+        if (sim->profiles->menu_profiles[i].page != active) continue;
+        if (MENU_HandleEvent(MENU_INST(i), evt)) return true;
+    }
+    return false;
+}
+
+static bool on_button_press(const ESTA_Event *evt, void *user_data) {
     SimState *sim = (SimState *)user_data;
     if (evt->source == 0 &&
         sim->wave_inst_count > 0 &&
@@ -57,15 +67,19 @@ static void on_button_press(const ESTA_Event *evt, void *user_data) {
                                ? WAVE_THEME_LIGHT : WAVE_THEME_DEFAULT;
         WAVE_WRITE_CONFIG(0, theme_type, next);
         WAVE_ReDraw(WAVE_INST(0));
+        return true;
     } else if (evt->source == 1 && sim->page_state.page_count > 1) {
         App_PageNext(&sim->page_state);
         printf("Switched to page %d\n", App_GetActivePage(&sim->page_state));
+        return true;
     }
+    return false;
 }
 
-static void on_menu_select(const ESTA_Event *evt, void *user_data) {
+static bool on_menu_select(const ESTA_Event *evt, void *user_data) {
     (void)user_data;
     printf("MENU SELECT: event_id=%d\n", evt->id);
+    return true;
 }
 
 /* ==================== Sim data feed helpers ==================== */
@@ -118,14 +132,6 @@ static void sim_feed_table(SimState *sim) {
         if (sim->profiles->table_profiles[i].page != active) continue;
         TABLE_UpdateUInt32(TABLE_INST(i), 0, 1, sim->data_wave[0][0]);
         TABLE_UpdateUInt32(TABLE_INST(i), 1, 1, (uint32_t)(1000U + sim->scenario.tick * 10U));
-    }
-}
-
-static void sim_process_menu(SimState *sim) {
-    uint8_t active = App_GetActivePage(&sim->page_state);
-    for (int i = 0; i < sim->menu_inst_count; i++) {
-        if (sim->profiles->menu_profiles[i].page != active) continue;
-        MENU_ProcessInput(MENU_INST(i));
     }
 }
 
@@ -188,8 +194,9 @@ int main(int argc, char *argv[])
 
     ESTA_Profile_ApplyEvents(profiles);
     App_EventInit();
-    App_RegisterHandler(ESTA_EVENT_BUTTON_PRESS, on_button_press, &g_sim);
-    App_RegisterHandler(ESTA_EVENT_MENU_SELECT, on_menu_select, NULL);
+    App_Subscribe(ESTA_EVENT_BUTTON_PRESS, 0, 3, on_menu_button, &g_sim);
+    App_Subscribe(ESTA_EVENT_BUTTON_PRESS, 0, APP_SOURCE_ANY, on_button_press, &g_sim);
+    App_Subscribe(ESTA_EVENT_MENU_SELECT, 0, APP_SOURCE_ANY, on_menu_select, NULL);
     BTN_UI_Init(profiles->button_count);
 
     memset(g_sim.ch_buf, 0, sizeof(g_sim.ch_buf));
@@ -228,7 +235,6 @@ int main(int argc, char *argv[])
         sim_feed_barchart(&g_sim);
         sim_feed_table(&g_sim);
 
-        sim_process_menu(&g_sim);
         App_DispatchEvents();
 
         BTN_UI_Render();

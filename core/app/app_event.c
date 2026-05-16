@@ -2,37 +2,70 @@
 #include <stddef.h>
 
 typedef struct {
+    uint8_t type;
+    uint8_t source_min;
+    uint8_t source_max;
     ESTA_EventHandler handler;
     void *user_data;
-} App_HandlerEntry;
+    bool active;
+} App_Subscription;
 
-static App_HandlerEntry g_handlers[APP_EVENT_TYPE_MAX];
+static App_Subscription g_subs[APP_MAX_SUBSCRIPTIONS];
 
 void App_EventInit(void) {
-    for (int i = 0; i < APP_EVENT_TYPE_MAX; i++) {
-        g_handlers[i].handler = NULL;
-        g_handlers[i].user_data = NULL;
+    for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
+        g_subs[i].active = false;
     }
 }
 
-void App_RegisterHandler(ESTA_EventType type, ESTA_EventHandler handler, void *user_data) {
-    if ((uint8_t)type >= APP_EVENT_TYPE_MAX) return;
-    g_handlers[(uint8_t)type].handler = handler;
-    g_handlers[(uint8_t)type].user_data = user_data;
+int App_Subscribe(ESTA_EventType type, uint8_t source_min, uint8_t source_max,
+                  ESTA_EventHandler handler, void *user_data) {
+    if (handler == NULL) return -1;
+    for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
+        if (!g_subs[i].active) {
+            g_subs[i].type = (uint8_t)type;
+            g_subs[i].source_min = source_min;
+            g_subs[i].source_max = source_max;
+            g_subs[i].handler = handler;
+            g_subs[i].user_data = user_data;
+            g_subs[i].active = true;
+            return i;
+        }
+    }
+    return -1;
 }
 
-void App_UnregisterHandler(ESTA_EventType type) {
-    if ((uint8_t)type >= APP_EVENT_TYPE_MAX) return;
-    g_handlers[(uint8_t)type].handler = NULL;
-    g_handlers[(uint8_t)type].user_data = NULL;
+void App_Unsubscribe(int subscription_id) {
+    if (subscription_id < 0 || subscription_id >= APP_MAX_SUBSCRIPTIONS) return;
+    g_subs[subscription_id].active = false;
 }
 
 void App_DispatchEvents(void) {
     ESTA_Event evt;
     while (ESTA_EventPoll(&evt)) {
-        uint8_t t = evt.type;
-        if (t < APP_EVENT_TYPE_MAX && g_handlers[t].handler != NULL) {
-            g_handlers[t].handler(&evt, g_handlers[t].user_data);
+        bool consumed = false;
+
+        for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
+            if (!g_subs[i].active) continue;
+            if (g_subs[i].type != evt.type) continue;
+            if (g_subs[i].source_max == APP_SOURCE_ANY) continue;
+            if (evt.source >= g_subs[i].source_min &&
+                evt.source <= g_subs[i].source_max) {
+                if (g_subs[i].handler(&evt, g_subs[i].user_data)) {
+                    consumed = true;
+                    break;
+                }
+            }
+        }
+
+        if (!consumed) {
+            for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
+                if (!g_subs[i].active) continue;
+                if (g_subs[i].type != evt.type) continue;
+                if (g_subs[i].source_max != APP_SOURCE_ANY) continue;
+                g_subs[i].handler(&evt, g_subs[i].user_data);
+                break;
+            }
         }
     }
 }

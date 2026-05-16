@@ -3,13 +3,15 @@
 
 #include "event/event.h"
 
-#define APP_EVENT_TYPE_MAX 6
+#define APP_MAX_SUBSCRIPTIONS 8
+#define APP_SOURCE_ANY        0xFF
 
-typedef void (*ESTA_EventHandler)(const ESTA_Event *event, void *user_data);
+typedef bool (*ESTA_EventHandler)(const ESTA_Event *event, void *user_data);
 
 void App_EventInit(void);
-void App_RegisterHandler(ESTA_EventType type, ESTA_EventHandler handler, void *user_data);
-void App_UnregisterHandler(ESTA_EventType type);
+int  App_Subscribe(ESTA_EventType type, uint8_t source_min, uint8_t source_max,
+                   ESTA_EventHandler handler, void *user_data);
+void App_Unsubscribe(int subscription_id);
 void App_DispatchEvents(void);
 
 #endif

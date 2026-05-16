@@ -370,3 +370,71 @@ void MENU_ProcessInput(int inst) {
         MENU_ReDraw(inst);
     }
 }
+
+bool MENU_HandleEvent(int inst, const ESTA_Event *event) {
+    if (!IS_VALID_MENU_INST(inst)) return false;
+    if (event == NULL) return false;
+    if (event->type != ESTA_EVENT_BUTTON_PRESS) return false;
+
+    bool state_changed = false;
+
+    switch (event->source) {
+        case 0: /* UP */
+            if (MENU_PRIVATE_MEMBER(inst, selected_idx) > 0) {
+                MENU_WRITE_PRIVATE(inst, selected_idx,
+                    (uint8_t)(MENU_PRIVATE_MEMBER(inst, selected_idx) - 1U));
+                state_changed = true;
+            }
+            break;
+
+        case 1: /* DOWN */
+            if (MENU_PRIVATE_MEMBER(inst, selected_idx) + 1U <
+                MENU_PRIVATE_MEMBER(inst, local_count)) {
+                MENU_WRITE_PRIVATE(inst, selected_idx,
+                    (uint8_t)(MENU_PRIVATE_MEMBER(inst, selected_idx) + 1U));
+                state_changed = true;
+            }
+            break;
+
+        case 2: /* ENTER */
+            {
+                uint8_t sel = MENU_PRIVATE_MEMBER(inst, selected_idx);
+                if (sel < MENU_PRIVATE_MEMBER(inst, local_count)) {
+                    uint8_t global_idx = MENU_PRIVATE_MEMBER_ARRAY(inst, local_items, sel);
+                    const MENU_ItemConfig *item =
+                        &MENU_PRIVATE_MEMBER_ARRAY(inst, items, global_idx);
+                    if (item->is_submenu) {
+                        uint8_t depth = MENU_PRIVATE_MEMBER(inst, nav_depth);
+                        if (depth < MENU_MAX_DEPTH) {
+                            MENU_WRITE_PRIVATE_ARRAY(inst, nav_stack, depth, global_idx);
+                            MENU_WRITE_PRIVATE(inst, nav_depth, (uint8_t)(depth + 1U));
+                            MENU_RebuildLocalList(inst);
+                            state_changed = true;
+                        }
+                    } else {
+                        ESTA_EventEmitMenuSelect((uint8_t)inst, item->event_id);
+                    }
+                }
+            }
+            break;
+
+        case 3: /* BACK */
+            {
+                uint8_t depth = MENU_PRIVATE_MEMBER(inst, nav_depth);
+                if (depth > 0) {
+                    MENU_WRITE_PRIVATE(inst, nav_depth, (uint8_t)(depth - 1U));
+                    MENU_RebuildLocalList(inst);
+                    state_changed = true;
+                }
+            }
+            break;
+
+        default:
+            return false;
+    }
+
+    if (state_changed) {
+        MENU_ReDraw(inst);
+    }
+    return true;
+}
