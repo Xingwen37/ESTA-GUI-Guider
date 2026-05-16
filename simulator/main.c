@@ -23,6 +23,7 @@
 #include "btn_ui.h"
 
 #define SIM_BATCH_MAX_POINTS 320
+#define SIM_TARGET_FRAME_MS  20  /* 50 FPS */
 
 /* ==================== Simulation state ==================== */
 
@@ -218,6 +219,8 @@ int main(int argc, char *argv[])
 
     while (is_running)
     {
+        uint32_t frame_start = SDL_GetTicks();
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 is_running = false;
@@ -226,6 +229,16 @@ int main(int argc, char *argv[])
                 uint32_t main_id = ESTA_SDL2_GetWindowID();
                 if (event.window.windowID == main_id) {
                     is_running = false;
+                }
+            } else if (event.type == SDL_KEYDOWN) {
+                uint32_t main_id = ESTA_SDL2_GetWindowID();
+                if (event.key.windowID == main_id &&
+                    event.key.keysym.sym >= SDLK_1 &&
+                    event.key.keysym.sym <= SDLK_9) {
+                    uint8_t btn_id = (uint8_t)(event.key.keysym.sym - SDLK_1);
+                    if (btn_id < g_sim.profiles->button_count) {
+                        ESTA_EventEmitButton(btn_id, ESTA_EVENT_BUTTON_PRESS);
+                    }
                 }
             }
             BTN_UI_ProcessEvent(&event);
@@ -239,7 +252,11 @@ int main(int argc, char *argv[])
 
         BTN_UI_Render();
         ESTA_SDL2_Update();
-        ESTA_SDL2_Delay(20);
+
+        uint32_t elapsed = SDL_GetTicks() - frame_start;
+        if (elapsed < SIM_TARGET_FRAME_MS) {
+            ESTA_SDL2_Delay(SIM_TARGET_FRAME_MS - elapsed);
+        }
         SimScenario_Tick(&g_sim.scenario);
     }
 
