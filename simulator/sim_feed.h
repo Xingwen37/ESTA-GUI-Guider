@@ -5,7 +5,7 @@
 #include "sim_scenario.h"
 
 void SimFeed_Init(App_MainState *app, SimScenarioRuntime *scenario);
-bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario);
+bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario, bool wave_trigger);
 void SimFeed_Tick(SimScenarioRuntime *scenario);
 
 #endif

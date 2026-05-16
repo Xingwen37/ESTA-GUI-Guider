@@ -8,6 +8,7 @@
 #include "sim_scenario.h"
 #include "sim_feed.h"
 #include "sim_input.h"
+#include "sim_gpio.h"
 #include "esta_port_sdl2.h"
 #include "btn_ui.h"
 
@@ -15,6 +16,15 @@
 
 static App_MainState g_app;
 static SimScenarioRuntime g_scenario;
+
+/* ---- GPIO 中断示例（模拟 MCU ISR 编程范式） ---- */
+
+static volatile uint8_t g_wave_refresh_flag = 0;
+
+static void btn0_rising_isr(uint8_t pin) {
+    (void)pin;
+    g_wave_refresh_flag = 1;
+}
 
 /* ---- 仿真器演示回调（MCU 替换为业务逻辑） ---- */
 
@@ -93,6 +103,8 @@ int main(int argc, char *argv[])
     }
 
     SimFeed_Init(&g_app, &g_scenario);
+    SimGPIO_Init();
+    SimGPIO_AttachInterrupt(0, btn0_rising_isr);
     App_Subscribe(ESTA_EVENT_BUTTON_PRESS, 0, APP_SOURCE_ANY, on_theme_toggle, NULL);
     App_Subscribe(ESTA_EVENT_MENU_SELECT, 0, APP_SOURCE_ANY, on_menu_select, NULL);
     BTN_UI_Init(profiles->button_count);
@@ -103,7 +115,13 @@ int main(int argc, char *argv[])
         SimInputResult input = SimInput_Poll(profiles->button_count);
         if (input.quit_requested) break;
 
-        if (!SimFeed_Update(&g_app, &g_scenario)) break;
+        bool wave_trigger = false;
+        if (g_wave_refresh_flag) {
+            g_wave_refresh_flag = 0;
+            wave_trigger = true;
+        }
+
+        if (!SimFeed_Update(&g_app, &g_scenario, wave_trigger)) break;
         App_MainTick(&g_app);
 
         BTN_UI_Render();

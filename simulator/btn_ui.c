@@ -1,5 +1,6 @@
 #include "btn_ui.h"
 #include "event/event.h"
+#include "sim_gpio.h"
 
 #include <stdio.h>
 
@@ -96,10 +97,12 @@ void BTN_UI_ProcessEvent(const SDL_Event *event) {
             if (event->type == SDL_MOUSEBUTTONDOWN) {
                 g_pressed[i] = true;
                 ESTA_EventEmitButton((uint8_t)i, ESTA_EVENT_BUTTON_PRESS);
+                SimGPIO_SetPin((uint8_t)i, 1);
                 printf("Button %d Pressed\n", i);
             } else if (event->type == SDL_MOUSEBUTTONUP) {
                 g_pressed[i] = false;
                 ESTA_EventEmitButton((uint8_t)i, ESTA_EVENT_BUTTON_RELEASE);
+                SimGPIO_SetPin((uint8_t)i, 0);
                 printf("Button %d Released\n", i);
             }
             break;

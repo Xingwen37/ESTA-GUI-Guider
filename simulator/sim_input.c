@@ -3,6 +3,7 @@
 #include "event/event.h"
 #include "esta_port_sdl2.h"
 #include "btn_ui.h"
+#include "sim_gpio.h"
 
 SimInputResult SimInput_Poll(uint8_t button_count) {
     SimInputResult result = { .quit_requested = false };
@@ -25,6 +26,17 @@ SimInputResult SimInput_Poll(uint8_t button_count) {
                 uint8_t btn_id = (uint8_t)(event.key.keysym.sym - SDLK_1);
                 if (btn_id < button_count) {
                     ESTA_EventEmitButton(btn_id, ESTA_EVENT_BUTTON_PRESS);
+                    SimGPIO_SetPin(btn_id, 1);
+                }
+            }
+        } else if (event.type == SDL_KEYUP) {
+            uint32_t main_id = ESTA_SDL2_GetWindowID();
+            if (event.key.windowID == main_id &&
+                event.key.keysym.sym >= SDLK_1 &&
+                event.key.keysym.sym <= SDLK_9) {
+                uint8_t btn_id = (uint8_t)(event.key.keysym.sym - SDLK_1);
+                if (btn_id < button_count) {
+                    SimGPIO_SetPin(btn_id, 0);
                 }
             }
         }

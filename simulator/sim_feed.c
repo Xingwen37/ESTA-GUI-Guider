@@ -83,8 +83,10 @@ void SimFeed_Init(App_MainState *app, SimScenarioRuntime *scenario) {
     }
 }
 
-bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario) {
-    if (!sim_feed_wave(app, scenario)) return false;
+bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario, bool wave_trigger) {
+    if (wave_trigger) {
+        if (!sim_feed_wave(app, scenario)) return false;
+    }
     sim_feed_barchart(app, scenario);
     sim_feed_table(app, scenario);
     return true;
