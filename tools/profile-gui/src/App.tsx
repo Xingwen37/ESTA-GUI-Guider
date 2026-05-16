@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import ProfileEditor from "./components/ProfileEditor";
+import ProfileEditor from "./components/WaveEditor";
 import BarChartEditor from "./components/BarChartEditor";
 import TableEditor from "./components/TableEditor";
 import MenuEditor from "./components/MenuEditor";
@@ -17,9 +17,7 @@ import {
 } from "./lib/types";
 
 const labelFromPosition = (value: number) => ({
-  value_type: "WAVE_RULER_LABEL_INT",
-  int_value: value,
-  float_value: value,
+  value: value,
 });
 
 const DEFAULT_MENU_ITEMS = [
@@ -31,8 +29,8 @@ const DEFAULT_MENU_ITEMS = [
   { label: "About", parent_idx: 255, is_submenu: false, event_id: 30 },
 ];
 
-const DEFAULT_RULER_Y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0];
-const DEFAULT_RULER_X = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0];
+const DEFAULT_RULER_Y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0, 0];
+const DEFAULT_RULER_X = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0, 0];
 
 const EMPTY_WAVE_PROFILE: WaveProfile = {
   x_origin: 0, y_origin: 0, x_width: 200, y_width: 120,
@@ -44,16 +42,14 @@ const EMPTY_WAVE_PROFILE: WaveProfile = {
   ruler_label_y: DEFAULT_RULER_Y.map(labelFromPosition),
   ruler_unit_y: "",
   ruler_precision_y: 0,
-  ruler_count_y: 4, ruler_num_digits_y: 4,
-  ruler_font_size_y: "ESTA_FONT_1608",
+  ruler_count_y: 4,
   is_display_ruler_x: true,
   ruler_x: DEFAULT_RULER_X,
   ruler_label_x: DEFAULT_RULER_X.map(labelFromPosition),
   ruler_unit_x: "",
   ruler_precision_x: 0,
   ruler_count_x: 3, ruler_zero_value_x: 0, ruler_full_value_x: 100,
-  ruler_num_digits_x: 8,
-  ruler_font_size_x: "ESTA_FONT_1608",
+  ruler_font_size: "ESTA_FONT_1608",
   theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
   is_use_batch_draw: false,

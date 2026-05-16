@@ -2,20 +2,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WaveRulerLabelProfile {
-    pub value_type: String,
-    pub int_value: i32,
-    pub float_value: f32,
+    #[serde(default)]
+    pub value: f32,
 }
 
 fn default_wave_ruler_label() -> WaveRulerLabelProfile {
-    WaveRulerLabelProfile {
-        value_type: "WAVE_RULER_LABEL_INT".into(),
-        int_value: 0,
-        float_value: 0.0,
-    }
+    WaveRulerLabelProfile { value: 0.0 }
 }
 
-fn default_wave_ruler_labels() -> [WaveRulerLabelProfile; 10] {
+fn default_wave_ruler_labels() -> [WaveRulerLabelProfile; 11] {
     std::array::from_fn(|_| default_wave_ruler_label())
 }
 
@@ -44,21 +39,18 @@ pub struct WaveProfile {
     pub channel_num: u16,
     pub channel_mask: u8,
     pub is_display_ruler_y: bool,
-    pub ruler_y: [u16; 10],
+    pub ruler_y: [u16; 11],
     #[serde(default = "default_wave_ruler_labels")]
-    pub ruler_label_y: [WaveRulerLabelProfile; 10],
+    pub ruler_label_y: [WaveRulerLabelProfile; 11],
     #[serde(default = "default_wave_ruler_unit")]
     pub ruler_unit_y: String,
     #[serde(default = "default_wave_ruler_precision")]
     pub ruler_precision_y: u8,
     pub ruler_count_y: u16,
-    pub ruler_num_digits_y: u16,
-    #[serde(default = "default_font_size")]
-    pub ruler_font_size_y: String,
     pub is_display_ruler_x: bool,
-    pub ruler_x: [u16; 10],
+    pub ruler_x: [u16; 11],
     #[serde(default = "default_wave_ruler_labels")]
-    pub ruler_label_x: [WaveRulerLabelProfile; 10],
+    pub ruler_label_x: [WaveRulerLabelProfile; 11],
     #[serde(default = "default_wave_ruler_unit")]
     pub ruler_unit_x: String,
     #[serde(default = "default_wave_ruler_precision")]
@@ -66,9 +58,8 @@ pub struct WaveProfile {
     pub ruler_count_x: u16,
     pub ruler_zero_value_x: u16,
     pub ruler_full_value_x: u16,
-    pub ruler_num_digits_x: u16,
     #[serde(default = "default_font_size")]
-    pub ruler_font_size_x: String,
+    pub ruler_font_size: String,
     pub theme_type: String,
     pub is_auto_clear: bool,
     pub is_use_batch_draw: bool,

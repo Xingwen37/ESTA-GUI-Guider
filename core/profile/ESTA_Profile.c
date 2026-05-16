@@ -12,76 +12,77 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
         {
             .x_origin = 0,
-            .y_origin = 0,
+            .y_origin = 10,
             .x_width = 200,
-            .y_width = 120,
+            .y_width = 256,
             .display_num_min = 0,
-            .display_num_max = 4095,
+            .display_num_max = 256,
             .x_scale = 1,
             .channel_num = 4,
             .channel_mask = CH0 | CH1 | CH2 | CH3,
             .is_display_ruler_y = true,
-            .ruler_y = { 1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0 },
+            .ruler_y = { 0, 32, 64, 96, 128, 160, 192, 224, 256, 0, 0 },
             .ruler_label_y = {
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 1000, .float_value = 1000 },
+                { .value = -4 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 2000, .float_value = 2000 },
+                { .value = -3 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 3000, .float_value = 3000 },
+                { .value = -2 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 4000, .float_value = 4000 },
+                { .value = -1 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 0 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 1 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 2 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 3 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 4 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 }
+                { .value = 0 },
+
+                { .value = 0 }
 
             },
-            .ruler_unit_y = "",
+            .ruler_unit_y = "0.1V",
             .ruler_precision_y = 0,
-            .ruler_count_y = 4,
-            .ruler_num_digits_y = 4,
-            .ruler_font_size_y = ESTA_FONT_1608,
+            .ruler_count_y = 9,
             .is_display_ruler_x = true,
-            .ruler_x = { 30, 50, 90, 0, 0, 0, 0, 0, 0, 0 },
+            .ruler_x = { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 },
             .ruler_label_x = {
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 30, .float_value = 30 },
+                { .value = 0 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 50, .float_value = 50 },
+                { .value = 1 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 90, .float_value = 90 },
+                { .value = 2 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 3 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 4 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 5 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 6 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 7 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 },
+                { .value = 8 },
 
-                { .value_type = WAVE_RULER_LABEL_INT, .int_value = 0, .float_value = 0 }
+                { .value = 9 },
+
+                { .value = 10 }
 
             },
-            .ruler_unit_x = "",
+            .ruler_unit_x = "ms",
             .ruler_precision_x = 0,
-            .ruler_count_x = 3,
+            .ruler_count_x = 11,
             .ruler_zero_value_x = 0,
             .ruler_full_value_x = 100,
-            .ruler_num_digits_x = 8,
-            .ruler_font_size_x = ESTA_FONT_1608,
+            .ruler_font_size = ESTA_FONT_1206,
             .theme_type = WAVE_THEME_DEFAULT,
             .is_auto_clear = true,
             .is_use_batch_draw = false
@@ -91,18 +92,18 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .bar_profiles = {
 
         {
-            .x_origin = 200,
-            .y_origin = 230,
+            .x_origin = 10,
+            .y_origin = 125,
             .x_width = 93,
-            .y_width = 88,
+            .y_width = 80,
             .display_num_min = 0,
-            .display_num_max = 7,
+            .display_num_max = 100,
             .bar_count = 6,
             .bar_width = 10,
             .bar_spacing = 5,
             .is_display_value = true,
             .is_display_axis = true,
-            .font_size = ESTA_FONT_1206,
+            .font_size = ESTA_FONT_1608,
             .theme_type = BARCHART_THEME_DEFAULT
         }
 
@@ -111,7 +112,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
         {
             .x_origin = 200,
-            .y_origin = 230,
+            .y_origin = 100,
             .x_width = 168,
             .y_width = 48,
             .row_count = 2,
@@ -243,20 +244,17 @@ bool ESTA_Profile_ToConfig(const ESTA_WaveProfile_TypeDef *profile, WAVE_Config_
     if (WAVE_ConfigSetChannelNum(out_config, profile->channel_num) != ESTA_OK) return false;
     if (WAVE_ConfigSetChannelEnabled(out_config, profile->channel_mask) != ESTA_OK) return false;
     if (WAVE_ConfigSetRulerY(out_config, profile->is_display_ruler_y,
-                             (uint16_t *)profile->ruler_y, profile->ruler_count_y,
-                             profile->ruler_num_digits_y) != ESTA_OK) return false;
+                             (uint16_t *)profile->ruler_y, profile->ruler_count_y) != ESTA_OK) return false;
     if (WAVE_ConfigSetRulerX(out_config, profile->is_display_ruler_x,
                              (uint16_t *)profile->ruler_x, profile->ruler_count_x,
-                             profile->ruler_zero_value_x, profile->ruler_full_value_x,
-                             profile->ruler_num_digits_x) != ESTA_OK) return false;
+                             profile->ruler_zero_value_x, profile->ruler_full_value_x) != ESTA_OK) return false;
     if (WAVE_ConfigSetRulerLabelY(out_config, profile->ruler_label_y,
                                   profile->ruler_unit_y,
                                   profile->ruler_precision_y) != ESTA_OK) return false;
     if (WAVE_ConfigSetRulerLabelX(out_config, profile->ruler_label_x,
                                   profile->ruler_unit_x,
                                   profile->ruler_precision_x) != ESTA_OK) return false;
-    if (WAVE_ConfigSetRulerFontSize(out_config, profile->ruler_font_size_x,
-                                    profile->ruler_font_size_y) != ESTA_OK) return false;
+    if (WAVE_ConfigSetRulerFontSize(out_config, profile->ruler_font_size) != ESTA_OK) return false;
     if (WAVE_ConfigSetTheme(out_config, profile->theme_type) != ESTA_OK) return false;
     if (WAVE_ConfigSetAutoClear(out_config, profile->is_auto_clear) != ESTA_OK) return false;
 

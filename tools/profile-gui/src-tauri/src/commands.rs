@@ -72,8 +72,6 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "ruler_unit_y": c_string_literal(&p.ruler_unit_y),
                 "ruler_precision_y": p.ruler_precision_y,
                 "ruler_count_y": p.ruler_count_y,
-                "ruler_num_digits_y": p.ruler_num_digits_y,
-                "ruler_font_size_y": p.ruler_font_size_y,
                 "is_display_ruler_x": p.is_display_ruler_x,
                 "ruler_x": p.ruler_x,
                 "ruler_label_x": wave_labels_for_template(&p.ruler_label_x),
@@ -82,8 +80,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "ruler_count_x": p.ruler_count_x,
                 "ruler_zero_value_x": p.ruler_zero_value_x,
                 "ruler_full_value_x": p.ruler_full_value_x,
-                "ruler_num_digits_x": p.ruler_num_digits_x,
-                "ruler_font_size_x": p.ruler_font_size_x,
+                "ruler_font_size": p.ruler_font_size,
                 "theme_type": p.theme_type,
                 "is_auto_clear": p.is_auto_clear,
                 "is_use_batch_draw": p.is_use_batch_draw,
@@ -253,24 +250,20 @@ fn c_string_literal(value: &str) -> String {
 
 fn wave_label_from_u16(value: u16) -> WaveRulerLabelProfile {
     WaveRulerLabelProfile {
-        value_type: "WAVE_RULER_LABEL_INT".into(),
-        int_value: i32::from(value),
-        float_value: f32::from(value),
+        value: f32::from(value),
     }
 }
 
-fn wave_labels_from_positions(values: &[u16; 10]) -> [WaveRulerLabelProfile; 10] {
+fn wave_labels_from_positions(values: &[u16; 11]) -> [WaveRulerLabelProfile; 11] {
     std::array::from_fn(|i| wave_label_from_u16(values[i]))
 }
 
-fn wave_labels_for_template(labels: &[WaveRulerLabelProfile; 10]) -> Vec<serde_json::Value> {
+fn wave_labels_for_template(labels: &[WaveRulerLabelProfile; 11]) -> Vec<serde_json::Value> {
     labels
         .iter()
         .map(|label| {
             json!({
-                "value_type": label.value_type.clone(),
-                "int_value": label.int_value,
-                "float_value": label.float_value,
+                "value": label.value,
             })
         })
         .collect()
@@ -366,8 +359,8 @@ fn default_wave_profile(
     theme_type: &str,
     is_use_batch_draw: bool,
 ) -> WaveProfile {
-    let ruler_y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0];
-    let ruler_x = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0];
+    let ruler_y = [1000, 2000, 3000, 4000, 0, 0, 0, 0, 0, 0, 0];
+    let ruler_x = [30, 50, 90, 0, 0, 0, 0, 0, 0, 0, 0];
     WaveProfile {
         x_origin,
         y_origin,
@@ -384,8 +377,6 @@ fn default_wave_profile(
         ruler_unit_y: "".into(),
         ruler_precision_y: 0,
         ruler_count_y: 4,
-        ruler_num_digits_y: 4,
-        ruler_font_size_y: "ESTA_FONT_1608".into(),
         is_display_ruler_x: true,
         ruler_x,
         ruler_label_x: wave_labels_from_positions(&ruler_x),
@@ -394,8 +385,7 @@ fn default_wave_profile(
         ruler_count_x: 3,
         ruler_zero_value_x: 0,
         ruler_full_value_x: 100,
-        ruler_num_digits_x: 8,
-        ruler_font_size_x: "ESTA_FONT_1608".into(),
+        ruler_font_size: "ESTA_FONT_1608".into(),
         theme_type: theme_type.into(),
         is_auto_clear: true,
         is_use_batch_draw,

@@ -195,37 +195,44 @@ body {
   gap: 4px;
 }
 
-.ruler-values {
+.ruler-gen-row {
   display: flex;
-  gap: 6px;
-}
-
-.ruler-values input {
-  width: 70px;
-}
-
-.ruler-label-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 560px;
-}
-
-.ruler-label-row {
-  display: grid;
-  grid-template-columns: 32px 76px 110px 86px 86px;
-  gap: 6px;
   align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
 }
 
-.ruler-label-head {
-  color: #9cdcfe;
+.ruler-gen-row label {
+  width: auto;
+  color: #888;
+  font-size: 11px;
+}
+
+.ruler-gen-row input {
+  width: 60px;
+  padding: 2px 4px;
+  background: #3c3c3c;
+  border: 1px solid #555;
+  color: #d4d4d4;
+  border-radius: 2px;
   font-size: 12px;
 }
 
-.ruler-label-row input[type="number"],
-.ruler-label-row select {
-  width: 100%;
+.ruler-ticks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ruler-ticks input {
+  width: 60px;
+  padding: 2px 4px;
+  background: #3c3c3c;
+  border: 1px solid #555;
+  color: #d4d4d4;
+  border-radius: 2px;
+  font-size: 12px;
 }
 
 /* Toast */

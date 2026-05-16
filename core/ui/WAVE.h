@@ -12,8 +12,8 @@
 #define MAX_WAVE_NUM 4
 #define MAX_WAVE_CHANNEL 4
 
-#define WAVE_MAX_RULER_Y_NUM 10
-#define WAVE_MAX_RULER_X_NUM 10
+#define WAVE_MAX_RULER_Y_NUM 11
+#define WAVE_MAX_RULER_X_NUM 11
 #define WAVE_MAX_RULER_UNIT_LEN 16
 #define WAVE_MAX_RULER_LABEL_TEXT_LEN 32
 
@@ -44,9 +44,7 @@ typedef enum {
 } WAVE_RulerLabelValueType;
 
 typedef struct {
-    WAVE_RulerLabelValueType value_type;
-    int32_t int_value;
-    float float_value;
+    float value;
 } WAVE_RulerLabel_TypeDef;
 
 #define WAVE_CONFIG_MEMBER(OSCx, reg_name) \
@@ -94,8 +92,6 @@ typedef struct {
     const char *ruler_unit_y;
     uint8_t ruler_precision_y;
     uint16_t ruler_count_y;
-    uint16_t ruler_num_digits_y;
-    ESTA_FontSize ruler_font_size_y;
 
     uint16_t *ruler_x;
     const WAVE_RulerLabel_TypeDef *ruler_label_x;
@@ -104,9 +100,8 @@ typedef struct {
     uint16_t ruler_count_x;
     uint16_t ruler_zero_value_x;
     uint16_t ruler_full_value_x;
-    uint16_t ruler_num_digits_x;
-    ESTA_FontSize ruler_font_size_x;
 
+    ESTA_FontSize ruler_font_size;
     volatile bool is_auto_clear;
     WAVE_theme_type theme_type;
 } WAVE_Config_TypeDef;
@@ -141,12 +136,10 @@ ESTA_StatusTypeDef WAVE_ConfigSetChannelEnabled(WAVE_Config_TypeDef *config,
 ESTA_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config,
     uint8_t channel_mask);
 ESTA_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config,
-    bool is_display, uint16_t *ruler_y, uint16_t ruler_count_y,
-    uint16_t ruler_num_digits_y);
+    bool is_display, uint16_t *ruler_y, uint16_t ruler_count_y);
 ESTA_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config,
     bool is_display, uint16_t *ruler_x, uint16_t ruler_count_x,
-    uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
-    uint16_t ruler_num_digits_x);
+    uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x);
 ESTA_StatusTypeDef WAVE_ConfigSetRulerLabelY(WAVE_Config_TypeDef *config,
     const WAVE_RulerLabel_TypeDef *ruler_label_y, const char *ruler_unit_y,
     uint8_t ruler_precision_y);
@@ -154,7 +147,7 @@ ESTA_StatusTypeDef WAVE_ConfigSetRulerLabelX(WAVE_Config_TypeDef *config,
     const WAVE_RulerLabel_TypeDef *ruler_label_x, const char *ruler_unit_x,
     uint8_t ruler_precision_x);
 ESTA_StatusTypeDef WAVE_ConfigSetRulerFontSize(WAVE_Config_TypeDef *config,
-    ESTA_FontSize font_size_x, ESTA_FontSize font_size_y);
+    ESTA_FontSize font_size);
 ESTA_StatusTypeDef WAVE_ConfigSetTheme(WAVE_Config_TypeDef *config,
     WAVE_theme_type theme_type);
 ESTA_StatusTypeDef WAVE_ConfigSetAutoClear(WAVE_Config_TypeDef *config,

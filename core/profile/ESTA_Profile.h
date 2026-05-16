@@ -34,8 +34,6 @@ typedef struct {
     char ruler_unit_y[WAVE_MAX_RULER_UNIT_LEN + 1];
     uint8_t ruler_precision_y;
     uint16_t ruler_count_y;
-    uint16_t ruler_num_digits_y;
-    ESTA_FontSize ruler_font_size_y;
 
     bool is_display_ruler_x;
     uint16_t ruler_x[WAVE_MAX_RULER_X_NUM];
@@ -45,9 +43,8 @@ typedef struct {
     uint16_t ruler_count_x;
     uint16_t ruler_zero_value_x;
     uint16_t ruler_full_value_x;
-    uint16_t ruler_num_digits_x;
-    ESTA_FontSize ruler_font_size_x;
 
+    ESTA_FontSize ruler_font_size;
     WAVE_theme_type theme_type;
     bool is_auto_clear;
     bool is_use_batch_draw;

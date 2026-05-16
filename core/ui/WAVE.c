@@ -130,27 +130,24 @@ static uint8_t WAVE_FormatRulerLabel(const WAVE_RulerLabel_TypeDef *label,
                                      char *buf,
                                      uint8_t size) {
     if (buf == NULL || size == 0 || label == NULL) return 0;
-    if (label->value_type == WAVE_RULER_LABEL_FLOAT) {
-        return WAVE_FormatFloat(label->float_value, precision, buf, size);
+    if (precision > 0) {
+        return WAVE_FormatFloat(label->value, precision, buf, size);
     }
-    return WAVE_FormatInt32(label->int_value, buf, size);
+    return WAVE_FormatInt32((int32_t)label->value, buf, size);
 }
 
 static WAVE_RulerLabel_TypeDef WAVE_DefaultRulerLabel(uint16_t value) {
     WAVE_RulerLabel_TypeDef label;
-    label.value_type = WAVE_RULER_LABEL_INT;
-    label.int_value = (int32_t)value;
-    label.float_value = (float)value;
+    label.value = (float)value;
     return label;
 }
 
 static uint16_t WAVE_GetYLabelReservedWidth(int OSCx) {
     uint16_t count = WAVE_CONFIG_MEMBER(OSCx, ruler_count_y);
-    uint16_t min_chars = WAVE_CONFIG_MEMBER(OSCx, ruler_num_digits_y);
     uint8_t precision = WAVE_CONFIG_MEMBER(OSCx, ruler_precision_y);
-    ESTA_FontSize font_size = WAVE_CONFIG_MEMBER(OSCx, ruler_font_size_y);
+    ESTA_FontSize font_size = WAVE_CONFIG_MEMBER(OSCx, ruler_font_size);
     char label_buf[WAVE_MAX_RULER_LABEL_TEXT_LEN + 1];
-    uint16_t max_chars = min_chars;
+    uint16_t max_chars = 1;
 
     for (uint16_t i = 0; i < count; i++) {
         uint8_t len = WAVE_FormatRulerLabel(
@@ -161,23 +158,13 @@ static uint16_t WAVE_GetYLabelReservedWidth(int OSCx) {
     return (uint16_t)(max_chars * ui_font_width(font_size));
 }
 
-static uint16_t WAVE_GetRightReservedWidth(int OSCx) {
-    uint16_t reserved = 0;
-    if (WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y)) {
-        reserved = (uint16_t)(reserved + WAVE_GetYLabelReservedWidth(OSCx));
-    }
-    return reserved;
+static uint16_t WAVE_GetLeftReservedWidth(int OSCx) {
+    if (!WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y)) return 0;
+    return WAVE_GetYLabelReservedWidth(OSCx);
 }
 
-static uint16_t WAVE_GetRightAlignedTextX(uint16_t x_origin, uint16_t width, uint16_t text_width) {
-    return (width > text_width) ? (uint16_t)(x_origin + width - text_width) : x_origin;
-}
-
-static uint16_t WAVE_GetBottomAlignedTextY(uint16_t y_origin, uint16_t height,
-                                           uint16_t reserved_below, uint16_t text_height) {
-    uint16_t required_height = (uint16_t)(reserved_below + text_height);
-    return (height > required_height) ?
-        (uint16_t)(y_origin + height - required_height) : y_origin;
+static uint16_t WAVE_GetPlotXOrigin(int OSCx) {
+    return (uint16_t)(WAVE_CONFIG_MEMBER(OSCx, x_origin) + WAVE_GetLeftReservedWidth(OSCx));
 }
 
 static uint16_t WAVE_GetSafeXScale(int OSCx) {
@@ -188,7 +175,7 @@ static uint16_t WAVE_GetSafeXScale(int OSCx) {
 uint16_t WAVE_GetPlotWidth(int OSCx) {
     if (!IS_VALID_WAVE_INST(OSCx)) return 0;
     uint16_t x_width = WAVE_CONFIG_MEMBER(OSCx, x_width);
-    uint16_t reserved = WAVE_GetRightReservedWidth(OSCx);
+    uint16_t reserved = WAVE_GetLeftReservedWidth(OSCx);
     return (x_width > reserved) ? (uint16_t)(x_width - reserved) : x_width;
 }
 
@@ -196,7 +183,7 @@ uint16_t WAVE_GetPlotHeight(int OSCx) {
     if (!IS_VALID_WAVE_INST(OSCx)) return 0;
     uint16_t y_width = WAVE_CONFIG_MEMBER(OSCx, y_width);
     if (!WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x)) return y_width;
-    uint16_t x_label_height = ui_font_height(WAVE_CONFIG_MEMBER(OSCx, ruler_font_size_x));
+    uint16_t x_label_height = ui_font_height(WAVE_CONFIG_MEMBER(OSCx, ruler_font_size));
     return (y_width > x_label_height) ? (uint16_t)(y_width - x_label_height) : y_width;
 }
 
@@ -256,27 +243,23 @@ ESTA_StatusTypeDef WAVE_ConfigSetChannelDisabled(WAVE_Config_TypeDef *config, ui
 }
 
 ESTA_StatusTypeDef WAVE_ConfigSetRulerY(WAVE_Config_TypeDef *config, bool is_display,
-                         uint16_t *ruler_y, uint16_t ruler_count_y,
-                         uint16_t ruler_num_digits_y) {
+                         uint16_t *ruler_y, uint16_t ruler_count_y) {
     if(config == NULL) return ESTA_ERROR;
     config->is_display_ruler_y = is_display;
     config->ruler_y = ruler_y;
     config->ruler_count_y = ruler_count_y;
-    config->ruler_num_digits_y = ruler_num_digits_y;
     return ESTA_OK;
 }
 
 ESTA_StatusTypeDef WAVE_ConfigSetRulerX(WAVE_Config_TypeDef *config, bool is_display,
                          uint16_t *ruler_x, uint16_t ruler_count_x,
-                         uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x,
-                         uint16_t ruler_num_digits_x) {
+                         uint16_t ruler_zero_value_x, uint16_t ruler_full_value_x) {
     if(config == NULL) return ESTA_ERROR;
     config->is_display_ruler_x = is_display;
     config->ruler_x = ruler_x;
     config->ruler_count_x = ruler_count_x;
     config->ruler_zero_value_x = ruler_zero_value_x;
     config->ruler_full_value_x = ruler_full_value_x;
-    config->ruler_num_digits_x = ruler_num_digits_x;
     return ESTA_OK;
 }
 
@@ -309,11 +292,10 @@ ESTA_StatusTypeDef WAVE_ConfigSetRulerLabelX(WAVE_Config_TypeDef *config,
 }
 
 ESTA_StatusTypeDef WAVE_ConfigSetRulerFontSize(WAVE_Config_TypeDef *config,
-                         ESTA_FontSize font_size_x, ESTA_FontSize font_size_y) {
+                         ESTA_FontSize font_size) {
     if(config == NULL) return ESTA_ERROR;
-    if(!WAVE_IsValidFontSize(font_size_x) || !WAVE_IsValidFontSize(font_size_y)) return ESTA_ERROR;
-    config->ruler_font_size_x = font_size_x;
-    config->ruler_font_size_y = font_size_y;
+    if(!WAVE_IsValidFontSize(font_size)) return ESTA_ERROR;
+    config->ruler_font_size = font_size;
     return ESTA_OK;
 }
 
@@ -363,7 +345,6 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         for(int i = 0; i < ruler_actual_count_y; i++){
             WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_y, i) = WAVE_Init->ruler_y[i];
             if (WAVE_Init->ruler_label_y != NULL) {
-                if (!IS_VALID_WAVE_RULER_LABEL_TYPE(WAVE_Init->ruler_label_y[i].value_type)) return ESTA_ERROR;
                 WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_y, i) = WAVE_Init->ruler_label_y[i];
             } else {
                 WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_y, i) =
@@ -378,7 +359,6 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         if (WAVE_Init->ruler_precision_y > 4U) return ESTA_ERROR;
         WAVE_WRITE_CONFIG_INIT(OSCx, ruler_precision_y);
         WAVE_WRITE_CONFIG(OSCx, ruler_count_y, ruler_actual_count_y);
-        WAVE_WRITE_CONFIG_INIT(OSCx, ruler_num_digits_y);
     }else{
         memset(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_buff_y, 0, sizeof(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_buff_y));
         memset(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_label_buff_y, 0, sizeof(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_label_buff_y));
@@ -389,7 +369,6 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         WAVE_WRITE_CONFIG(OSCx, ruler_unit_y, NULL);
         WAVE_WRITE_CONFIG(OSCx, ruler_precision_y, 0);
         WAVE_WRITE_CONFIG(OSCx, ruler_count_y, 0);
-        WAVE_WRITE_CONFIG(OSCx, ruler_num_digits_y, 0);
     }
     
     // 初始化X轴标尺
@@ -403,7 +382,6 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         for(int i = 0; i < ruler_actual_count_x; i++){
             WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_buff_x, i) = WAVE_Init->ruler_x[i];
             if (WAVE_Init->ruler_label_x != NULL) {
-                if (!IS_VALID_WAVE_RULER_LABEL_TYPE(WAVE_Init->ruler_label_x[i].value_type)) return ESTA_ERROR;
                 WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_x, i) = WAVE_Init->ruler_label_x[i];
             } else {
                 WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_x, i) =
@@ -420,7 +398,6 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         WAVE_WRITE_CONFIG(OSCx, ruler_count_x, ruler_actual_count_x);
         WAVE_WRITE_CONFIG_INIT(OSCx, ruler_zero_value_x);
         WAVE_WRITE_CONFIG_INIT(OSCx, ruler_full_value_x);
-        WAVE_WRITE_CONFIG_INIT(OSCx, ruler_num_digits_x);
     }else{
         memset(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_buff_x, 0, sizeof(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_buff_x));
         memset(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_label_buff_x, 0, sizeof(WAVE_INST_ADDR(OSCx).WAVE_Private.ruler_label_buff_x));
@@ -433,16 +410,13 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
         WAVE_WRITE_CONFIG(OSCx, ruler_count_x, 0);
         WAVE_WRITE_CONFIG(OSCx, ruler_zero_value_x, 0);
         WAVE_WRITE_CONFIG(OSCx, ruler_full_value_x, 0);
-        WAVE_WRITE_CONFIG(OSCx, ruler_num_digits_x, 0);
     }
 
     if(!IS_VALID_CHNUM(WAVE_CONFIG_MEMBER(OSCx, channel_num))) return ESTA_ERROR;
     WAVE_WRITE_CONFIG_INIT(OSCx, channel_num);
 
-    if(!WAVE_IsValidFontSize(WAVE_Init->ruler_font_size_x) ||
-       !WAVE_IsValidFontSize(WAVE_Init->ruler_font_size_y)) return ESTA_ERROR;
-    WAVE_WRITE_CONFIG_INIT(OSCx, ruler_font_size_x);
-    WAVE_WRITE_CONFIG_INIT(OSCx, ruler_font_size_y);
+    if(!WAVE_IsValidFontSize(WAVE_Init->ruler_font_size)) return ESTA_ERROR;
+    WAVE_WRITE_CONFIG_INIT(OSCx, ruler_font_size);
 
     if(!IS_VALID_THEME(WAVE_CONFIG_MEMBER(OSCx, theme_type))) return ESTA_ERROR;
     WAVE_WRITE_CONFIG_INIT(OSCx, theme_type);
@@ -450,7 +424,7 @@ ESTA_StatusTypeDef WAVE_Init(int OSCx, WAVE_Config_TypeDef *WAVE_Init) {
 
     /* Private regs */
     WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
-    WAVE_WRITE_PRIVATE(OSCx, x_coor_last, WAVE_Init->x_origin);
+    WAVE_WRITE_PRIVATE(OSCx, x_coor_last, WAVE_Init->x_origin + WAVE_GetLeftReservedWidth(OSCx));
     for(int i = 0; i < MAX_WAVE_CHANNEL; i++){
         WAVE_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
     }
@@ -478,18 +452,15 @@ ESTA_StatusTypeDef WAVE_DeInit(int OSCx) {
     WAVE_WRITE_CONFIG(OSCx, ruler_unit_y, NULL);
     WAVE_WRITE_CONFIG(OSCx, ruler_precision_y, 0);
     WAVE_WRITE_CONFIG(OSCx, ruler_count_y, 0);
-    WAVE_WRITE_CONFIG(OSCx, ruler_num_digits_y, 0);
     WAVE_WRITE_CONFIG(OSCx, is_display_ruler_x, false);
     WAVE_WRITE_CONFIG(OSCx, ruler_x, NULL);
     WAVE_WRITE_CONFIG(OSCx, ruler_label_x, NULL);
     WAVE_WRITE_CONFIG(OSCx, ruler_unit_x, NULL);
     WAVE_WRITE_CONFIG(OSCx, ruler_precision_x, 0);
     WAVE_WRITE_CONFIG(OSCx, ruler_count_x, 0);
-    WAVE_WRITE_CONFIG(OSCx, ruler_num_digits_x, 0);
     WAVE_WRITE_CONFIG(OSCx, ruler_zero_value_x, 0);
     WAVE_WRITE_CONFIG(OSCx, ruler_full_value_x, 0);
-    WAVE_WRITE_CONFIG(OSCx, ruler_font_size_x, ESTA_FONT_1608);
-    WAVE_WRITE_CONFIG(OSCx, ruler_font_size_y, ESTA_FONT_1608);
+    WAVE_WRITE_CONFIG(OSCx, ruler_font_size, ESTA_FONT_1608);
     WAVE_WRITE_CONFIG(OSCx, theme_type, WAVE_THEME_DEFAULT);
     WAVE_WRITE_CONFIG(OSCx, is_auto_clear, true);
 
@@ -529,8 +500,8 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
     volatile bool is_display_ruler_x = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_x);
     if(!(is_display_ruler_x || is_display_ruler_y)) return ESTA_OK;
 
-    uint16_t x_origin             = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
-    uint16_t y_origin             = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
+    uint16_t x_origin             = WAVE_CONFIG_MEMBER(OSCx, x_origin);
+    uint16_t y_origin             = WAVE_CONFIG_MEMBER(OSCx, y_origin);
     uint16_t display_num_min      = WAVE_CONFIG_MEMBER(OSCx, display_num_min);
     uint16_t display_num_max      = WAVE_CONFIG_MEMBER(OSCx, display_num_max);
     uint16_t ruler_count_y        = WAVE_CONFIG_MEMBER(OSCx, ruler_count_y);
@@ -539,15 +510,15 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
     uint16_t ruler_full_value_x   = WAVE_CONFIG_MEMBER(OSCx, ruler_full_value_x);
     uint8_t ruler_precision_y     = WAVE_CONFIG_MEMBER(OSCx, ruler_precision_y);
     uint8_t ruler_precision_x     = WAVE_CONFIG_MEMBER(OSCx, ruler_precision_x);
-    ESTA_FontSize ruler_font_size_x = WAVE_CONFIG_MEMBER(OSCx, ruler_font_size_x);
-    ESTA_FontSize ruler_font_size_y = WAVE_CONFIG_MEMBER(OSCx, ruler_font_size_y);
+    ESTA_FontSize ruler_font_size = WAVE_CONFIG_MEMBER(OSCx, ruler_font_size);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
     uint16_t ruler_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_RULER_INDEX);
-    uint16_t ruler_font_width_x = ui_font_width(ruler_font_size_x);
-    uint16_t ruler_font_height_y = ui_font_height(ruler_font_size_y);
+    uint16_t font_w = ui_font_width(ruler_font_size);
+    uint16_t font_h = ui_font_height(ruler_font_size);
 
-    uint16_t y_frame_width = WAVE_GetPlotHeight(OSCx);
-    uint16_t x_frame_width = WAVE_GetPlotWidth(OSCx);
+    uint16_t plot_height = WAVE_GetPlotHeight(OSCx);
+    uint16_t plot_width = WAVE_GetPlotWidth(OSCx);
+    uint16_t plot_x = WAVE_GetPlotXOrigin(OSCx);
     const char *unit_y = WAVE_PRIVATE_MEMBER(OSCx, ruler_unit_buff_y);
     const char *unit_x = WAVE_PRIVATE_MEMBER(OSCx, ruler_unit_buff_x);
     char label_buf[WAVE_MAX_RULER_LABEL_TEXT_LEN + 1];
@@ -560,28 +531,19 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
             uint8_t label_len = WAVE_FormatRulerLabel(
                 &WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_y, i),
                 ruler_precision_y, label_buf, sizeof(label_buf));
-            uint16_t ruler_y_coor = 0;
-            ruler_y_coor = y_origin + y_frame_width - 
-                ui_coor_normal(y_frame_width, display_range, ruler - display_num_min);
-            ruler_y_coor = ui_limit(y_origin + y_frame_width - 2, y_origin + 2, ruler_y_coor);
-            uint16_t ruler_y_num_coor = 
-                ui_limit(y_origin + y_frame_width, y_origin, 
-                ruler_y_coor - ruler_font_height_y / 2);
-            // 防止无符号整数溢出
-            if((int16_t)ruler_y_coor - ruler_font_height_y / 2 < 0) ruler_y_num_coor = 0;
-            SCREEN_DRAW_LINE(x_origin, ruler_y_coor, 
-                x_origin + x_frame_width, ruler_y_coor, ruler_color);
-                //原注释：有时屏幕显示数字需要画两次 但在模拟器却没有出现该情况，推测是硬件驱动的问题
-                SCREEN_DRAW_STRING_FONT(x_origin + x_frame_width, ruler_y_num_coor,
-                    label_buf, label_len, ruler_font_size_y, ruler_color);
+            uint16_t ruler_y_coor = y_origin + plot_height -
+                ui_coor_normal(plot_height, display_range, ruler - display_num_min);
+            ruler_y_coor = ui_limit(y_origin + plot_height - 2, y_origin + 2, ruler_y_coor);
+            uint16_t label_y = ui_limit(y_origin + plot_height, y_origin,
+                ruler_y_coor - font_h / 2);
+            if((int16_t)ruler_y_coor - font_h / 2 < 0) label_y = 0;
+            SCREEN_DRAW_LINE(plot_x, ruler_y_coor,
+                plot_x + plot_width, ruler_y_coor, ruler_color);
+            uint16_t label_w = (uint16_t)(label_len * font_w);
+            uint16_t label_x = (plot_x >= label_w + 2) ? (uint16_t)(plot_x - label_w - 2) : x_origin;
+            SCREEN_DRAW_STRING_FONT(label_x, label_y,
+                label_buf, label_len, ruler_font_size, ruler_color);
         }
-        //原注释：写数字导致边框可能间断，重新绘制 但在模拟器却没有出现该情况，推测是硬件驱动的问题
-        /*
-        uint16_t x_outline_width = x_width;
-        uint16_t y_outline_width = y_width;
-        SCREEN_DRAW_RECTANGLE(x_origin + x_frame_width, y_origin, 
-        x_origin + x_outline_width, y_origin + y_outline_width, frame_color);
-        */
     }
 
     if(is_display_ruler_x){
@@ -591,52 +553,63 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
             uint8_t label_len = WAVE_FormatRulerLabel(
                 &WAVE_PRIVATE_MEMBER_ARRAY(OSCx, ruler_label_buff_x, i),
                 ruler_precision_x, label_buf, sizeof(label_buf));
-            uint16_t label_width = (uint16_t)(label_len * ruler_font_width_x);
-            uint16_t ruler_x_coor = 0;
-            ruler_x_coor = x_origin + 
-                ui_coor_normal(x_frame_width, x_ruler_range, ruler - ruler_zero_value_x);
-            ruler_x_coor = 
-                ui_limit(x_origin + x_frame_width - 2, x_origin + 2, ruler_x_coor);
-            uint16_t ruler_x_num_coor = 
-                ui_limit(x_origin + x_frame_width, x_origin, 
-                ruler_x_coor - label_width / 2);
-            // 防止无符号整数溢出
-            if((int16_t)ruler_x_coor - label_width / 2 < 0) {
-                ruler_x_num_coor = 0;
-            }
-            SCREEN_DRAW_LINE(ruler_x_coor, y_origin, 
-                ruler_x_coor, y_origin + y_frame_width, ruler_color);
-                //原注释：有时屏幕显示数字需要画两次 //但在模拟器却没有出现该情况，推测是硬件驱动的问题
-            uint16_t label_right_limit = (x_frame_width > label_width) ?
-                (uint16_t)(x_origin + x_frame_width - label_width) : x_origin;
-            if (ruler_x_num_coor > label_right_limit) {
-                ruler_x_num_coor = label_right_limit;
-            }
-            SCREEN_DRAW_STRING_FONT(ruler_x_num_coor, y_origin + y_frame_width,
-                label_buf, label_len, ruler_font_size_x, ruler_color);
+            uint16_t label_width = (uint16_t)(label_len * font_w);
+            uint16_t ruler_x_coor = plot_x +
+                ui_coor_normal(plot_width, x_ruler_range, ruler - ruler_zero_value_x);
+            ruler_x_coor = ui_limit(plot_x + plot_width - 2, plot_x + 2, ruler_x_coor);
+            SCREEN_DRAW_LINE(ruler_x_coor, y_origin,
+                ruler_x_coor, y_origin + plot_height, ruler_color);
+            uint16_t ruler_x_num_coor = (ruler_x_coor >= label_width / 2) ?
+                (uint16_t)(ruler_x_coor - label_width / 2) : 0;
+            SCREEN_DRAW_STRING_FONT(ruler_x_num_coor, y_origin + plot_height,
+                label_buf, label_len, ruler_font_size, ruler_color);
         }
     }
-    uint8_t unit_len_x = is_display_ruler_x ? WAVE_StrLen(unit_x) : 0U;
-    uint8_t unit_len_y = is_display_ruler_y ? WAVE_StrLen(unit_y) : 0U;
-    uint16_t unit_x_height = ui_font_height(ruler_font_size_x);
-    uint16_t unit_y_height = ui_font_height(ruler_font_size_y);
 
-    if (unit_len_x > 0U) {
-        uint16_t unit_x_width = (uint16_t)(unit_len_x * ruler_font_width_x);
-        uint16_t unit_x_coor = WAVE_GetRightAlignedTextX(x_origin, x_frame_width, unit_x_width);
-        uint16_t unit_y_coor = WAVE_GetBottomAlignedTextY(y_origin, y_frame_width, 0U, unit_x_height);
-        SCREEN_DRAW_STRING_FONT(unit_x_coor, unit_y_coor,
-            unit_x, unit_len_x, ruler_font_size_x, ruler_color);
-    }
-    if (unit_len_y > 0U) {
-        uint16_t ruler_font_width_y = ui_font_width(ruler_font_size_y);
-        uint16_t unit_y_width = (uint16_t)(unit_len_y * ruler_font_width_y);
-        uint16_t reserved_below = (unit_len_x > 0U) ? unit_x_height : 0U;
-        uint16_t unit_x_coor = WAVE_GetRightAlignedTextX(x_origin, x_frame_width, unit_y_width);
-        uint16_t unit_y_coor = WAVE_GetBottomAlignedTextY(y_origin, y_frame_width,
-            reserved_below, unit_y_height);
-        SCREEN_DRAW_STRING_FONT(unit_x_coor, unit_y_coor,
-            unit_y, unit_len_y, ruler_font_size_y, ruler_color);
+    uint8_t unit_len_y = is_display_ruler_y ? WAVE_StrLen(unit_y) : 0U;
+    uint8_t unit_len_x = is_display_ruler_x ? WAVE_StrLen(unit_x) : 0U;
+    if (unit_len_y > 0U || unit_len_x > 0U) {
+        uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type, WAVE_THEME_FRAME_INDEX);
+        uint16_t bg_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type, WAVE_THEME_BACKGROUND_INDEX);
+
+        uint8_t line_count = 0;
+        uint8_t max_line_chars = 0;
+        if (unit_len_y > 0U) {
+            line_count++;
+            uint8_t line_len = (uint8_t)(2U + unit_len_y);
+            if (line_len > max_line_chars) max_line_chars = line_len;
+        }
+        if (unit_len_x > 0U) {
+            line_count++;
+            uint8_t line_len = (uint8_t)(2U + unit_len_x);
+            if (line_len > max_line_chars) max_line_chars = line_len;
+        }
+
+        uint16_t badge_w = (uint16_t)(max_line_chars * font_w + 4);
+        uint16_t badge_h = (uint16_t)(line_count * font_h + 2);
+        uint16_t badge_x = (uint16_t)(plot_x + plot_width - badge_w - 1);
+        uint16_t badge_y = (uint16_t)(y_origin + 1);
+
+        SCREEN_FILL(badge_x, badge_y, badge_x + badge_w, badge_y + badge_h, frame_color);
+
+        uint16_t text_x = (uint16_t)(badge_x + 2);
+        uint16_t text_y = (uint16_t)(badge_y + 1);
+        char unit_line[WAVE_MAX_RULER_UNIT_LEN + 3];
+        if (unit_len_y > 0U) {
+            unit_line[0] = 'Y'; unit_line[1] = ':';
+            memcpy(&unit_line[2], unit_y, unit_len_y);
+            unit_line[2 + unit_len_y] = '\0';
+            SCREEN_DRAW_STRING_FONT(text_x, text_y,
+                unit_line, (uint8_t)(2 + unit_len_y), ruler_font_size, bg_color);
+            text_y = (uint16_t)(text_y + font_h);
+        }
+        if (unit_len_x > 0U) {
+            unit_line[0] = 'X'; unit_line[1] = ':';
+            memcpy(&unit_line[2], unit_x, unit_len_x);
+            unit_line[2 + unit_len_x] = '\0';
+            SCREEN_DRAW_STRING_FONT(text_x, text_y,
+                unit_line, (uint8_t)(2 + unit_len_x), ruler_font_size, bg_color);
+        }
     }
     return ESTA_OK;
 }
@@ -647,19 +620,14 @@ ESTA_StatusTypeDef WAVE_RulerDisplay(int OSCx) {
 */
 ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
     if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
-    uint16_t x_origin    = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
-    uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
-    uint16_t x_width     = WAVE_CONFIG_MEMBER(OSCx, x_width);
-    uint16_t y_width     = WAVE_CONFIG_MEMBER(OSCx, y_width);
+    uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
     uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_FRAME_INDEX);
-    uint16_t y_frame_width = WAVE_GetPlotHeight(OSCx);
-    uint16_t x_frame_width = WAVE_GetPlotWidth(OSCx);
-    uint16_t x_outline_width = x_width;
-    SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
-            x_origin + x_frame_width, y_origin + y_frame_width, frame_color);
-    SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
-            x_origin + x_outline_width, y_origin + y_width, frame_color);
+    uint16_t plot_height = WAVE_GetPlotHeight(OSCx);
+    uint16_t plot_width = WAVE_GetPlotWidth(OSCx);
+    uint16_t plot_x = WAVE_GetPlotXOrigin(OSCx);
+    SCREEN_DRAW_RECTANGLE(plot_x, y_origin,
+            plot_x + plot_width, y_origin + plot_height, frame_color);
     return ESTA_OK;
 }
 
@@ -669,27 +637,22 @@ ESTA_StatusTypeDef WAVE_FrameDisplay(int OSCx) {
 */
 ESTA_StatusTypeDef WAVE_CurveClear(int OSCx) {
     if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
-    uint16_t x_origin    = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
-    uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
+    uint16_t x_origin    = WAVE_CONFIG_MEMBER(OSCx, x_origin);
+    uint16_t y_origin    = WAVE_CONFIG_MEMBER(OSCx, y_origin);
     uint16_t x_width     = WAVE_CONFIG_MEMBER(OSCx, x_width);
     uint16_t y_width     = WAVE_CONFIG_MEMBER(OSCx, y_width);
-    volatile bool is_display_ruler_y = WAVE_CONFIG_MEMBER(OSCx, is_display_ruler_y);
     uint16_t theme_type  = WAVE_CONFIG_MEMBER(OSCx, theme_type);
-    uint16_t frame_color = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_FRAME_INDEX);
     uint16_t bg_color    = ESTA_THEME_COLOR(WAVE_ColorTable, theme_type,WAVE_THEME_BACKGROUND_INDEX);
+    uint16_t plot_x = WAVE_GetPlotXOrigin(OSCx);
 
     SCREEN_FILL(x_origin, y_origin, x_origin + x_width, y_origin + y_width, bg_color);
-    SCREEN_DRAW_RECTANGLE(x_origin, y_origin, 
-            x_origin + x_width, y_origin + y_width, frame_color);
-    // reset the index of ESTA
     WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
-    WAVE_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
+    WAVE_WRITE_PRIVATE(OSCx, x_coor_last, plot_x);
     for(int i = 0; i < MAX_WAVE_CHANNEL; i++){
         WAVE_WRITE_PRIVATE(OSCx, y_coor_last_CH[i], 0);
     }
-    if(is_display_ruler_y) {
-        ESTA_RETURN_IF_ERROR(WAVE_RulerDisplay(OSCx));
-    }
+    ESTA_RETURN_IF_ERROR(WAVE_FrameDisplay(OSCx));
+    ESTA_RETURN_IF_ERROR(WAVE_RulerDisplay(OSCx));
     return ESTA_OK;
 }
 
@@ -714,14 +677,14 @@ ESTA_StatusTypeDef WAVE_ReDraw(int OSCx) {
 */
 ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
     if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
-    uint16_t x_origin                = WAVE_CONFIG_MEMBER(OSCx, x_origin); 
-    uint16_t y_origin                = WAVE_CONFIG_MEMBER(OSCx, y_origin); 
+    uint16_t y_origin                = WAVE_CONFIG_MEMBER(OSCx, y_origin);
     uint16_t display_num_min         = WAVE_CONFIG_MEMBER(OSCx, display_num_min);
     uint16_t display_num_max         = WAVE_CONFIG_MEMBER(OSCx, display_num_max);
     uint16_t channel_num             = WAVE_CONFIG_MEMBER(OSCx, channel_num);
     uint16_t theme_type              = WAVE_CONFIG_MEMBER(OSCx, theme_type);
     volatile bool is_auto_clear      = WAVE_CONFIG_MEMBER(OSCx, is_auto_clear);
     uint8_t channel_mask             = WAVE_CONFIG_MEMBER(OSCx, channel_mask);
+    uint16_t plot_x = WAVE_GetPlotXOrigin(OSCx);
 
     uint16_t active_channel_num = (channel_num > MAX_WAVE_CHANNEL) ? MAX_WAVE_CHANNEL : channel_num;
 
@@ -739,14 +702,13 @@ ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
         y_coor_last_CH[i] = WAVE_PRIVATE_MEMBER(OSCx, y_coor_last_CH[i]);
     }
 
-    uint16_t y_frame_width = WAVE_GetPlotHeight(OSCx);
+    uint16_t plot_height = WAVE_GetPlotHeight(OSCx);
     uint16_t sample_capacity = WAVE_GetSampleCapacity(OSCx);
 
     if(last_index >= sample_capacity) {
         if (!is_auto_clear) {
-            // 重置绘制状态
             WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
-            WAVE_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
+            WAVE_WRITE_PRIVATE(OSCx, x_coor_last, plot_x);
             return ESTA_FULL;
         }
         last_index = 0;
@@ -755,7 +717,7 @@ ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
 
     uint16_t display_range = display_num_max - display_num_min;
     uint16_t x_scale = WAVE_GetSafeXScale(OSCx);
-    uint16_t x_coor = (uint16_t)(x_origin + last_index * x_scale);
+    uint16_t x_coor = (uint16_t)(plot_x + last_index * x_scale);
 
     for(int i = 0; i < active_channel_num; i++) {
         uint8_t ch_mask = (uint8_t)(CH0 << i);
@@ -764,8 +726,8 @@ ESTA_StatusTypeDef WAVE_CurveDraw(int OSCx, uint16_t data_CH[]) {
         if(ui_is_out_of_bound(display_num_max, display_num_min, data_CH[i])) return ESTA_ERROR;
 
         uint16_t y_display_value = ui_limit(display_num_max, display_num_min, data_CH[i]);
-        uint16_t y_coor = y_origin + y_frame_width -
-                ui_coor_normal(y_frame_width, display_range, y_display_value);
+        uint16_t y_coor = y_origin + plot_height -
+                ui_coor_normal(plot_height, display_range, y_display_value);
 
         if(last_index > 0) {
             SCREEN_DRAW_LINE(x_coor, y_coor,
@@ -790,14 +752,14 @@ ESTA_StatusTypeDef WAVE_CurveDrawBatch(int OSCx, int ch_idx,
     uint8_t channel_mask = WAVE_CONFIG_MEMBER(OSCx, channel_mask);
     if (!is_channel_enabled(channel_mask, (uint8_t)(CH0 << ch_idx))) return ESTA_ERROR;
 
-    uint16_t x_origin                = WAVE_CONFIG_MEMBER(OSCx, x_origin);
     uint16_t y_origin                = WAVE_CONFIG_MEMBER(OSCx, y_origin);
     uint16_t display_num_min         = WAVE_CONFIG_MEMBER(OSCx, display_num_min);
     uint16_t display_num_max         = WAVE_CONFIG_MEMBER(OSCx, display_num_max);
     uint16_t theme_type              = WAVE_CONFIG_MEMBER(OSCx, theme_type);
     volatile bool is_auto_clear      = WAVE_CONFIG_MEMBER(OSCx, is_auto_clear);
+    uint16_t plot_x = WAVE_GetPlotXOrigin(OSCx);
 
-    uint16_t y_frame_width = WAVE_GetPlotHeight(OSCx);
+    uint16_t plot_height = WAVE_GetPlotHeight(OSCx);
     uint16_t sample_capacity = WAVE_GetSampleCapacity(OSCx);
     uint16_t display_range = display_num_max - display_num_min;
     uint16_t x_scale = WAVE_GetSafeXScale(OSCx);
@@ -813,12 +775,12 @@ ESTA_StatusTypeDef WAVE_CurveDrawBatch(int OSCx, int ch_idx,
         if (last_index >= sample_capacity) {
             if (!is_auto_clear) {
                 WAVE_WRITE_PRIVATE(OSCx, last_index, 0);
-                WAVE_WRITE_PRIVATE(OSCx, x_coor_last, x_origin);
+                WAVE_WRITE_PRIVATE(OSCx, x_coor_last, plot_x);
                 return ESTA_FULL;
             }
             WAVE_CurveClear(OSCx);
             last_index  = 0;
-            x_coor_last = x_origin;
+            x_coor_last = plot_x;
             y_coor_last = 0;
         }
 
@@ -826,9 +788,9 @@ ESTA_StatusTypeDef WAVE_CurveDrawBatch(int OSCx, int ch_idx,
             return ESTA_ERROR;
 
         uint16_t y_display_value = ui_limit(display_num_max, display_num_min, data[i]);
-        uint16_t y_coor = y_origin + y_frame_width -
-                ui_coor_normal(y_frame_width, display_range, y_display_value);
-        uint16_t x_coor = (uint16_t)(x_origin + last_index * x_scale);
+        uint16_t y_coor = y_origin + plot_height -
+                ui_coor_normal(plot_height, display_range, y_display_value);
+        uint16_t x_coor = (uint16_t)(plot_x + last_index * x_scale);
 
         if (last_index > 0) {
             SCREEN_DRAW_LINE(x_coor, y_coor,

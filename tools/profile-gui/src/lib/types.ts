@@ -1,7 +1,5 @@
 export interface WaveRulerLabel {
-  value_type: string;
-  int_value: number;
-  float_value: number;
+  value: number;
 }
 
 export interface WaveProfile {
@@ -20,8 +18,6 @@ export interface WaveProfile {
   ruler_unit_y: string;
   ruler_precision_y: number;
   ruler_count_y: number;
-  ruler_num_digits_y: number;
-  ruler_font_size_y: string;
   is_display_ruler_x: boolean;
   ruler_x: number[];
   ruler_label_x: WaveRulerLabel[];
@@ -30,8 +26,7 @@ export interface WaveProfile {
   ruler_count_x: number;
   ruler_zero_value_x: number;
   ruler_full_value_x: number;
-  ruler_num_digits_x: number;
-  ruler_font_size_x: string;
+  ruler_font_size: string;
   theme_type: string;
   is_auto_clear: boolean;
   is_use_batch_draw: boolean;
@@ -173,8 +168,8 @@ export const MAX_TABLE_INST = 4;
 export const MAX_MENU_INST = 4;
 export const MAX_BUTTON_COUNT = 8;
 export const MAX_WAVE_CHANNEL = 4;
-export const MAX_RULER_X_NUM = 10;
-export const MAX_RULER_Y_NUM = 10;
+export const MAX_RULER_X_NUM = 11;
+export const MAX_RULER_Y_NUM = 11;
 export const MAX_TABLE_ROWS = 8;
 export const MAX_TABLE_COLS = 6;
 export const MAX_TABLE_STRING_LEN = 16;
