@@ -2,7 +2,7 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <string.h>
-#include "infra/font.h" // 引入你的字库
+#include "infra/font.h"
 
 // 内部维护的 SDL 上下文
 static SDL_Window* g_window   = NULL;

@@ -21,6 +21,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/core/event
     ${CMAKE_SOURCE_DIR}/core/app
     ${CMAKE_SOURCE_DIR}/port
+    ${CMAKE_SOURCE_DIR}/simulator
     ${SDL2_INCLUDE_DIRS}
 )
 
