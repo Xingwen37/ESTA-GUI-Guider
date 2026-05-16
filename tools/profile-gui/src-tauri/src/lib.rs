@@ -29,6 +29,7 @@ pub fn run() {
             commands::save_profile,
             commands::build_simulator,
             commands::run_simulator,
+            commands::preview_simulator,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

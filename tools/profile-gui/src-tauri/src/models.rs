@@ -63,6 +63,8 @@ pub struct WaveProfile {
     pub theme_type: String,
     pub is_auto_clear: bool,
     pub is_use_batch_draw: bool,
+    #[serde(default)]
+    pub page: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -81,6 +83,8 @@ pub struct BarChartProfile {
     #[serde(default = "default_font_size")]
     pub font_size: String,
     pub theme_type: String,
+    #[serde(default)]
+    pub page: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -125,6 +129,8 @@ pub struct TableProfile {
     pub cols: Vec<TableColProfile>,
     #[serde(default)]
     pub cells: Vec<Vec<TableCellProfile>>,
+    #[serde(default)]
+    pub page: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -156,6 +162,8 @@ pub struct MenuProfile {
     pub theme_type: String,
     #[serde(default = "default_menu_items")]
     pub items: Vec<MenuItemProfile>,
+    #[serde(default)]
+    pub page: u8,
 }
 
 fn default_font_size() -> String {
@@ -171,6 +179,8 @@ pub struct ProfileSet {
     #[serde(default)]
     pub menu_inst_count: u16,
     pub button_count: u16,
+    #[serde(default = "default_page_count")]
+    pub page_count: u8,
     pub wave_profiles: Vec<WaveProfile>,
     pub bar_profiles: Vec<BarChartProfile>,
     #[serde(default)]
@@ -178,6 +188,8 @@ pub struct ProfileSet {
     #[serde(default)]
     pub menu_profiles: Vec<MenuProfile>,
 }
+
+fn default_page_count() -> u8 { 1 }
 
 impl WaveProfile {
     pub fn channel_mask_expr(&self) -> String {

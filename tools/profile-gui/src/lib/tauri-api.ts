@@ -16,3 +16,7 @@ export async function buildSimulator(): Promise<string> {
 export async function runSimulator(): Promise<void> {
   return invoke("run_simulator");
 }
+
+export async function previewSimulator(data: ProfileSet): Promise<string[]> {
+  return invoke("preview_simulator", { data });
+}

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use base64::Engine as _;
 use serde_json::json;
 use tauri::State;
 
@@ -84,6 +85,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "theme_type": p.theme_type,
                 "is_auto_clear": p.is_auto_clear,
                 "is_use_batch_draw": p.is_use_batch_draw,
+                "page": p.page,
             })
         })
         .collect();
@@ -106,6 +108,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "is_display_axis": p.is_display_axis,
                 "font_size": p.font_size,
                 "theme_type": p.theme_type,
+                "page": p.page,
             })
         })
         .collect();
@@ -164,6 +167,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "theme_type": p.theme_type,
                 "cols": cols,
                 "cells": cells,
+                "page": p.page,
             })
         })
         .collect();
@@ -198,6 +202,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "font_size": p.font_size,
                 "theme_type": p.theme_type,
                 "items": items,
+                "page": p.page,
             })
         })
         .collect();
@@ -208,6 +213,7 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     ctx.insert("table_inst_count", &data.table_inst_count);
     ctx.insert("menu_inst_count", &data.menu_inst_count);
     ctx.insert("button_count", &data.button_count);
+    ctx.insert("page_count", &data.page_count);
     ctx.insert("wave_profiles", &wave_profiles_for_template);
     ctx.insert("bar_profiles", &bar_profiles_for_template);
     ctx.insert("table_profiles", &table_profiles_for_template);
@@ -328,6 +334,35 @@ pub fn run_simulator(state: State<AppState>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+pub fn preview_simulator(state: State<AppState>, data: ProfileSet) -> Result<Vec<String>, String> {
+    let page_count = data.page_count.max(1);
+    save_profile(state.clone(), data)?;
+    build_simulator(state.clone())?;
+
+    let exe = state.repo_root.join("build").join("ESTA_Simulator.exe");
+    let preview_base = state.repo_root.join("build").join("preview");
+
+    let output = Command::new(&exe)
+        .args(["--screenshot", preview_base.to_str().unwrap_or("build/preview")])
+        .current_dir(&state.repo_root)
+        .output()
+        .map_err(|e| format!("预览失败: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!("仿真器截图失败: {}", String::from_utf8_lossy(&output.stderr)));
+    }
+
+    let mut pages = Vec::new();
+    for p in 0..page_count {
+        let path = format!("{}_{}.bmp", preview_base.display(), p);
+        let bmp_data = std::fs::read(&path).map_err(|e| format!("读取第{}页截图失败: {}", p, e))?;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bmp_data);
+        pages.push(format!("data:image/bmp;base64,{}", b64));
+    }
+    Ok(pages)
+}
+
 fn default_profile() -> ProfileSet {
     ProfileSet {
         wave_inst_count: 2,
@@ -335,6 +370,7 @@ fn default_profile() -> ProfileSet {
         table_inst_count: 1,
         menu_inst_count: 1,
         button_count: 4,
+        page_count: 1,
         wave_profiles: vec![
             default_wave_profile(10, 0, "WAVE_THEME_LIGHT", true),
             default_wave_profile(0, 125, "WAVE_THEME_DEFAULT", true),
@@ -389,6 +425,7 @@ fn default_wave_profile(
         theme_type: theme_type.into(),
         is_auto_clear: true,
         is_use_batch_draw,
+        page: 0,
     }
 }
 
@@ -425,6 +462,7 @@ fn default_table_profile() -> TableProfile {
                 TableCellProfile { text: "Hz".into(), u32: 0, f32: 0.0 },
             ],
         ],
+        page: 0,
     }
 }
 
@@ -480,6 +518,7 @@ fn default_menu_profile() -> MenuProfile {
                 event_id: 30,
             },
         ],
+        page: 0,
     }
 }
 
@@ -506,5 +545,6 @@ fn default_bar_profile(
         is_display_axis: true,
         font_size: "ESTA_FONT_1608".into(),
         theme_type: theme_type.into(),
+        page: 0,
     }
 }

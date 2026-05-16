@@ -53,6 +53,7 @@ const EMPTY_WAVE_PROFILE: WaveProfile = {
   theme_type: "WAVE_THEME_DEFAULT",
   is_auto_clear: true,
   is_use_batch_draw: false,
+  page: 0,
 };
 
 const EMPTY_BAR_PROFILE: BarChartProfile = {
@@ -62,6 +63,7 @@ const EMPTY_BAR_PROFILE: BarChartProfile = {
   is_display_value: true, is_display_axis: true,
   font_size: "ESTA_FONT_1608",
   theme_type: "BARCHART_THEME_DEFAULT",
+  page: 0,
 };
 
 const EMPTY_TABLE_PROFILE: TableProfile = {
@@ -83,6 +85,7 @@ const EMPTY_TABLE_PROFILE: TableProfile = {
     [{ text: "Vpp", u32: 0, f32: 0 }, { text: "", u32: 1000, f32: 0 }, { text: "mV", u32: 0, f32: 0 }],
     [{ text: "Fre", u32: 0, f32: 0 }, { text: "", u32: 1230, f32: 0 }, { text: "Hz", u32: 0, f32: 0 }],
   ],
+  page: 0,
 };
 
 function cloneWaveProfile(): WaveProfile {
@@ -108,6 +111,7 @@ const EMPTY_MENU_PROFILE: MenuProfile = {
   font_size: "ESTA_FONT_1608",
   theme_type: "MENU_THEME_DEFAULT",
   items: DEFAULT_MENU_ITEMS.map((item) => ({ ...item })),
+  page: 0,
 };
 
 function cloneTableProfile(): TableProfile {
@@ -192,6 +196,10 @@ export default function App() {
   const [data, setData] = useState<ProfileSet | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [status, setStatus] = useState<Status>({ type: "idle" });
+  const [screenW, setScreenW] = useState(400);
+  const [screenH, setScreenH] = useState(320);
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
+  const [previewPage, setPreviewPage] = useState(0);
 
   useEffect(() => {
     api.loadProfile().then(setData).catch((e) =>
@@ -309,6 +317,7 @@ export default function App() {
     table_inst_count: tableCount,
     menu_inst_count: menuCount,
     button_count: data.button_count,
+    page_count: data.page_count ?? 1,
     wave_profiles: ensureCount(data.wave_profiles, waveCount, cloneWaveProfile),
     bar_profiles: ensureCount(data.bar_profiles, barCount, cloneBarProfile),
     table_profiles: ensureCount(data.table_profiles ?? [], tableCount, cloneTableProfile),
@@ -347,6 +356,93 @@ export default function App() {
     } catch (e) {
       showStatus({ type: "error", msg: `${e}` });
     }
+  };
+
+  const handlePreview = async () => {
+    const err = validateAll();
+    if (err) { showStatus({ type: "error", msg: err }); return; }
+    try {
+      showStatus({ type: "success", msg: "正在生成预览..." });
+      const pages = await api.previewSimulator(buildSavePayload());
+      setPreviewPages(pages);
+      setPreviewPage(0);
+      showStatus({ type: "success", msg: `预览已生成（${pages.length} 页）` });
+    } catch (e) {
+      showStatus({ type: "error", msg: `预览失败: ${e}` });
+    }
+  };
+
+  const handleAutoLayout = () => {
+    const SCREEN_W = screenW, SCREEN_H = screenH, GAP = 4;
+    type Item = { type: "wave" | "bar" | "table" | "menu"; idx: number; w: number; h: number };
+    const items: Item[] = [];
+    data.wave_profiles.slice(0, waveCount).forEach((p, i) => items.push({ type: "wave", idx: i, w: p.x_width, h: p.y_width }));
+    data.bar_profiles.slice(0, barCount).forEach((p, i) => items.push({ type: "bar", idx: i, w: p.x_width, h: p.y_width }));
+    (data.table_profiles ?? []).slice(0, tableCount).forEach((p, i) => items.push({ type: "table", idx: i, w: p.x_width, h: p.y_width }));
+    (data.menu_profiles ?? []).slice(0, menuCount).forEach((p, i) => items.push({ type: "menu", idx: i, w: p.x_width, h: p.y_width }));
+    items.sort((a, b) => (b.w * b.h) - (a.w * a.h));
+
+    type Rect = { x: number; y: number; w: number; h: number };
+    const pages: Rect[][] = [[{ x: 0, y: 0, w: SCREEN_W, h: SCREEN_H }]];
+    const layout = new Map<string, { x: number; y: number; page: number }>();
+
+    for (const item of items) {
+      const iw = item.w + GAP, ih = item.h + GAP;
+      let placed = false;
+      for (let p = 0; p < pages.length; p++) {
+        const rects = pages[p];
+        let bestIdx = -1, bestShort = Infinity;
+        for (let r = 0; r < rects.length; r++) {
+          if (rects[r].w >= iw && rects[r].h >= ih) {
+            const shortSide = Math.min(rects[r].w - iw, rects[r].h - ih);
+            if (shortSide < bestShort) { bestShort = shortSide; bestIdx = r; }
+          }
+        }
+        if (bestIdx >= 0) {
+          const rect = rects[bestIdx];
+          layout.set(`${item.type}_${item.idx}`, { x: rect.x, y: rect.y, page: p });
+          rects.splice(bestIdx, 1);
+          const rightW = rect.w - iw;
+          const bottomH = rect.h - ih;
+          if (rightW > 0) rects.push({ x: rect.x + iw, y: rect.y, w: rightW, h: ih });
+          if (bottomH > 0) rects.push({ x: rect.x, y: rect.y + ih, w: rect.w, h: bottomH });
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        pages.push([{ x: 0, y: 0, w: SCREEN_W, h: SCREEN_H }]);
+        const p = pages.length - 1;
+        const rect = pages[p][0];
+        layout.set(`${item.type}_${item.idx}`, { x: 0, y: 0, page: p });
+        pages[p].splice(0, 1);
+        const rightW = rect.w - iw;
+        const bottomH = rect.h - ih;
+        if (rightW > 0) pages[p].push({ x: iw, y: 0, w: rightW, h: ih });
+        if (bottomH > 0) pages[p].push({ x: 0, y: ih, w: rect.w, h: bottomH });
+      }
+    }
+
+    const newWave = data.wave_profiles.map((p, i) => {
+      const l = layout.get(`wave_${i}`);
+      return l ? { ...p, x_origin: l.x, y_origin: l.y, page: l.page } : p;
+    });
+    const newBar = data.bar_profiles.map((p, i) => {
+      const l = layout.get(`bar_${i}`);
+      return l ? { ...p, x_origin: l.x, y_origin: l.y, page: l.page } : p;
+    });
+    const newTable = (data.table_profiles ?? []).map((p, i) => {
+      const l = layout.get(`table_${i}`);
+      return l ? { ...p, x_origin: l.x, y_origin: l.y, page: l.page } : p;
+    });
+    const newMenu = (data.menu_profiles ?? []).map((p, i) => {
+      const l = layout.get(`menu_${i}`);
+      return l ? { ...p, x_origin: l.x, y_origin: l.y, page: l.page } : p;
+    });
+    const pageCount = pages.length;
+    setData({ ...data, wave_profiles: newWave, bar_profiles: newBar, table_profiles: newTable, menu_profiles: newMenu, page_count: pageCount });
+    if (pageCount > 1) showStatus({ type: "success", msg: `已自动布局，分配到 ${pageCount} 页` });
+    else showStatus({ type: "success", msg: "已自动布局" });
   };
 
   return (
@@ -398,11 +494,23 @@ export default function App() {
           }
         />
         <div className="toolbar-spacer" />
+        <label>Screen</label>
+        <input type="number" value={screenW} min={100} max={800}
+          onChange={(e) => setScreenW(Math.max(100, Number(e.target.value) || 400))} />
+        <span style={{ color: "#888" }}>×</span>
+        <input type="number" value={screenH} min={100} max={800}
+          onChange={(e) => setScreenH(Math.max(100, Number(e.target.value) || 320))} />
+        <button className="btn-auto-calc" onClick={handleAutoLayout}>
+          自动布局
+        </button>
         <button className="btn-generate" onClick={handleGenerate}>
           生成 ESTA_Profile.c
         </button>
         <button className="btn-run" onClick={handleBuildRun}>
           Build & Run
+        </button>
+        <button className="btn-auto-calc" onClick={handlePreview}>
+          预览
         </button>
         {status.type !== "idle" && (
           <span className="status">{status.msg}</span>
@@ -450,6 +558,25 @@ export default function App() {
           </button>
         ))}
       </div>
+
+      {previewPages.length > 0 && (
+        <div style={{ padding: "8px 16px", background: "#1a1a1a", borderBottom: "1px solid #3c3c3c", position: "relative" }}>
+          <img src={previewPages[previewPage]} alt={`Preview page ${previewPage}`} style={{ maxWidth: "100%", height: "auto", borderRadius: 4, border: "1px solid #555" }} />
+          {previewPages.length > 1 && (
+            <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
+              <button className="btn-auto-calc" disabled={previewPage === 0}
+                onClick={() => setPreviewPage(previewPage - 1)}>&lt;</button>
+              <span style={{ color: "#ccc", fontSize: 12 }}>{previewPage + 1} / {previewPages.length}</span>
+              <button className="btn-auto-calc" disabled={previewPage === previewPages.length - 1}
+                onClick={() => setPreviewPage(previewPage + 1)}>&gt;</button>
+            </div>
+          )}
+          <button onClick={() => setPreviewPages([])}
+            style={{ position: "absolute", top: 12, right: 20, background: "#333", border: "1px solid #555", color: "#ccc", borderRadius: 4, cursor: "pointer", padding: "2px 8px", fontSize: 12 }}>
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="editor-scroll">
         {totalTabs === 0 ? (

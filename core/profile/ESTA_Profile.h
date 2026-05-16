@@ -48,6 +48,7 @@ typedef struct {
     WAVE_theme_type theme_type;
     bool is_auto_clear;
     bool is_use_batch_draw;
+    uint8_t page;
 } ESTA_WaveProfile_TypeDef;
 
 typedef struct {
@@ -68,6 +69,7 @@ typedef struct {
     ESTA_FontSize font_size;
 
     BARCHART_theme_type theme_type;
+    uint8_t page;
 } ESTA_BarChartProfile_TypeDef;
 
 typedef struct {
@@ -88,6 +90,7 @@ typedef struct {
     TABLE_theme_type theme_type;
     TABLE_ColConfig_TypeDef cols[TABLE_MAX_COLS];
     TABLE_CellValue default_cells[TABLE_MAX_ROWS][TABLE_MAX_COLS];
+    uint8_t page;
 } ESTA_TableProfile_TypeDef;
 
 typedef struct {
@@ -105,6 +108,7 @@ typedef struct {
     ESTA_FontSize font_size;
     MENU_theme_type theme_type;
     MENU_ItemConfig items[MENU_MAX_ITEMS];
+    uint8_t page;
 } ESTA_MenuProfile_TypeDef;
 
 typedef struct {
@@ -113,6 +117,7 @@ typedef struct {
     uint16_t table_inst_count;
     uint16_t menu_inst_count;
     uint16_t button_count;
+    uint8_t page_count;
     ESTA_WaveProfile_TypeDef wave_profiles[ESTA_PROFILE_MAX_WAVE_INST];
     ESTA_BarChartProfile_TypeDef bar_profiles[ESTA_PROFILE_MAX_BARCHART_INST];
     ESTA_TableProfile_TypeDef table_profiles[ESTA_PROFILE_MAX_TABLE_INST];
@@ -120,6 +125,9 @@ typedef struct {
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);
+void ESTA_Profile_SetActivePage(uint8_t page);
+uint8_t ESTA_Profile_GetActivePage(void);
+ESTA_StatusTypeDef ESTA_Profile_ApplyPage(const ESTA_ProfileSet_TypeDef *profile_set, uint8_t page);
 bool ESTA_Profile_ToConfig(const ESTA_WaveProfile_TypeDef *profile, WAVE_Config_TypeDef *out_config);
 ESTA_StatusTypeDef ESTA_Profile_Apply(int inst_idx, const ESTA_WaveProfile_TypeDef *profile);
 bool ESTA_Profile_ToBARCHART_Config(const ESTA_BarChartProfile_TypeDef *profile, BARCHART_Config_TypeDef *out_config);

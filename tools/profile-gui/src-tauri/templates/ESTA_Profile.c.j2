@@ -2,12 +2,15 @@
 
 #include <string.h>
 
+static uint8_t g_active_page = 0;
+
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .wave_inst_count = {{ wave_inst_count }},
     .bar_inst_count = {{ bar_inst_count }},
     .table_inst_count = {{ table_inst_count }},
     .menu_inst_count = {{ menu_inst_count }},
     .button_count = {{ button_count }},
+    .page_count = {{ page_count }},
     .wave_profiles = {
 {% for p in wave_profiles %}
         {
@@ -45,7 +48,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_font_size = {{ p.ruler_font_size }},
             .theme_type = {{ p.theme_type }},
             .is_auto_clear = {{ p.is_auto_clear }},
-            .is_use_batch_draw = {{ p.is_use_batch_draw }}
+            .is_use_batch_draw = {{ p.is_use_batch_draw }},
+            .page = {{ p.page }}
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     },
@@ -64,7 +68,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .is_display_value = {{ p.is_display_value }},
             .is_display_axis = {{ p.is_display_axis }},
             .font_size = {{ p.font_size }},
-            .theme_type = {{ p.theme_type }}
+            .theme_type = {{ p.theme_type }},
+            .page = {{ p.page }}
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     },
@@ -94,7 +99,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 {% for row in p.cells %}
                 { {% for cell in row %}{ .{{ cell.active_field }} = {{ cell.active_value }} }{% if not loop.last %}, {% endif %}{% endfor %} }{% if not loop.last %},{% endif %}
 {% endfor %}
-            }
+            },
+            .page = {{ p.page }}
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     },
@@ -122,7 +128,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
                     .event_id = {{ item.event_id }}
                 }{% if not loop.last %},{% endif %}
 {% endfor %}
-            }
+            },
+            .page = {{ p.page }}
         }{% if not loop.last %},{% endif %}
 {% endfor %}
     }
@@ -270,5 +277,44 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx,
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
     (void)profile_set;
     ESTA_EventInit();
+    return ESTA_OK;
+}
+
+void ESTA_Profile_SetActivePage(uint8_t page) {
+    g_active_page = page;
+}
+
+uint8_t ESTA_Profile_GetActivePage(void) {
+    return g_active_page;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyPage(const ESTA_ProfileSet_TypeDef *profile_set, uint8_t page) {
+    if (profile_set == NULL) return ESTA_ERROR;
+    g_active_page = page;
+
+    for (uint16_t i = 0; i < profile_set->wave_inst_count; i++) {
+        if (profile_set->wave_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_Apply(i, &profile_set->wave_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->bar_inst_count; i++) {
+        if (profile_set->bar_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyBARCHART(i, &profile_set->bar_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->table_inst_count; i++) {
+        if (profile_set->table_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyTABLE(i, &profile_set->table_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->menu_inst_count; i++) {
+        if (profile_set->menu_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyMENU(i, &profile_set->menu_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
     return ESTA_OK;
 }

@@ -2,17 +2,20 @@
 
 #include <string.h>
 
+static uint8_t g_active_page = 0;
+
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .wave_inst_count = 1,
     .bar_inst_count = 1,
-    .table_inst_count = 1,
+    .table_inst_count = 2,
     .menu_inst_count = 1,
-    .button_count = 4,
+    .button_count = 6,
+    .page_count = 2,
     .wave_profiles = {
 
         {
             .x_origin = 0,
-            .y_origin = 10,
+            .y_origin = 0,
             .x_width = 200,
             .y_width = 256,
             .display_num_min = 0,
@@ -85,17 +88,18 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .ruler_font_size = ESTA_FONT_1206,
             .theme_type = WAVE_THEME_DEFAULT,
             .is_auto_clear = true,
-            .is_use_batch_draw = false
+            .is_use_batch_draw = false,
+            .page = 0
         }
 
     },
     .bar_profiles = {
 
         {
-            .x_origin = 10,
-            .y_origin = 125,
+            .x_origin = 0,
+            .y_origin = 76,
             .x_width = 93,
-            .y_width = 80,
+            .y_width = 76,
             .display_num_min = 0,
             .display_num_max = 100,
             .bar_count = 6,
@@ -103,16 +107,17 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .bar_spacing = 5,
             .is_display_value = true,
             .is_display_axis = true,
-            .font_size = ESTA_FONT_1608,
-            .theme_type = BARCHART_THEME_DEFAULT
+            .font_size = ESTA_FONT_1206,
+            .theme_type = BARCHART_THEME_DEFAULT,
+            .page = 1
         }
 
     },
     .table_profiles = {
 
         {
-            .x_origin = 200,
-            .y_origin = 100,
+            .x_origin = 0,
+            .y_origin = 260,
             .x_width = 168,
             .y_width = 48,
             .row_count = 2,
@@ -144,24 +149,59 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
                 { { .text = "Wave2" }, { .u32 = 1230 }, { .text = "mV" }, { .u32 = 2000 }, { .text = "Hz" } }
 
-            }
+            },
+            .page = 0
+        },
+
+        {
+            .x_origin = 0,
+            .y_origin = 0,
+            .x_width = 110,
+            .y_width = 72,
+            .row_count = 2,
+            .col_count = 3,
+            .row_height = 20,
+            .is_show_header = false,
+            .is_show_frame = true,
+            .is_show_row_line = false,
+            .is_show_col_line = false,
+            .is_fill_background = true,
+            .font_size = ESTA_FONT_1608,
+            .theme_type = TABLE_THEME_LIGHT,
+            .cols = {
+
+                { .header = "Name", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 },
+
+                { .header = "Value", .cell_type = TABLE_CELL_UINT32, .width = 0, .precision = 0 },
+
+                { .header = "Unit", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 }
+
+            },
+            .default_cells = {
+
+                { { .text = "Vpp" }, { .u32 = 1000 }, { .text = "mV" } },
+
+                { { .text = "Fre" }, { .u32 = 1230 }, { .text = "Hz" } }
+
+            },
+            .page = 1
         }
 
     },
     .menu_profiles = {
 
         {
-            .x_origin = 10,
-            .y_origin = 230,
-            .x_width = 98,
-            .y_width = 80,
+            .x_origin = 114,
+            .y_origin = 0,
+            .x_width = 78,
+            .y_width = 64,
             .item_count = 8,
-            .item_height = 20,
+            .item_height = 16,
             .breadcrumb_height = 0,
             .is_show_frame = true,
             .is_show_breadcrumb = false,
             .is_fill_background = true,
-            .font_size = ESTA_FONT_1608,
+            .font_size = ESTA_FONT_1206,
             .theme_type = MENU_THEME_DEFAULT,
             .items = {
 
@@ -221,7 +261,8 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
                     .event_id = 0
                 }
 
-            }
+            },
+            .page = 1
         }
 
     }
@@ -369,5 +410,44 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx,
 ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
     (void)profile_set;
     ESTA_EventInit();
+    return ESTA_OK;
+}
+
+void ESTA_Profile_SetActivePage(uint8_t page) {
+    g_active_page = page;
+}
+
+uint8_t ESTA_Profile_GetActivePage(void) {
+    return g_active_page;
+}
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyPage(const ESTA_ProfileSet_TypeDef *profile_set, uint8_t page) {
+    if (profile_set == NULL) return ESTA_ERROR;
+    g_active_page = page;
+
+    for (uint16_t i = 0; i < profile_set->wave_inst_count; i++) {
+        if (profile_set->wave_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_Apply(i, &profile_set->wave_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->bar_inst_count; i++) {
+        if (profile_set->bar_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyBARCHART(i, &profile_set->bar_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->table_inst_count; i++) {
+        if (profile_set->table_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyTABLE(i, &profile_set->table_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
+    for (uint16_t i = 0; i < profile_set->menu_inst_count; i++) {
+        if (profile_set->menu_profiles[i].page == page) {
+            ESTA_StatusTypeDef ret = ESTA_Profile_ApplyMENU(i, &profile_set->menu_profiles[i]);
+            if (ret != ESTA_OK) return ret;
+        }
+    }
     return ESTA_OK;
 }

@@ -30,6 +30,7 @@ export interface WaveProfile {
   theme_type: string;
   is_auto_clear: boolean;
   is_use_batch_draw: boolean;
+  page: number;
 }
 
 export interface BarChartProfile {
@@ -46,6 +47,7 @@ export interface BarChartProfile {
   is_display_axis: boolean;
   font_size: string;
   theme_type: string;
+  page: number;
 }
 
 export interface TableColProfile {
@@ -78,6 +80,7 @@ export interface TableProfile {
   theme_type: string;
   cols: TableColProfile[];
   cells: TableCellProfile[][];
+  page: number;
 }
 
 export interface MenuItemProfile {
@@ -101,6 +104,7 @@ export interface MenuProfile {
   font_size: string;
   theme_type: string;
   items: MenuItemProfile[];
+  page: number;
 }
 
 export interface ProfileSet {
@@ -109,6 +113,7 @@ export interface ProfileSet {
   table_inst_count: number;
   menu_inst_count: number;
   button_count: number;
+  page_count: number;
   wave_profiles: WaveProfile[];
   bar_profiles: BarChartProfile[];
   table_profiles: TableProfile[];

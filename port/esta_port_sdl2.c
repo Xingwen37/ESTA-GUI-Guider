@@ -100,6 +100,18 @@ uint32_t ESTA_SDL2_GetWindowID(void) {
     return SDL_GetWindowID(g_window);
 }
 
+void ESTA_SDL2_SaveScreenshot(const char *path) {
+    SDL_Surface *surface = SDL_CreateRGBSurface(0,
+        SIMULATOR_SCREEN_WIDTH, SIMULATOR_SCREEN_HEIGHT, 32,
+        0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    if (surface == NULL) return;
+    SDL_SetRenderTarget(g_renderer, g_screen);
+    SDL_RenderReadPixels(g_renderer, NULL, SDL_PIXELFORMAT_ARGB8888,
+        surface->pixels, surface->pitch);
+    SDL_SaveBMP(surface, path);
+    SDL_FreeSurface(surface);
+}
+
 /* ================== 绘图 API 映射 ================== */
 
 void ESTA_SDL2_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
