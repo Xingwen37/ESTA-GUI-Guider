@@ -33,5 +33,8 @@ file(GLOB_RECURSE SOURCES
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-# 只需链接 SDL2
+# 链接 SDL2 和 math 库
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
+if(UNIX)
+    target_link_libraries(${PROJECT_NAME} m)
+endif()

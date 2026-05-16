@@ -1,93 +1,108 @@
-﻿#include "sim_scenario.h"
+#include "sim_scenario.h"
 
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
-static const uint16_t g_default_signal[] = {
-128, 132, 136, 140, 144, 148, 152, 156, 160, 164, 
-168, 172, 175, 179, 183, 186, 190, 193, 197, 200, 
-204, 207, 210, 213, 216, 219, 222, 224, 227, 229, 
-232, 234, 236, 239, 240, 242, 244, 246, 247, 249, 
-250, 251, 252, 253, 254, 255, 255, 256, 256, 256, 
-256, 256, 256, 255, 255, 254, 254, 253, 252, 251, 
-249, 248, 247, 245, 243, 241, 240, 237, 235, 233, 
-231, 228, 226, 223, 220, 217, 214, 211, 208, 205, 
-202, 199, 195, 192, 188, 185, 181, 177, 173, 170, 
-166, 162, 158, 154, 150, 146, 142, 138, 134, 130, 
-126, 122, 118, 114, 110, 106, 102,  98,  94,  90, 
- 86,  83,  79,  75,  71,  68,  64,  61,  57,  54, 
- 51,  48,  45,  42,  39,  36,  33,  30,  28,  25, 
- 23,  21,  19,  16,  15,  13,  11,   9,   8,   7, 
-  5,   4,   3,   2,   2,   1,   1,   0,   0,   0, 
-  0,   0,   0,   1,   1,   2,   3,   4,   5,   6, 
-  7,   9,  10,  12,  14,  16,  17,  20,  22,  24, 
- 27,  29,  32,  34,  37,  40,  43,  46,  49,  52, 
- 56,  59,  63,  66,  70,  73,  77,  81,  84,  88, 
- 92,  96, 100, 104, 108, 112, 116, 120, 124, 128 
-};
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+static uint16_t SimSignal_Generate(const SimSignalGen *gen, size_t tick) {
+    if (gen->period == 0) return gen->offset;
+
+    double t = fmod((double)(tick + gen->phase), (double)gen->period) / (double)gen->period;
+    double value = 0.0;
+
+    switch (gen->type) {
+        case SIM_SIGNAL_SINE:
+            value = sin(2.0 * M_PI * t);
+            break;
+        case SIM_SIGNAL_SQUARE:
+            value = (t < 0.5) ? 1.0 : -1.0;
+            break;
+        case SIM_SIGNAL_TRIANGLE:
+            value = (t < 0.5) ? (4.0 * t - 1.0) : (3.0 - 4.0 * t);
+            break;
+        case SIM_SIGNAL_SAWTOOTH:
+            value = 2.0 * t - 1.0;
+            break;
+        case SIM_SIGNAL_NOISE:
+            value = ((double)(rand() % 2001) - 1000.0) / 1000.0;
+            break;
+        default:
+            value = 0.0;
+            break;
+    }
+
+    int32_t result = (int32_t)gen->offset + (int32_t)(value * (double)gen->amplitude);
+    if (result < 0) result = 0;
+    if (result > SIM_SIGNAL_MAX) result = SIM_SIGNAL_MAX;
+    return (uint16_t)result;
+}
 
 bool SimScenario_LoadDefault(SimScenarioRuntime *runtime) {
     if (runtime == NULL) return false;
     memset(runtime, 0, sizeof(*runtime));
 
-    runtime->signal_lut = g_default_signal;
-    runtime->signal_len = sizeof(g_default_signal) / sizeof(g_default_signal[0]);
-    runtime->tick = 0;
+    /* Instance 0: CH0=sine, CH1=square, CH2=triangle, CH3=const */
+    runtime->wave_signals[0][0] = (SimSignalGen){ SIM_SIGNAL_SINE,     SIM_SIGNAL_AMP_DEFAULT, SIM_SIGNAL_MID, 200, 0 };
+    runtime->wave_signals[0][1] = (SimSignalGen){ SIM_SIGNAL_SQUARE,   (SIM_SIGNAL_MAX * 37) / 100, SIM_SIGNAL_MID, 150, 0 };
+    runtime->wave_signals[0][2] = (SimSignalGen){ SIM_SIGNAL_TRIANGLE, (SIM_SIGNAL_MAX * 29) / 100, SIM_SIGNAL_MID, 100, 0 };
+    runtime->wave_signals[0][3] = (SimSignalGen){ SIM_SIGNAL_CONST,       0, SIM_SIGNAL_MID,   0, 0 };
 
-    return true;
-}
+    /* Instance 1: all sine, different frequencies/phases */
+    runtime->wave_signals[1][0] = (SimSignalGen){ SIM_SIGNAL_SINE, (SIM_SIGNAL_MAX * 39) / 100, SIM_SIGNAL_MID, 180, 0 };
+    runtime->wave_signals[1][1] = (SimSignalGen){ SIM_SIGNAL_SINE, (SIM_SIGNAL_MAX * 34) / 100, SIM_SIGNAL_MID, 120, 30 };
+    runtime->wave_signals[1][2] = (SimSignalGen){ SIM_SIGNAL_SAWTOOTH, (SIM_SIGNAL_MAX * 24) / 100, SIM_SIGNAL_MID, 160, 0 };
+    runtime->wave_signals[1][3] = (SimSignalGen){ SIM_SIGNAL_CONST, 0, SIM_SIGNAL_MID / 2, 0, 0 };
 
-bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx, uint16_t data_ch[MAX_WAVE_CHANNEL]) {
-    if (runtime == NULL || data_ch == NULL) return false;
-    if (inst_idx < 0 || inst_idx >= SIM_SCENARIO_WAVE_COUNT) return false;
-    if (runtime->signal_lut == NULL || runtime->signal_len == 0) return false;
-
-    memset(data_ch, 0, sizeof(uint16_t) * MAX_WAVE_CHANNEL);
-    size_t base = runtime->tick % runtime->signal_len;
-    size_t shift_32 = (runtime->tick + 32U) % runtime->signal_len;
-
-    if (inst_idx == 0) {
-        data_ch[0] = runtime->signal_lut[base];
-        data_ch[1] = runtime->signal_lut[shift_32];
-        data_ch[2] = 1000;
-        data_ch[3] = 1600;
-    } else {
-        data_ch[0] = runtime->signal_lut[shift_32];
-        data_ch[1] = runtime->signal_lut[base];
-        data_ch[2] = 1400;
-        data_ch[3] = 2400;
+    /* Instance 2-3: sine with varying phase */
+    for (int inst = 2; inst < SIM_SCENARIO_WAVE_COUNT; inst++) {
+        for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
+            runtime->wave_signals[inst][ch] = (SimSignalGen){
+                SIM_SIGNAL_SINE, (SIM_SIGNAL_MAX * 37) / 100, SIM_SIGNAL_MID,
+                (uint16_t)(200 + inst * 50), (uint16_t)(ch * 25)
+            };
+        }
     }
 
+    /* BARCHART: sine waves with different phases, output 0-100 range */
+    for (int inst = 0; inst < SIM_SCENARIO_BARCHART_COUNT; inst++) {
+        for (int i = 0; i < BARCHART_MAX_BARS; i++) {
+            runtime->bar_signals[inst][i] = (SimSignalGen){
+                SIM_SIGNAL_SINE, 45, 50, 200, (uint16_t)(i * 20)
+            };
+        }
+    }
+
+    runtime->tick = 0;
     return true;
 }
 
-bool SimScenario_GetBatchData(const SimScenarioRuntime *runtime, uint16_t *buf, uint16_t count) {
-    if (runtime == NULL || buf == NULL || count == 0) return false;
-    if (runtime->signal_lut == NULL || runtime->signal_len == 0) return false;
+bool SimScenario_GetNextFrame(const SimScenarioRuntime *runtime, int inst_idx,
+                              uint16_t data_ch[MAX_WAVE_CHANNEL]) {
+    if (runtime == NULL || data_ch == NULL) return false;
+    if (inst_idx < 0 || inst_idx >= SIM_SCENARIO_WAVE_COUNT) return false;
 
-    for (uint16_t i = 0; i < count; i++) {
-        buf[i] = runtime->signal_lut[(runtime->tick + i) % runtime->signal_len];
+    for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
+        data_ch[ch] = SimSignal_Generate(&runtime->wave_signals[inst_idx][ch], runtime->tick);
     }
     return true;
 }
 
 void SimScenario_Tick(SimScenarioRuntime *runtime) {
-    if (runtime == NULL || runtime->signal_len == 0) return;
-    runtime->tick = (runtime->tick + 1U) % runtime->signal_len;
+    if (runtime == NULL) return;
+    runtime->tick++;
 }
 
-bool SimScenario_BARCHART_GetData(const SimScenarioRuntime *runtime, uint16_t bar_data[BARCHART_MAX_BARS], uint16_t bar_count) {
+bool SimScenario_BARCHART_GetData(const SimScenarioRuntime *runtime,
+                                  uint16_t bar_data[BARCHART_MAX_BARS], uint16_t bar_count) {
     if (runtime == NULL || bar_data == NULL) return false;
     if (bar_count > BARCHART_MAX_BARS) bar_count = BARCHART_MAX_BARS;
 
-    /* 用正弦波的多相位采样产生动态柱状图数据 */
-    size_t t = runtime->tick;
-    size_t len = runtime->signal_len;
     for (int i = 0; i < bar_count; i++) {
-        size_t phase = (t + i * 10U) % len;
-        uint16_t raw = runtime->signal_lut[phase];
-        /* 将 12-bit 范围 0-4095 映射到 0-100 */
-        bar_data[i] = (uint16_t)(((uint32_t)raw * 100U) / 4095U);
+        bar_data[i] = SimSignal_Generate(&runtime->bar_signals[0][i], runtime->tick);
     }
-
     return true;
 }
