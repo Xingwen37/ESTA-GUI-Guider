@@ -292,16 +292,16 @@ ESTA_StatusTypeDef MENU_ReDraw(int inst) {
 void MENU_ProcessInput(int inst) {
     if (!IS_VALID_MENU_INST(inst)) return;
 
-    ESTA_EventTypeDef evt;
+    ESTA_Event evt;
     bool state_changed = false;
 
     /* Gather and re-push helper */
-    ESTA_EventTypeDef held[16];
+    ESTA_Event held[16];
     uint8_t held_count = 0;
 
     while (ESTA_EventPoll(&evt)) {
-        if (evt.event_type == ESTA_EVENT_BUTTON_PRESS) {
-            switch (evt.button_id) {
+        if (evt.type == ESTA_EVENT_BUTTON_PRESS) {
+            switch (evt.source) {
                 case 0: /* UP */
                     if (MENU_PRIVATE_MEMBER(inst, selected_idx) > 0) {
                         MENU_WRITE_PRIVATE(inst, selected_idx,
@@ -335,7 +335,7 @@ void MENU_ProcessInput(int inst) {
                                     state_changed = true;
                                 }
                             } else {
-                                ESTA_EventPush(item->event_id, ESTA_EVENT_MENU_SELECT);
+                                ESTA_EventEmitMenuSelect((uint8_t)inst, item->event_id);
                             }
                         }
                     }
@@ -363,7 +363,7 @@ void MENU_ProcessInput(int inst) {
 
     /* Re-push unconsumed events */
     for (uint8_t i = 0; i < held_count; i++) {
-        ESTA_EventPush(held[i].button_id, held[i].event_type);
+        ESTA_EventPush(&held[i]);
     }
 
     if (state_changed) {

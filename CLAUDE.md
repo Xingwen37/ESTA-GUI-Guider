@@ -53,6 +53,12 @@ cargo check                           # Rust 类型检查（在 src-tauri/ 下�
 npx tsc --noEmit                      # TypeScript 类型检查（在 tools/profile-gui/ 下运行）
 ```
 
+TypeScript 配置为 strict 模式（`noUnusedLocals`、`noUnusedParameters`、`noFallthroughCasesInSwitch` 均启用）。
+
+### 测试与 Lint
+
+本项目无自动化测试套件和 CI。验证方式为：编译 C 仿真器 + 运行截图模式目视检查 + `cargo check` / `npx tsc --noEmit` 类型检查。
+
 ## 架构
 
 ### OOP-in-C 模式（`core/ui/WAVE.h` 和 `core/ui/WAVE.c`）
@@ -81,6 +87,7 @@ WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注�
 | API | 说明 |
 |-----|------|
 | `WAVE_Init()` | 初始化实例并载入配置 |
+| `WAVE_DeInit()` | 复位实例，清空数据和私有状态 |
 | `WAVE_CurveDraw()` | 压入单帧通道数据并触发波形绘制 |
 | `WAVE_CurveDrawBatch()` | 批量压入多采样点数据（滑动窗口），减少逐点绘制开销 |
 | `WAVE_ReDraw()` | 强制重绘边框、背景与坐标轴 |

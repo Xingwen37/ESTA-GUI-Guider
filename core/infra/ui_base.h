@@ -20,6 +20,8 @@ typedef enum {
 #include "main.h"
 #include "ili9341_driver.h"
 
+#define ESTA_GET_TICK()  HAL_GetTick()
+
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
             ILI9341_draw_line(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR) \
@@ -37,6 +39,9 @@ typedef enum {
 
 #elif defined(SCREEN_USE_SDL2)
 #include "esta_port_sdl2.h"
+#include <SDL2/SDL.h>
+
+#define ESTA_GET_TICK()  ((uint32_t)SDL_GetTicks())
 
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR) \
             ESTA_SDL2_DrawLine(x1, y1, x2, y2, COLOR)
@@ -55,6 +60,7 @@ typedef enum {
 
 #else
 // 自定义屏幕驱动
+#define ESTA_GET_TICK()  0U
 #define SCREEN_DRAW_LINE(x1, y1, x2, y2, COLOR)
 #define SCREEN_DRAW_RECTANGLE(x1, y1, x2, y2, COLOR)
 #define SCREEN_FILL(x1, y1, x2, y2, COLOR)

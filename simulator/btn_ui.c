@@ -95,11 +95,11 @@ void BTN_UI_ProcessEvent(const SDL_Event *event) {
         if (SDL_PointInRect(&pt, &g_btn_rects[i])) {
             if (event->type == SDL_MOUSEBUTTONDOWN) {
                 g_pressed[i] = true;
-                ESTA_EventPush((uint8_t)i, ESTA_EVENT_BUTTON_PRESS);
+                ESTA_EventEmitButton((uint8_t)i, ESTA_EVENT_BUTTON_PRESS);
                 printf("Button %d Pressed\n", i);
             } else if (event->type == SDL_MOUSEBUTTONUP) {
                 g_pressed[i] = false;
-                ESTA_EventPush((uint8_t)i, ESTA_EVENT_BUTTON_RELEASE);
+                ESTA_EventEmitButton((uint8_t)i, ESTA_EVENT_BUTTON_RELEASE);
                 printf("Button %d Released\n", i);
             }
             break;

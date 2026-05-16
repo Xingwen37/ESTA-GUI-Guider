@@ -19,6 +19,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/core/infra
     ${CMAKE_SOURCE_DIR}/core/profile
     ${CMAKE_SOURCE_DIR}/core/event
+    ${CMAKE_SOURCE_DIR}/core/app
     ${CMAKE_SOURCE_DIR}/port
     ${SDL2_INCLUDE_DIRS}
 )
