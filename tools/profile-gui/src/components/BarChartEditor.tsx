@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import type { BarChartProfile } from "../lib/types";
 import { BAR_THEME_OPTIONS, UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
@@ -13,14 +14,17 @@ const FONT_METRICS: Record<string, { w: number; h: number }> = {
 };
 
 function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
+  const [text, setText] = useState(String(value));
+  const prev = useRef(value);
+  if (prev.current !== value) { prev.current = value; setText(String(value)); }
   return (
-    <input
-      type="number"
-      value={value}
-      min={min}
-      max={max}
-      onChange={(e) => onChange(Number(e.target.value) || 0)}
-    />
+    <input type="number" value={text} min={min} max={max}
+      onChange={(e) => {
+        setText(e.target.value);
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) { prev.current = v; onChange(v); }
+      }}
+      onBlur={() => setText(String(value))} />
   );
 }
 

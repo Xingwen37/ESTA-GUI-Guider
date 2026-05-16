@@ -7,20 +7,20 @@ static uint8_t g_active_page = 0;
 static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .wave_inst_count = 1,
     .bar_inst_count = 1,
-    .table_inst_count = 2,
+    .table_inst_count = 1,
     .menu_inst_count = 1,
     .button_count = 6,
-    .page_count = 2,
+    .page_count = 1,
     .wave_profiles = {
 
         {
             .x_origin = 0,
             .y_origin = 0,
-            .x_width = 200,
+            .x_width = 400,
             .y_width = 256,
             .display_num_min = 0,
             .display_num_max = 256,
-            .x_scale = 1,
+            .x_scale = 2,
             .channel_num = 4,
             .channel_mask = CH0 | CH1 | CH2 | CH3,
             .is_display_ruler_y = true,
@@ -96,10 +96,10 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .bar_profiles = {
 
         {
-            .x_origin = 0,
-            .y_origin = 76,
+            .x_origin = 102,
+            .y_origin = 324,
             .x_width = 93,
-            .y_width = 76,
+            .y_width = 80,
             .display_num_min = 0,
             .display_num_max = 100,
             .bar_count = 6,
@@ -107,9 +107,9 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .bar_spacing = 5,
             .is_display_value = true,
             .is_display_axis = true,
-            .font_size = ESTA_FONT_1206,
+            .font_size = ESTA_FONT_1608,
             .theme_type = BARCHART_THEME_DEFAULT,
-            .page = 1
+            .page = 0
         }
 
     },
@@ -118,17 +118,17 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
         {
             .x_origin = 0,
             .y_origin = 260,
-            .x_width = 168,
-            .y_width = 48,
+            .x_width = 224,
+            .y_width = 60,
             .row_count = 2,
             .col_count = 5,
-            .row_height = 16,
+            .row_height = 20,
             .is_show_header = true,
             .is_show_frame = true,
             .is_show_row_line = false,
             .is_show_col_line = false,
             .is_fill_background = true,
-            .font_size = ESTA_FONT_1206,
+            .font_size = ESTA_FONT_1608,
             .theme_type = TABLE_THEME_DEFAULT,
             .cols = {
 
@@ -151,57 +151,23 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
             },
             .page = 0
-        },
-
-        {
-            .x_origin = 0,
-            .y_origin = 0,
-            .x_width = 110,
-            .y_width = 72,
-            .row_count = 2,
-            .col_count = 3,
-            .row_height = 20,
-            .is_show_header = false,
-            .is_show_frame = true,
-            .is_show_row_line = false,
-            .is_show_col_line = false,
-            .is_fill_background = true,
-            .font_size = ESTA_FONT_1608,
-            .theme_type = TABLE_THEME_LIGHT,
-            .cols = {
-
-                { .header = "Name", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 },
-
-                { .header = "Value", .cell_type = TABLE_CELL_UINT32, .width = 0, .precision = 0 },
-
-                { .header = "Unit", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 }
-
-            },
-            .default_cells = {
-
-                { { .text = "Vpp" }, { .u32 = 1000 }, { .text = "mV" } },
-
-                { { .text = "Fre" }, { .u32 = 1230 }, { .text = "Hz" } }
-
-            },
-            .page = 1
         }
 
     },
     .menu_profiles = {
 
         {
-            .x_origin = 114,
-            .y_origin = 0,
-            .x_width = 78,
-            .y_width = 64,
+            .x_origin = 0,
+            .y_origin = 324,
+            .x_width = 98,
+            .y_width = 80,
             .item_count = 8,
-            .item_height = 16,
+            .item_height = 20,
             .breadcrumb_height = 0,
             .is_show_frame = true,
             .is_show_breadcrumb = false,
             .is_fill_background = true,
-            .font_size = ESTA_FONT_1206,
+            .font_size = ESTA_FONT_1608,
             .theme_type = MENU_THEME_DEFAULT,
             .items = {
 
@@ -262,7 +228,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
                 }
 
             },
-            .page = 1
+            .page = 0
         }
 
     }

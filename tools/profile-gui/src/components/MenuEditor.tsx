@@ -19,6 +19,21 @@ interface TreeNode {
   expanded: boolean;
 }
 
+function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
+  const [text, setText] = useState(String(value));
+  const prev = useRef(value);
+  if (prev.current !== value) { prev.current = value; setText(String(value)); }
+  return (
+    <input type="number" value={text} min={min} max={max}
+      onChange={(e) => {
+        setText(e.target.value);
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) { prev.current = v; onChange(v); }
+      }}
+      onBlur={() => setText(String(value))} />
+  );
+}
+
 let _nextId = 1;
 function genId(): string {
   return "n" + _nextId++;
@@ -315,7 +330,7 @@ function PropertiesPanel({
             value={node.event_id}
             min={0}
             max={255}
-            onChange={(e) => onUpdate({ event_id: Math.max(0, Math.min(255, Number(e.target.value) || 0)) })}
+            onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) onUpdate({ event_id: Math.max(0, Math.min(255, v)) }); }}
           />
         </div>
       )}
@@ -470,12 +485,12 @@ export default function MenuEditor({ profile, onChange }: Props) {
       {/* Position / Layout / Display settings */}
       <fieldset className="group-box">
         <legend>Position & Layout</legend>
-        <div className="form-row"><label>x_origin</label><input type="number" value={profile.x_origin} min={0} max={65535} onChange={(e) => set("x_origin", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>y_origin</label><input type="number" value={profile.y_origin} min={0} max={65535} onChange={(e) => set("y_origin", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>x_width</label><input type="number" value={profile.x_width} min={1} max={65535} onChange={(e) => set("x_width", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>y_width</label><input type="number" value={profile.y_width} min={1} max={65535} onChange={(e) => set("y_width", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>item_height</label><input type="number" value={profile.item_height} min={16} max={65535} onChange={(e) => set("item_height", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>breadcrumb_height</label><input type="number" value={profile.breadcrumb_height} min={0} max={65535} onChange={(e) => set("breadcrumb_height", Number(e.target.value) || 0)} /></div>
+        <div className="form-row"><label>x_origin</label>{spin(profile.x_origin, 0, 65535, (v) => set("x_origin", v))}</div>
+        <div className="form-row"><label>y_origin</label>{spin(profile.y_origin, 0, 65535, (v) => set("y_origin", v))}</div>
+        <div className="form-row"><label>x_width</label>{spin(profile.x_width, 1, 65535, (v) => set("x_width", v))}</div>
+        <div className="form-row"><label>y_width</label>{spin(profile.y_width, 1, 65535, (v) => set("y_width", v))}</div>
+        <div className="form-row"><label>item_height</label>{spin(profile.item_height, 16, 65535, (v) => set("item_height", v))}</div>
+        <div className="form-row"><label>breadcrumb_height</label>{spin(profile.breadcrumb_height, 0, 65535, (v) => set("breadcrumb_height", v))}</div>
         <button className="btn-auto-calc" onClick={handleAutoCalc} type="button">
           自动计算尺寸
         </button>

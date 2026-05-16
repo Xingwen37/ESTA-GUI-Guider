@@ -101,6 +101,16 @@ body {
   border-bottom-color: #0e639c;
 }
 
+.tab-close {
+  margin-left: 6px;
+  opacity: 0;
+  font-size: 11px;
+  color: #888;
+  transition: opacity 0.15s;
+}
+.tab:hover .tab-close { opacity: 1; }
+.tab-close:hover { color: #f48771; }
+
 .tab-sep {
   width: 8px;
   flex-shrink: 0;

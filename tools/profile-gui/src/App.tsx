@@ -287,6 +287,35 @@ export default function App() {
     });
   };
 
+  const deleteWave = (idx: number) => {
+    const profiles = [...data.wave_profiles];
+    profiles.splice(idx, 1);
+    const nextTotal = profiles.length + barCount + tableCount + menuCount;
+    setActiveTab((tab) => Math.min(tab, Math.max(0, nextTotal - 1)));
+    setData({ ...data, wave_inst_count: profiles.length, wave_profiles: profiles });
+  };
+  const deleteBar = (idx: number) => {
+    const profiles = [...data.bar_profiles];
+    profiles.splice(idx, 1);
+    const nextTotal = waveCount + profiles.length + tableCount + menuCount;
+    setActiveTab((tab) => Math.min(tab, Math.max(0, nextTotal - 1)));
+    setData({ ...data, bar_inst_count: profiles.length, bar_profiles: profiles });
+  };
+  const deleteTable = (idx: number) => {
+    const profiles = [...(data.table_profiles ?? [])];
+    profiles.splice(idx, 1);
+    const nextTotal = waveCount + barCount + profiles.length + menuCount;
+    setActiveTab((tab) => Math.min(tab, Math.max(0, nextTotal - 1)));
+    setData({ ...data, table_inst_count: profiles.length, table_profiles: profiles });
+  };
+  const deleteMenu = (idx: number) => {
+    const profiles = [...(data.menu_profiles ?? [])];
+    profiles.splice(idx, 1);
+    const nextTotal = waveCount + barCount + tableCount + profiles.length;
+    setActiveTab((tab) => Math.min(tab, Math.max(0, nextTotal - 1)));
+    setData({ ...data, menu_inst_count: profiles.length, menu_profiles: profiles });
+  };
+
   const updateWaveProfile = (p: WaveProfile) => {
     const wave_profiles = ensureCount(data.wave_profiles, waveCount, cloneWaveProfile);
     wave_profiles[profileIndex] = p;
@@ -496,10 +525,10 @@ export default function App() {
         <div className="toolbar-spacer" />
         <label>Screen</label>
         <input type="number" value={screenW} min={100} max={800}
-          onChange={(e) => setScreenW(Math.max(100, Number(e.target.value) || 400))} />
+          onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) setScreenW(v); }} />
         <span style={{ color: "#888" }}>×</span>
         <input type="number" value={screenH} min={100} max={800}
-          onChange={(e) => setScreenH(Math.max(100, Number(e.target.value) || 320))} />
+          onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) setScreenH(v); }} />
         <button className="btn-auto-calc" onClick={handleAutoLayout}>
           自动布局
         </button>
@@ -525,6 +554,7 @@ export default function App() {
             onClick={() => setActiveTab(i)}
           >
             WAVE{i}
+            <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteWave(i); }}>×</span>
           </button>
         ))}
         {waveCount > 0 && barCount > 0 && <span className="tab-sep" />}
@@ -535,6 +565,7 @@ export default function App() {
             onClick={() => setActiveTab(waveCount + i)}
           >
             BARCHART{i}
+            <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteBar(i); }}>×</span>
           </button>
         ))}
         {(waveCount + barCount) > 0 && tableCount > 0 && <span className="tab-sep" />}
@@ -545,6 +576,7 @@ export default function App() {
             onClick={() => setActiveTab(waveCount + barCount + i)}
           >
             TABLE{i}
+            <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteTable(i); }}>×</span>
           </button>
         ))}
         {(waveCount + barCount + tableCount) > 0 && menuCount > 0 && <span className="tab-sep" />}
@@ -555,6 +587,7 @@ export default function App() {
             onClick={() => setActiveTab(waveCount + barCount + tableCount + i)}
           >
             MENU{i}
+            <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteMenu(i); }}>×</span>
           </button>
         ))}
       </div>

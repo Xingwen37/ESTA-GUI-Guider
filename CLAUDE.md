@@ -29,7 +29,8 @@ tools/profile-gui/  # Tauri 配置器 GUI
 
 ```powershell
 .\build.ps1                           # 配置 + 构建，输出 build/ESTA_Simulator.exe
-.\build\ESTA_Simulator.exe            # 运行仿真器
+.\build\ESTA_Simulator.exe            # 运行仿真器（正常模式，按钮 1 切换页面）
+.\build\ESTA_Simulator.exe --screenshot build\preview  # 截图模式：每页生成 preview_0.bmp, preview_1.bmp, ...
 ```
 
 `build.ps1` 将 `$env:CC` 设为 MinGW 的 gcc，执行 `cmake -G "MinGW Makefiles" -B build -S .` 然后 `cmake --build build`。MinGW 路径硬编码在脚本中——如果你的 MinGW 安装路径不同，请相应修改。
@@ -72,7 +73,9 @@ WAVE_TypeDef              ← 每个实例一个（静态数组 WAVE_State[MAX_W
 
 最多支持 4 个实例（`MAX_WAVE_NUM`），每个实例最多 4 个通道（`MAX_WAVE_CHANNEL`）。实例之间完全隔离——每个实例拥有独立的配置、私有状态和屏幕区域。
 
-标尺容量：Y/X 轴各最多 10 个标尺（`WAVE_MAX_RULER_Y_NUM` / `WAVE_MAX_RULER_X_NUM`）。
+标尺容量：Y/X 轴各最多 11 个标尺（`WAVE_MAX_RULER_Y_NUM` / `WAVE_MAX_RULER_X_NUM`）。
+
+WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注在绘图区下方（居中对齐）。单位标注以反色打底框形式显示在绘图区右上角（格式 "Y:0.1V" / "X:ms"）。绘图区 X 起点 = x_origin + Y标注宽度。
 
 关键 API：
 | API | 说明 |
@@ -107,11 +110,18 @@ WAVE_TypeDef              ← 每个实例一个（静态数组 WAVE_State[MAX_W
 
 字体大小由 `ESTA_FontSize` 枚举定义：`ESTA_FONT_1206`（12×6）、`ESTA_FONT_1608`（16×8，默认）、`ESTA_FONT_2412`（24×12）。
 
-在实际硬件上，这些宏映射到 ILI9341 LCD 驱动调用。在仿真器上，它们映射到 SDL2 渲染（`port/esta_port_sdl2.c`），使用虚拟的 400×320 纹理以 2 倍缩放渲染。字体数据（`core/infra/font.c`）使用的是真实的 MCU 点阵字库 `asc2_1608`——与芯片上使用的位图完全一致。
+在实际硬件上，这些宏映射到 ILI9341 LCD 驱动调用。在仿真器上，它们映射到 SDL2 渲染（`port/esta_port_sdl2.c`），使用虚拟的 800×480 纹理以 2 倍缩放渲染。字体数据（`core/infra/font.c`）使用的是真实的 MCU 点阵字库 `asc2_1608`——与芯片上使用的位图完全一致。仿真器屏幕分辨率在 `port/esta_port_sdl2.h` 的 `SIMULATOR_SCREEN_WIDTH` / `SIMULATOR_SCREEN_HEIGHT` 宏中定义。
 
 ### Profile 系统与代码生成（`core/profile/ESTA_Profile.*`）
 
-`ESTA_Profile_TypeDef` 是一个可序列化的配置描述符（包含所有组件的配置字段，外加以内联数组形式存储的标尺数据）。`ESTA_Profile_Apply()` 将 profile 转换为各组件的 `Config_TypeDef` 并调用各自的 `Init()`。
+`ESTA_ProfileSet_TypeDef` 是一个可序列化的配置描述符（包含所有组件的配置字段，外加以内联数组形式存储的标尺数据）。每个组件 profile 包含 `page` 字段（uint8），用于多页切换。`ESTA_Profile_Apply()` 将 profile 转换为各组件的 `Config_TypeDef` 并调用各自的 `Init()`。
+
+多页系统：
+- `ProfileSet.page_count`：总页数（至少 1）
+- 每个组件 profile 的 `.page` 字段指定其所属页面
+- `ESTA_Profile_SetActivePage(page)` / `ESTA_Profile_GetActivePage()`：页面管理
+- `ESTA_Profile_ApplyPage(profile_set, page)`：只初始化指定页面的组件
+- 仿真器中按钮 1 切换页面（循环）
 
 文件 `core/profile/ESTA_Profile.c` 由 Tauri 配置器 GUI 从 `core/profile/ESTA_Profile.json` **自动生成**。生成流程：
 
@@ -126,7 +136,7 @@ GUI 在每次保存时也会回写 `ESTA_Profile.json`，保持二者同步。
 
 ### Tauri GUI 命令流（`tools/profile-gui/src-tauri/`）
 
-四个 Tauri 命令连接前端与文件系统和构建系统：
+五个 Tauri 命令连接前端与文件系统和构建系统：
 
 | 命令 | 功能 |
 |---|---|
@@ -134,6 +144,7 @@ GUI 在每次保存时也会回写 `ESTA_Profile.json`，保持二者同步。
 | `save_profile` | 将 profile 数据序列化为 JSON 上下文，渲染 Tera 模板 → 写入 `core/profile/ESTA_Profile.c`（含 `.c.bak` 备份），写入 `core/profile/ESTA_Profile.json`。 |
 | `build_simulator` | 在仓库根目录下运行 `cmake` 配置 + 构建（硬编码使用 "MinGW Makefiles" 生成器）。 |
 | `run_simulator` | 启动 `build/ESTA_Simulator.exe`。 |
+| `preview_simulator` | 保存 profile → 编译 → 以 `--screenshot` 模式运行仿真器（每页生成一张 BMP）→ 读取截图 → 返回 base64 data URL 数组。 |
 
 `repo_root()`（在 `commands.rs` 中）从 `std::env::current_dir()` 出发向上遍历目录树，查找包含 `CMakeLists.txt` 的目录。Tauri 的 `AppState` 保存解析后的 `repo_root` 和预加载了 `src-tauri/templates/*.j2` 的 `Tera` 引擎。
 
@@ -146,16 +157,21 @@ GUI 在每次保存时也会回写 `ESTA_Profile.json`，保持二者同步。
 
 关键字段约定：
 - 各组件的 `x_origin`/`y_origin`/`x_width`/`y_width` 以组件前缀命名：WAVE 无前缀（`x_origin`），BARCHART 用 `bar_` 前缀（`bar_x_origin`），TABLE 用 `table_` 前缀（`table_x_origin`），新组件类推。
+- `page`：每个组件 profile 的页面归属（uint8，从 0 开始）。`ProfileSet.page_count` 记录总页数。
 - `channel_mask`：已启用通道的位掩码（bit 0 = CH0，以此类推）。Rust 模型的 `channel_mask_expr()` 方法会生成 C 语言的 OR 表达式。
-- `ruler_y` / `ruler_x`：固定大小的数组。实际仅使用前 `ruler_count_y`/`ruler_count_x` 个元素。
+- `ruler_y` / `ruler_x`：固定大小的数组（11 元素）。实际仅使用前 `ruler_count_y`/`ruler_count_x` 个元素。
+- `ruler_unit_y` / `ruler_unit_x`：单位字符串，支持系数+符号（如 "0.1V"），最长 16 字符。
 - `theme_type`：字符串，取值为 `WAVE_THEME_DEFAULT` 或 `WAVE_THEME_LIGHT`（Rust 后端将其原样传入 C 模板）。各组件有独立的 theme 枚举。
 
 ### 前端布局（`tools/profile-gui/src/`）
 
-- `App.tsx`：根组件。挂载时加载 profile，渲染工具栏（inst_count 数值框、生成/Build&Run 按钮、状态栏）+ 标签栏 + 各组件 Editor。在生成/构建前执行校验。**注意**：错误状态仅在 `data` 非空时渲染（loading 提前返回时也会显示错误信息）。
-- `ProfileEditor.tsx`：WAVE 编辑——基础参数、通道使能复选框（位掩码操作）、Y 标尺设置、X 标尺设置。
-- `BarChartEditor.tsx`：BARCHART 编辑——位置尺寸、柱体数量、主题等。
-- `TableEditor.tsx`：TABLE 编辑——位置尺寸、行配置、列宽、主题等。
+- `App.tsx`：根组件。挂载时加载 profile，渲染工具栏（inst_count 数值框、Screen 尺寸、自动布局/生成/Build&Run/预览按钮、状态栏）+ 标签栏（含 × 关闭按钮精准删除组件）+ 各组件 Editor + 预览图显示。在生成/构建前执行校验。
+- `WaveEditor.tsx`：WAVE 编辑——位置尺寸、波形参数、通道使能、Y/X 标尺（含自动生成+精度推算）、主题。
+- `BarChartEditor.tsx`：BARCHART 编辑——位置尺寸（含柱体布局）、自动计算、主题。
+- `TableEditor.tsx`：TABLE 编辑——位置尺寸、列配置（水平排列）、数据网格、右键行列操作、实时预览。
+- `MenuEditor.tsx`：MENU 编辑——可视化树形编辑器、右键上下文菜单、属性面板、自动计算尺寸。
+
+自动布局算法：Guillotine 矩形切割（Best Short Side Fit），按组件面积降序放置，放不下时自动分页。Screen 尺寸可在工具栏配置。
 
 ## 常见坑点
 

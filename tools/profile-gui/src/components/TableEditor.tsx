@@ -20,6 +20,21 @@ const FONT_METRICS: Record<string, { w: number; h: number }> = {
   "ESTA_FONT_2412": { w: 12, h: 24 },
 };
 
+function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
+  const [text, setText] = useState(String(value));
+  const prev = useRef(value);
+  if (prev.current !== value) { prev.current = value; setText(String(value)); }
+  return (
+    <input type="number" value={text} min={min} max={max}
+      onChange={(e) => {
+        setText(e.target.value);
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) { prev.current = v; onChange(v); }
+      }}
+      onBlur={() => setText(String(value))} />
+  );
+}
+
 const THEME_COLORS: Record<string, { bg: string; header: string; text: string; frame: string; line: string }> = {
   "TABLE_THEME_DEFAULT": { bg: "#000", header: "#4fc3f7", text: "#fff", frame: "#fff", line: "#888" },
   "TABLE_THEME_LIGHT": { bg: "#fff", header: "#1565c0", text: "#000", frame: "#000", line: "#888" },
@@ -164,11 +179,11 @@ export default function TableEditor({ profile, onChange }: Props) {
     <div>
       <fieldset className="group-box">
         <legend>Position & Layout</legend>
-        <div className="form-row"><label>x_origin</label><input type="number" value={profile.x_origin} min={0} max={65535} onChange={(e) => set("x_origin", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>y_origin</label><input type="number" value={profile.y_origin} min={0} max={65535} onChange={(e) => set("y_origin", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>x_width</label><input type="number" value={profile.x_width} min={1} max={65535} onChange={(e) => set("x_width", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>y_width</label><input type="number" value={profile.y_width} min={1} max={65535} onChange={(e) => set("y_width", Number(e.target.value) || 0)} /></div>
-        <div className="form-row"><label>row_height</label><input type="number" value={profile.row_height} min={12} max={65535} onChange={(e) => set("row_height", Number(e.target.value) || 0)} /></div>
+        <div className="form-row"><label>x_origin</label>{spin(profile.x_origin, 0, 65535, (v) => set("x_origin", v))}</div>
+        <div className="form-row"><label>y_origin</label>{spin(profile.y_origin, 0, 65535, (v) => set("y_origin", v))}</div>
+        <div className="form-row"><label>x_width</label>{spin(profile.x_width, 1, 65535, (v) => set("x_width", v))}</div>
+        <div className="form-row"><label>y_width</label>{spin(profile.y_width, 1, 65535, (v) => set("y_width", v))}</div>
+        <div className="form-row"><label>row_height</label>{spin(profile.row_height, 12, 65535, (v) => set("row_height", v))}</div>
         <button className="btn-auto-calc" onClick={handleAutoCalc} type="button">自动计算尺寸</button>
       </fieldset>
 
@@ -228,9 +243,9 @@ export default function TableEditor({ profile, onChange }: Props) {
                         {col.cell_type === "TABLE_CELL_TEXT" ? (
                           <input value={cell.text} maxLength={MAX_TABLE_STRING_LEN} onChange={(e) => updateCell(r, c, { text: clampText(e.target.value) })} />
                         ) : col.cell_type === "TABLE_CELL_UINT32" ? (
-                          <input type="number" value={cell.u32} min={0} onChange={(e) => updateCell(r, c, { u32: Number(e.target.value) || 0 })} />
+                          <input type="number" value={cell.u32} min={0} onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) updateCell(r, c, { u32: v }); }} />
                         ) : (
-                          <input type="number" value={cell.f32} step={0.1} onChange={(e) => updateCell(r, c, { f32: Number(e.target.value) || 0 })} />
+                          <input type="number" value={cell.f32} step={0.1} onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateCell(r, c, { f32: v }); }} />
                         )}
                       </td>
                     );
