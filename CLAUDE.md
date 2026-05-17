@@ -15,10 +15,10 @@ core/
 ├── ui/          # 可视化组件（WAVE, BARCHART, TABLE, MENU）
 ├── infra/       # 基础设施（helper, font, ui_base, ui_theme）
 ├── profile/     # Profile 系统（ESTA_Profile.*, ESTA_Profile.json）
-├── event/       # 事件队列（button press/release, menu select）
-└── app/         # 可移植应用骨架（app_main, app_page, app_event）
+├── event/       # 事件队列 + Flag 系统（event.h, event_flag.h）
+└── app/         # 可移植应用骨架（app_main, app_page, app_event, app_action）
 port/            # 平台抽象层（SDL2 后端）
-simulator/       # PC 仿真器（main.c, sim_scenario, sim_feed, sim_input, sim_gpio, btn_ui）
+simulator/       # PC 仿真器（main.c, sim_scenario, sim_feed, sim_input）
 tools/profile-gui/  # Tauri 配置器 GUI
 ```
 
@@ -30,7 +30,7 @@ tools/profile-gui/  # Tauri 配置器 GUI
 
 ```powershell
 .\build.ps1                           # 配置 + 构建，输出 build/ESTA_Simulator.exe
-.\build\ESTA_Simulator.exe            # 运行仿真器（按键 1 触发波形刷新，按键 2 切换页面）
+.\build\ESTA_Simulator.exe            # 运行仿真器（按键行为由 Profile 事件绑定配置决定）
 .\build\ESTA_Simulator.exe --screenshot build\preview  # 截图模式：每页生成 preview_0.bmp, preview_1.bmp, ...
 ```
 
@@ -104,9 +104,11 @@ WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注�
 
 核心概念：
 - **事件队列**（容量 16）：`ESTA_EventPush()` / `ESTA_EventPoll()`
-- **事件类型**：`BUTTON_PRESS`(1)、`BUTTON_RELEASE`(2)、`MENU_SELECT`(3)、`ENCODER_ROTATE`(4)、`TIMER`(5)
+- **事件类型**：`BUTTON_PRESS`(1)、`BUTTON_RELEASE`(2)、`MENU_SELECT`(3)、`ENCODER_ROTATE`(4)、`TIMER`(5)、`FLAG`(6)
 - **事件绑定**：Profile 中的 `bindings[]` 数组，通过 `ESTA_Profile_ApplyEvents()` 注册到订阅系统
 - **绑定结构体**：`trigger + source_id + trigger_id + target_type + target_inst + action`
+- **Flag 系统**（`core/event/event_flag.h/.c`）：轻量级内部信号，`ESTA_FlagSet()` 自动推送 FLAG 事件到队列
+- **Action 语义**：即时（WAVE_REDRAW 通过回调直接绘制）vs 延迟（FLAG_SET 仅设标志）
 
 ### 应用骨架（`core/app/`）
 
@@ -137,32 +139,8 @@ while (1) {
 |------|------|
 | `main.c` | 顶层流程控制，含 MCU 移植模板注释 |
 | `sim_scenario.h/.c` | 实时信号生成器（正弦/方波/三角波/锯齿/噪声/常量），可配置幅值/频率/相位 |
-| `sim_feed.h/.c` | 数据灌入封装（`SimFeed_Update`），wave 部分由 `App_MainState.wave_trigger` 标志驱动（触发模式） |
-| `sim_input.h/.c` | SDL 事件轮询 + 键盘映射（数字键 0-9 → 按钮事件 + GPIO 电平，键 N = Button N） |
-| `sim_gpio.h/.c` | GPIO 中断仿真（上升沿触发 ISR，模拟 MCU EXTI 机制） |
-
-### GPIO 中断仿真（`simulator/sim_gpio.h`）
-
-模拟 MCU 的 GPIO 外部中断（EXTI），与事件队列系统独立并存：
-
-```c
-SimGPIO_Init();
-SimGPIO_AttachInterrupt(0, my_isr);  // PIN0 上升沿触发
-
-// ISR 中仅设标志（模拟真实 MCU 约束）
-void my_isr(uint8_t pin) { g_flag = 1; }
-
-// 主循环中检测标志执行业务
-if (g_flag) { g_flag = 0; WAVE_ReDraw(...); }
-```
-
-API：`SimGPIO_Init`、`SimGPIO_SetPin`、`SimGPIO_ReadPin`、`SimGPIO_AttachInterrupt`、`SimGPIO_DetachInterrupt`。
-
-架构层次：
-```
-SDL 键盘事件 → ESTA_EventEmitButton() → 事件队列 → App_DispatchEvents() → 绑定 handler  [高层事件绑定]
-SDL 键盘事件 → SimGPIO_SetPin(pin,1)  → 边沿检测 → ISR → 设标志                         [底层硬件仿真]
-```
+| `sim_feed.h/.c` | 数据灌入封装：持续采样（`SimFeed_Update`）+ 触发绘制回调（`SimFeed_RedrawWaveInst`） |
+| `sim_input.h/.c` | SDL 事件轮询 + 键盘映射（数字键 0-9 → 按钮事件，键 N = Button N） |
 
 ### 硬件抽象边界
 

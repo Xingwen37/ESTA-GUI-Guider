@@ -8,7 +8,8 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  事件源                                                          │
 │  ├─ 外部输入：按钮按下/松开、编码器旋转                            │
-│  └─ 内部事件：MENU 选中某项、定时器到期                            │
+│  ├─ 内部事件：MENU 选中某项、定时器到期                            │
+│  └─ Flag 信号：ESTA_FlagSet() 自动推送 FLAG 事件                  │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌─────────────────────────────────┐                             │
@@ -58,6 +59,7 @@ typedef enum {
     ESTA_EVENT_MENU_SELECT    = 3,
     ESTA_EVENT_ENCODER_ROTATE = 4,
     ESTA_EVENT_TIMER          = 5,
+    ESTA_EVENT_FLAG           = 6,
     ESTA_EVENT_CUSTOM         = 0xFF
 } ESTA_EventType;
 ```
@@ -96,6 +98,7 @@ typedef struct {
 | MENU_SELECT (3) | MENU 实例编号 (0~3) | 菜单项的 event_id |
 | ENCODER_ROTATE (4) | 编码器编号 | 方向/步数（预留） |
 | TIMER (5) | — | timer_id（预留） |
+| FLAG (6) | Flag ID (0~7) | 无意义（填 0xFFFF） |
 
 ## 目标类型与动作
 
@@ -109,6 +112,7 @@ typedef enum {
     ESTA_TARGET_MENU,
     ESTA_TARGET_PAGE,
     ESTA_TARGET_GLOBAL,
+    ESTA_TARGET_FLAG,
 } ESTA_TargetType;
 ```
 
@@ -120,11 +124,12 @@ typedef enum {
     ESTA_ACTION_PAGE_NEXT     = 1,
     ESTA_ACTION_PAGE_PREV     = 2,
     ESTA_ACTION_THEME_TOGGLE  = 3,
-    ESTA_ACTION_WAVE_REDRAW   = 4,
+    ESTA_ACTION_WAVE_REDRAW   = 4,   // 即时：通过回调直接绘制
     ESTA_ACTION_MENU_UP       = 5,
     ESTA_ACTION_MENU_DOWN     = 6,
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
+    ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 ```
@@ -139,6 +144,7 @@ typedef enum {
 | MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK |
 | PAGE (4) | PAGE_NEXT, PAGE_PREV |
 | GLOBAL (5) | THEME_TOGGLE |
+| FLAG (6) | FLAG_SET |
 
 ## 分发机制
 
@@ -220,20 +226,113 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 | 4 | Button 4 | MENU #0 BACK |
 | 5~9 | Button 5~9 | （未绑定） |
 
-## 波形触发模式
+## 波形触发模式（回调架构）
 
-`App_MainState.wave_trigger`（bool）控制 SimFeed 是否执行波形数据采集：
-- `action_wave_redraw` handler 设置 `s->wave_trigger = true`
-- `sim_feed_wave()` 检查标志，触发后消费（单次触发）
-- 默认波形静止，按键触发后刷新一帧
+WAVE_REDRAW 是即时 action——handler 通过回调函数直接执行绘制，而非设置标志位等待轮询。
+
+数据流模型：
+```
+SimFeed 每帧采样 → 写入通道缓冲区（模拟 ADC 连续采集）
+                    ↓ 不绘制
+WAVE_REDRAW handler → 调用 wave_redraw_fn(inst, ctx) → 读取缓冲区并绘制一帧
+```
+
+`App_MainState` 中的回调字段：
+```c
+typedef void (*App_WaveRedrawFn)(int inst, void *ctx);
+
+typedef struct {
+    App_PageState page_state;
+    int wave_inst_count, bar_inst_count, table_inst_count, menu_inst_count;
+    App_WaveRedrawFn wave_redraw_fn;  // 平台注册的绘制回调
+    void *wave_redraw_ctx;
+} App_MainState;
+```
+
+Handler 实现：
+```c
+static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL || s->wave_redraw_fn == NULL) return false;
+    s->wave_redraw_fn(ctx->target_inst, s->wave_redraw_ctx);
+    return true;
+}
+```
+
+仿真器注册：
+```c
+g_app.wave_redraw_fn = (App_WaveRedrawFn)SimFeed_RedrawWaveInst;
+g_app.wave_redraw_ctx = NULL;
+```
+
+MCU 移植时，用户实现自己的绘制回调（从 ADC 缓冲区读取数据并调用 `WAVE_CurveDrawBatch`）。
+
+## Flag 系统（`core/event/event_flag.h/.c`）
+
+Flag 是一种轻量级的内部信号机制，用于跨模块通信。支持两种消费模式：
+
+### 模式
+
+| 模式 | 说明 |
+|------|------|
+| `ESTA_FLAG_MODE_MANUAL` | 手动模式：外部代码调用 `ESTA_FlagCheck()` 轮询消费 |
+| `ESTA_FLAG_MODE_AUTO_EVENT` | 自动模式：`ESTA_FlagPoll()` 将 Flag 转换为配置的事件类型推入队列 |
+
+### API
+
+```c
+void ESTA_FlagInit(void);
+void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
+void ESTA_FlagSet(uint8_t flag_id);    // 设置 Flag 并自动推送 ESTA_EVENT_FLAG 事件
+bool ESTA_FlagCheck(uint8_t flag_id);  // 检查并清除（consume）
+bool ESTA_FlagPeek(uint8_t flag_id);   // 仅查看，不清除
+void ESTA_FlagPoll(void);             // AUTO_EVENT 模式转换
+```
+
+### Flag 作为触发条件
+
+`ESTA_FlagSet()` 在设置标志位的同时，自动向事件队列推送一条 `ESTA_EVENT_FLAG` 事件（`source = flag_id`）。这使得 Flag 可以作为事件绑定的触发条件：
+
+```json
+{ "trigger": 6, "source_id": 2, "trigger_id": 65535, "target_type": 4, "target_inst": 0, "action": 1 }
+```
+含义：Flag #2 被设置时 → 切换到下一页。
+
+### FLAG_SET action
+
+FLAG_SET 是延迟 action——handler 仅设置 Flag，实际效果由 Flag 的消费者决定：
+
+```c
+static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    ESTA_FlagSet(ctx->target_inst);  // target_inst = flag_id
+    return true;
+}
+```
+
+### Action 语义分类
+
+| 类别 | Action | 行为 |
+|------|--------|------|
+| 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, MENU_* | handler 直接执行效果 |
+| 延迟 | FLAG_SET | handler 仅设置标志，效果由外部消费 |
+
+### 容量
+
+`ESTA_FLAG_MAX = 8`，Flag ID 范围 0~7。
 
 ## 全链路文件清单
 
 | 层 | 文件 | 职责 |
 |----|------|------|
 | C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体、队列、Emit 函数 |
+| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT 转换 |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table |
+| C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
 | C Profile 绑定 | `core/profile/ESTA_Profile.c` | ApplyEvents、g_binding_ctx |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back |
 | JSON 数据 | `core/profile/ESTA_Profile.json` | bindings 数组 |
@@ -255,6 +354,13 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 ### 添加新事件类型
 
 1. `event.h`：`ESTA_EventType` 枚举新增值
-2. 实现对应的 `ESTA_EventEmitXxx()` 函数
+2. 实现对应的 `ESTA_EventEmitXxx()` 函数（或通过 `ESTA_EventPush` 直接推送）
 3. `types.ts`：`TRIGGER_OPTIONS` 新增选项
 4. `EventEditor.tsx`：根据新 trigger 类型决定 source/trigger_id 的 UI 呈现
+
+### 添加新目标类型
+
+1. `app_action.h`：`ESTA_TargetType` 枚举新增值
+2. `types.ts`：`TARGET_TYPE_OPTIONS` 新增选项，`VALID_ACTIONS` 新增约束条目
+3. `EventEditor.tsx`：根据新 target_type 决定 target_inst 的 UI 呈现（下拉/隐藏）
+4. 实现对应的 action handler（通过 `App_BindingContext.target_inst` 获取实例）
