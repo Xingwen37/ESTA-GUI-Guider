@@ -22,6 +22,13 @@ void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config) {
 void ESTA_FlagSet(uint8_t flag_id) {
     if (flag_id >= ESTA_FLAG_MAX) return;
     s_flags[flag_id] = 1;
+
+    ESTA_Event evt;
+    evt.type = (uint8_t)ESTA_EVENT_FLAG;
+    evt.source = flag_id;
+    evt.id = 0;
+    evt.timestamp = ESTA_GET_TICK();
+    ESTA_EventPush(&evt);
 }
 
 bool ESTA_FlagCheck(uint8_t flag_id) {

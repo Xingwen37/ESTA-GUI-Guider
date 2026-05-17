@@ -14,6 +14,7 @@ typedef enum {
     ESTA_TARGET_MENU,
     ESTA_TARGET_PAGE,
     ESTA_TARGET_GLOBAL,
+    ESTA_TARGET_FLAG,
 } ESTA_TargetType;
 
 typedef enum {
@@ -26,6 +27,7 @@ typedef enum {
     ESTA_ACTION_MENU_DOWN     = 6,
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
+    ESTA_ACTION_FLAG_SET      = 9,
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 

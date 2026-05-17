@@ -35,6 +35,7 @@ function getInstCount(targetType: number, props: Props): number {
     case 1: return props.barInstCount;
     case 2: return props.tableInstCount;
     case 3: return props.menuInstCount;
+    case 6: return 8; // FLAG_MAX
     default: return 0;
   }
 }
@@ -111,6 +112,7 @@ export default function EventEditor(props: Props) {
               const singleton = isSingletonTarget(b.target_type);
               const isButton = isButtonTrigger(b.trigger);
               const isMenuSelect = b.trigger === 3;
+              const isFlagTrigger = b.trigger === 6;
               const menuItems = isMenuSelect ? getMenuItemOptions(b.source_id) : [];
 
               return (
@@ -137,6 +139,14 @@ export default function EventEditor(props: Props) {
                         onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
                         {Array.from({ length: props.menuInstCount }, (_, k) => (
                           <option key={k} value={k}>MENU #{k}</option>
+                        ))}
+                      </select>
+                    ) : isFlagTrigger ? (
+                      <select value={b.source_id}
+                        onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
+                        <option value={SOURCE_ANY}>ANY</option>
+                        {Array.from({ length: 8 }, (_, k) => (
+                          <option key={k} value={k}>Flag #{k}</option>
                         ))}
                       </select>
                     ) : (

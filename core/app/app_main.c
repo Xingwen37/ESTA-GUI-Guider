@@ -20,9 +20,10 @@ void App_MainInit(App_MainState *state, uint16_t screen_w, uint16_t screen_h) {
     state->menu_inst_count  = profiles->menu_inst_count;
     if (state->menu_inst_count > MENU_MAX_NUM) state->menu_inst_count = MENU_MAX_NUM;
 
+    state->wave_redraw_fn = NULL;
+    state->wave_redraw_ctx = NULL;
+
     ESTA_FlagInit();
-    ESTA_FlagConfig wave_flag = { .mode = ESTA_FLAG_MODE_MANUAL };
-    ESTA_FlagRegister(ESTA_FLAG_WAVE_REDRAW, &wave_flag);
 
     App_PageInit(&state->page_state, profiles, screen_w, screen_h);
     App_ApplyAndDrawPage(&state->page_state, 0);

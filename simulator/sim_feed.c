@@ -4,7 +4,6 @@
 #include "ui/WAVE.h"
 #include "ui/BARCHART.h"
 #include "ui/TABLE.h"
-#include "event/event_flag.h"
 
 #define SIM_BATCH_MAX_POINTS 320
 
@@ -14,15 +13,11 @@ static uint16_t s_ch_buf[SIM_SCENARIO_WAVE_COUNT][MAX_WAVE_CHANNEL][SIM_BATCH_MA
 static uint16_t s_batch_window_len[SIM_SCENARIO_WAVE_COUNT];
 static uint16_t s_bar_count[SIM_SCENARIO_BARCHART_COUNT];
 
-static bool sim_feed_wave(App_MainState *app, SimScenarioRuntime *scenario) {
-    if (!ESTA_FlagCheck(ESTA_FLAG_WAVE_REDRAW)) return true;
-
+static void sim_feed_wave_sample(App_MainState *app, SimScenarioRuntime *scenario) {
     uint8_t active = App_GetActivePage(&app->page_state);
     for (int i = 0; i < app->wave_inst_count; i++) {
         if (app->page_state.profiles->wave_profiles[i].page != active) continue;
-        if (!SimScenario_GetNextFrame(scenario, i, s_data_wave[i])) {
-            return false;
-        }
+        SimScenario_GetNextFrame(scenario, i, s_data_wave[i]);
         uint16_t xfw = s_batch_window_len[i];
         if (xfw == 0) continue;
 
@@ -34,18 +29,25 @@ static bool sim_feed_wave(App_MainState *app, SimScenarioRuntime *scenario) {
                 s_ch_buf[i][ch][xfw - 1U] = s_data_wave[i][ch];
             }
         }
+    }
+}
 
-        WAVE_CurveClear(WAVE_INST(i));
-        for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
-            if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
-                WAVE_WRITE_PRIVATE(i, last_index, 0);
-                WAVE_WRITE_PRIVATE(i, x_coor_last,
-                    WAVE_CONFIG_MEMBER(i, x_origin));
-                WAVE_CurveDrawBatch(WAVE_INST(i), ch, s_ch_buf[i][ch], xfw);
-            }
+void SimFeed_RedrawWaveInst(int inst, void *ctx) {
+    (void)ctx;
+    if (inst < 0 || inst >= SIM_SCENARIO_WAVE_COUNT) return;
+    uint16_t xfw = s_batch_window_len[inst];
+    if (xfw == 0) return;
+
+    uint8_t mask = WAVE_CONFIG_MEMBER(inst, channel_mask);
+    WAVE_CurveClear(WAVE_INST(inst));
+    for (int ch = 0; ch < MAX_WAVE_CHANNEL; ch++) {
+        if (is_channel_enabled(mask, (uint8_t)(CH0 << ch))) {
+            WAVE_WRITE_PRIVATE(inst, last_index, 0);
+            WAVE_WRITE_PRIVATE(inst, x_coor_last,
+                WAVE_CONFIG_MEMBER(inst, x_origin));
+            WAVE_CurveDrawBatch(WAVE_INST(inst), ch, s_ch_buf[inst][ch], xfw);
         }
     }
-    return true;
 }
 
 static void sim_feed_barchart(App_MainState *app, SimScenarioRuntime *scenario) {
@@ -87,7 +89,7 @@ void SimFeed_Init(App_MainState *app, SimScenarioRuntime *scenario) {
 }
 
 bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario) {
-    if (!sim_feed_wave(app, scenario)) return false;
+    sim_feed_wave_sample(app, scenario);
     sim_feed_barchart(app, scenario);
     sim_feed_table(app, scenario);
     return true;

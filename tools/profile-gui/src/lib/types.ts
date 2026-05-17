@@ -200,6 +200,7 @@ export const TRIGGER_OPTIONS = [
   [3, "MENU_SELECT"],
   [4, "ENCODER_ROTATE"],
   [5, "TIMER"],
+  [6, "FLAG"],
 ] as const;
 
 export const TARGET_TYPE_OPTIONS = [
@@ -209,6 +210,7 @@ export const TARGET_TYPE_OPTIONS = [
   [3, "MENU"],
   [4, "PAGE"],
   [5, "GLOBAL"],
+  [6, "FLAG"],
 ] as const;
 
 export const ACTION_TYPE_OPTIONS = [
@@ -220,6 +222,7 @@ export const ACTION_TYPE_OPTIONS = [
   [6, "MENU_DOWN"],
   [7, "MENU_ENTER"],
   [8, "MENU_BACK"],
+  [9, "FLAG_SET"],
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {
@@ -229,6 +232,7 @@ export const VALID_ACTIONS: Record<number, number[]> = {
   3: [5, 6, 7, 8],   // MENU: UP, DOWN, ENTER, BACK
   4: [1, 2],          // PAGE: PAGE_NEXT, PAGE_PREV
   5: [3],             // GLOBAL: THEME_TOGGLE
+  6: [9],             // FLAG: FLAG_SET
 };
 
 export const SOURCE_ANY = 0xFF;

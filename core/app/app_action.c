@@ -50,8 +50,10 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 
 static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
     (void)evt;
-    (void)user_data;
-    ESTA_FlagSet(ESTA_FLAG_WAVE_REDRAW);
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL || s->wave_redraw_fn == NULL) return false;
+    s->wave_redraw_fn(ctx->target_inst, s->wave_redraw_ctx);
     return true;
 }
 
@@ -103,6 +105,13 @@ static bool action_menu_back(const ESTA_Event *evt, void *user_data) {
     return MENU_NavBack(MENU_INST(target));
 }
 
+static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    ESTA_FlagSet(ctx->target_inst);
+    return true;
+}
+
 static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_NONE]          = NULL,
     [ESTA_ACTION_PAGE_NEXT]     = action_page_next,
@@ -113,6 +122,7 @@ static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_MENU_DOWN]     = action_menu_down,
     [ESTA_ACTION_MENU_ENTER]    = action_menu_enter,
     [ESTA_ACTION_MENU_BACK]     = action_menu_back,
+    [ESTA_ACTION_FLAG_SET]      = action_flag_set,
 };
 
 #define ACTION_TABLE_SIZE (sizeof(g_action_table) / sizeof(g_action_table[0]))

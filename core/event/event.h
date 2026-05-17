@@ -13,6 +13,7 @@ typedef enum {
     ESTA_EVENT_MENU_SELECT    = 3,
     ESTA_EVENT_ENCODER_ROTATE = 4,
     ESTA_EVENT_TIMER          = 5,
+    ESTA_EVENT_FLAG           = 6,
     ESTA_EVENT_CUSTOM         = 0xFF
 } ESTA_EventType;
 

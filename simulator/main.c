@@ -67,6 +67,8 @@ int main(int argc, char *argv[])
     }
 
     SimFeed_Init(&g_app, &g_scenario);
+    g_app.wave_redraw_fn = (App_WaveRedrawFn)SimFeed_RedrawWaveInst;
+    g_app.wave_redraw_ctx = NULL;
 
     while (true) {
         uint32_t frame_start = SDL_GetTicks();
@@ -75,8 +77,8 @@ int main(int argc, char *argv[])
         if (input.quit_requested) break;
 
         ESTA_FlagPoll();
-        App_MainTick(&g_app);
         if (!SimFeed_Update(&g_app, &g_scenario)) break;
+        App_MainTick(&g_app);
 
         ESTA_SDL2_Update();
 
