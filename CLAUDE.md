@@ -12,12 +12,13 @@ TL-ESTA 是一个嵌入式波形显示 GUI 库，用 C 语言以 OOP-in-C 风格
 
 ```
 core/
-├── ui/          # 可视化组件（WAVE, BARCHART, TABLE）
+├── ui/          # 可视化组件（WAVE, BARCHART, TABLE, MENU）
 ├── infra/       # 基础设施（helper, font, ui_base, ui_theme）
 ├── profile/     # Profile 系统（ESTA_Profile.*, ESTA_Profile.json）
-└── event/       # 事件队列（button press/release）
+├── event/       # 事件队列（button press/release, menu select）
+└── app/         # 可移植应用骨架（app_main, app_page, app_event）
 port/            # 平台抽象层（SDL2 后端）
-simulator/       # PC 仿真器入口（main.c, sim_scenario, btn_ui）
+simulator/       # PC 仿真器（main.c, sim_scenario, sim_feed, sim_input, sim_gpio, btn_ui）
 tools/profile-gui/  # Tauri 配置器 GUI
 ```
 
@@ -29,7 +30,7 @@ tools/profile-gui/  # Tauri 配置器 GUI
 
 ```powershell
 .\build.ps1                           # 配置 + 构建，输出 build/ESTA_Simulator.exe
-.\build\ESTA_Simulator.exe            # 运行仿真器（正常模式，按钮 1 切换页面）
+.\build\ESTA_Simulator.exe            # 运行仿真器（按键 1 触发波形刷新，按键 2 切换页面）
 .\build\ESTA_Simulator.exe --screenshot build\preview  # 截图模式：每页生成 preview_0.bmp, preview_1.bmp, ...
 ```
 
@@ -97,9 +98,71 @@ WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注�
 
 表格组件，支持每行显示 label / value / unit 三列。每行 value 可为文本、uint32 或 float。最多 4 个实例、每实例最多 8 行、字符串最长 16 字符。API 包括 `TABLE_UpdateUInt32`、`TABLE_UpdateFloat`、`TABLE_UpdateText` 按行更新。
 
-### 事件系统（`core/event/event.h`）
+### 事件系统（`core/event/event.h`、`core/app/app_event.h`、`core/app/app_action.h`）
 
-简易事件队列（容量 16），当前支持按键按下/释放事件（`ESTA_EVENT_BUTTON_PRESS` / `ESTA_EVENT_BUTTON_RELEASE`）。仿真器在 `simulator/btn_ui.c` 中实现按键 UI，通过 `ESTA_EventPush()` 注入事件，核心库可通过 `ESTA_EventPoll()` 消费。
+事件队列 + 订阅式路由 + 数据驱动绑定。详见 `docs/EVENT_SYSTEM_SPEC.md`。
+
+核心概念：
+- **事件队列**（容量 16）：`ESTA_EventPush()` / `ESTA_EventPoll()`
+- **事件类型**：`BUTTON_PRESS`(1)、`BUTTON_RELEASE`(2)、`MENU_SELECT`(3)、`ENCODER_ROTATE`(4)、`TIMER`(5)
+- **事件绑定**：Profile 中的 `bindings[]` 数组，通过 `ESTA_Profile_ApplyEvents()` 注册到订阅系统
+- **绑定结构体**：`trigger + source_id + trigger_id + target_type + target_inst + action`
+
+### 应用骨架（`core/app/`）
+
+可移植的应用层，MCU 和仿真器共用：
+
+| 模块 | 职责 |
+|------|------|
+| `app_main.h/.c` | `App_MainInit()` 加载 Profile 并初始化所有组件；`App_MainTick()` 每帧分发事件。 |
+| `app_page.h/.c` | 多页管理（`App_PageInit`、`App_ApplyAndDrawPage`、`App_PageNext`） |
+| `app_event.h/.c` | 订阅式事件路由（`App_Subscribe` 按 type/source_id/event_id 匹配，精确优先于 wildcard） |
+| `app_action.h/.c` | Action 注册表（`ESTA_ActionType` 枚举 → handler 函数），`App_BindingContext` 传递 target 信息 |
+
+MCU 移植最小代码：
+```c
+App_MainState app;
+App_MainInit(&app, LCD_WIDTH, LCD_HEIGHT);
+while (1) {
+    // 采集数据 → WAVE_CurveDrawBatch()
+    // 检测按键 → ESTA_EventEmitButton()
+    App_MainTick(&app);
+    HAL_Delay(20);
+}
+```
+
+### 仿真器模块（`simulator/`）
+
+| 模块 | 职责 |
+|------|------|
+| `main.c` | 顶层流程控制，含 MCU 移植模板注释 |
+| `sim_scenario.h/.c` | 实时信号生成器（正弦/方波/三角波/锯齿/噪声/常量），可配置幅值/频率/相位 |
+| `sim_feed.h/.c` | 数据灌入封装（`SimFeed_Update`），wave 部分由 `App_MainState.wave_trigger` 标志驱动（触发模式） |
+| `sim_input.h/.c` | SDL 事件轮询 + 键盘映射（数字键 0-9 → 按钮事件 + GPIO 电平，键 N = Button N） |
+| `sim_gpio.h/.c` | GPIO 中断仿真（上升沿触发 ISR，模拟 MCU EXTI 机制） |
+
+### GPIO 中断仿真（`simulator/sim_gpio.h`）
+
+模拟 MCU 的 GPIO 外部中断（EXTI），与事件队列系统独立并存：
+
+```c
+SimGPIO_Init();
+SimGPIO_AttachInterrupt(0, my_isr);  // PIN0 上升沿触发
+
+// ISR 中仅设标志（模拟真实 MCU 约束）
+void my_isr(uint8_t pin) { g_flag = 1; }
+
+// 主循环中检测标志执行业务
+if (g_flag) { g_flag = 0; WAVE_ReDraw(...); }
+```
+
+API：`SimGPIO_Init`、`SimGPIO_SetPin`、`SimGPIO_ReadPin`、`SimGPIO_AttachInterrupt`、`SimGPIO_DetachInterrupt`。
+
+架构层次：
+```
+SDL 键盘事件 → ESTA_EventEmitButton() → 事件队列 → App_DispatchEvents() → 绑定 handler  [高层事件绑定]
+SDL 键盘事件 → SimGPIO_SetPin(pin,1)  → 边沿检测 → ISR → 设标志                         [底层硬件仿真]
+```
 
 ### 硬件抽象边界
 
@@ -128,7 +191,7 @@ WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注�
 - 每个组件 profile 的 `.page` 字段指定其所属页面
 - `ESTA_Profile_SetActivePage(page)` / `ESTA_Profile_GetActivePage()`：页面管理
 - `ESTA_Profile_ApplyPage(profile_set, page)`：只初始化指定页面的组件
-- 仿真器中按钮 1 切换页面（循环）
+- 按键行为由事件绑定配置决定（详见 `docs/EVENT_SYSTEM_SPEC.md`）
 
 文件 `core/profile/ESTA_Profile.c` 由 Tauri 配置器 GUI 从 `core/profile/ESTA_Profile.json` **自动生成**。生成流程：
 
@@ -277,11 +340,13 @@ core/ui/{NAME}.h + core/ui/{NAME}.c   // 组件代码（如 WAVE.h/WAVE.c）
 
 ### 新组件集成需修改的文件（约 14 个）
 
-`core/ui/XXX.h`, `core/ui/XXX.c`（新建），`core/profile/ESTA_Profile.h`, `core/profile/ESTA_Profile.c`, `core/profile/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src-tauri/src/commands.rs`, `tools/profile-gui/src/lib/types.ts`, `tools/profile-gui/src/components/XXXEditor.tsx`（新建），`tools/profile-gui/src/App.tsx`, `simulator/sim_scenario.h/.c`, `simulator/main.c`, `docs/COMPONENT_SPEC.md`
+`core/ui/XXX.h`, `core/ui/XXX.c`（新建），`core/profile/ESTA_Profile.h`, `core/profile/ESTA_Profile.c`, `core/profile/ESTA_Profile.json`, `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2`, `tools/profile-gui/src-tauri/src/models.rs`, `tools/profile-gui/src-tauri/src/commands.rs`, `tools/profile-gui/src/lib/types.ts`, `tools/profile-gui/src/components/XXXEditor.tsx`（新建），`tools/profile-gui/src/App.tsx`, `simulator/sim_scenario.h/.c`, `simulator/sim_feed.c`, `simulator/main.c`, `docs/COMPONENT_SPEC.md`
 
 完整集成步骤参见 `docs/INTEGRATION_SPEC.md`（三层架构：C核心 → Rust后端 → TS前端，含精确修改位置和代码模板）。
 
 profile-gui 侧的集成模式（TS 前端 + Rust 后端 + Tera 模板）详见 `docs/PROFILE_GUI_SPEC.md`（含新组件 6 步骤、新事件 v1/v2 模式、App.tsx 核心模式、修改速查表）。
+
+事件绑定系统（绑定结构体、Action 注册、分发机制、扩展指南）详见 `docs/EVENT_SYSTEM_SPEC.md`。
 
 ### Profile 字段前缀约定
 
