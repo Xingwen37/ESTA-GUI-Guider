@@ -5,6 +5,7 @@
   "menu_inst_count": 1,
   "button_count": 6,
   "page_count": 1,
+  "binding_count": 5,
   "wave_profiles": [
     {
       "x_origin": 0,
@@ -132,7 +133,7 @@
   "bar_profiles": [
     {
       "x_origin": 102,
-      "y_origin": 324,
+      "y_origin": 336,
       "x_width": 93,
       "y_width": 80,
       "display_num_min": 0,
@@ -151,21 +152,21 @@
     {
       "x_origin": 0,
       "y_origin": 260,
-      "x_width": 224,
-      "y_width": 60,
+      "x_width": 110,
+      "y_width": 72,
       "row_count": 2,
-      "col_count": 5,
+      "col_count": 3,
       "row_height": 20,
-      "is_show_header": true,
+      "is_show_header": false,
       "is_show_frame": true,
       "is_show_row_line": false,
       "is_show_col_line": false,
       "is_fill_background": true,
       "font_size": "ESTA_FONT_1608",
-      "theme_type": "TABLE_THEME_DEFAULT",
+      "theme_type": "TABLE_THEME_LIGHT",
       "cols": [
         {
-          "header": "WAVE",
+          "header": "Name",
           "cell_type": "TABLE_CELL_TEXT",
           "width": 0,
           "precision": 0
@@ -177,19 +178,7 @@
           "precision": 0
         },
         {
-          "header": "uint",
-          "cell_type": "TABLE_CELL_TEXT",
-          "width": 0,
-          "precision": 0
-        },
-        {
-          "header": "Value",
-          "cell_type": "TABLE_CELL_UINT32",
-          "width": 0,
-          "precision": 0
-        },
-        {
-          "header": "uint",
+          "header": "Unit",
           "cell_type": "TABLE_CELL_TEXT",
           "width": 0,
           "precision": 0
@@ -198,7 +187,7 @@
       "cells": [
         [
           {
-            "text": "Wave1",
+            "text": "Vpp",
             "u32": 0,
             "f32": 0.0
           },
@@ -209,39 +198,19 @@
           },
           {
             "text": "mV",
-            "u32": 0,
-            "f32": 0.0
-          },
-          {
-            "text": "",
-            "u32": 1000,
-            "f32": 0.0
-          },
-          {
-            "text": "Hz",
             "u32": 0,
             "f32": 0.0
           }
         ],
         [
           {
-            "text": "Wave2",
+            "text": "Fre",
             "u32": 0,
             "f32": 0.0
           },
           {
             "text": "",
             "u32": 1230,
-            "f32": 0.0
-          },
-          {
-            "text": "mV",
-            "u32": 0,
-            "f32": 0.0
-          },
-          {
-            "text": "",
-            "u32": 2000,
             "f32": 0.0
           },
           {
@@ -257,7 +226,7 @@
   "menu_profiles": [
     {
       "x_origin": 0,
-      "y_origin": 324,
+      "y_origin": 336,
       "x_width": 98,
       "y_width": 80,
       "item_count": 8,
@@ -319,6 +288,48 @@
         }
       ],
       "page": 0
+    }
+  ],
+  "bindings": [
+    {
+      "trigger": 1,
+      "source_id": 1,
+      "trigger_id": 65535,
+      "target_type": 3,
+      "target_inst": 0,
+      "action": 5
+    },
+    {
+      "trigger": 1,
+      "source_id": 2,
+      "trigger_id": 65535,
+      "target_type": 3,
+      "target_inst": 0,
+      "action": 6
+    },
+    {
+      "trigger": 1,
+      "source_id": 3,
+      "trigger_id": 65535,
+      "target_type": 3,
+      "target_inst": 0,
+      "action": 7
+    },
+    {
+      "trigger": 1,
+      "source_id": 4,
+      "trigger_id": 65535,
+      "target_type": 3,
+      "target_inst": 0,
+      "action": 8
+    },
+    {
+      "trigger": 3,
+      "source_id": 0,
+      "trigger_id": 10,
+      "target_type": 0,
+      "target_inst": 0,
+      "action": 3
     }
   ]
 }

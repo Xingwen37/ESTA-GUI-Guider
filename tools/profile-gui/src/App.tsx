@@ -3,6 +3,7 @@ import ProfileEditor from "./components/WaveEditor";
 import BarChartEditor from "./components/BarChartEditor";
 import TableEditor from "./components/TableEditor";
 import MenuEditor from "./components/MenuEditor";
+import EventEditor from "./components/EventEditor";
 import * as api from "./lib/tauri-api";
 import type { ProfileSet, WaveProfile, BarChartProfile, TableProfile, MenuProfile } from "./lib/types";
 import {
@@ -196,8 +197,8 @@ export default function App() {
   const [data, setData] = useState<ProfileSet | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [status, setStatus] = useState<Status>({ type: "idle" });
-  const [screenW, setScreenW] = useState(400);
-  const [screenH, setScreenH] = useState(320);
+  const [screenW, setScreenW] = useState(800);
+  const [screenH, setScreenH] = useState(480);
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [previewPage, setPreviewPage] = useState(0);
 
@@ -229,11 +230,13 @@ export default function App() {
   const barCount = data.bar_inst_count;
   const tableCount = data.table_inst_count ?? 0;
   const menuCount = data.menu_inst_count ?? 0;
-  const totalTabs = waveCount + barCount + tableCount + menuCount;
-  const activeSafeTab = totalTabs > 0 ? Math.min(activeTab, totalTabs - 1) : 0;
-  const isWaveTab = activeSafeTab < waveCount;
-  const isBarTab = !isWaveTab && activeSafeTab < waveCount + barCount;
-  const isTableTab = !isWaveTab && !isBarTab && activeSafeTab < waveCount + barCount + tableCount;
+  const totalComponentTabs = waveCount + barCount + tableCount + menuCount;
+  const totalTabs = totalComponentTabs + 1;
+  const activeSafeTab = Math.min(activeTab, totalTabs - 1);
+  const isEventTab = activeSafeTab === totalComponentTabs;
+  const isWaveTab = !isEventTab && activeSafeTab < waveCount;
+  const isBarTab = !isEventTab && !isWaveTab && activeSafeTab < waveCount + barCount;
+  const isTableTab = !isEventTab && !isWaveTab && !isBarTab && activeSafeTab < waveCount + barCount + tableCount;
   const profileIndex = isWaveTab ? activeSafeTab :
     isBarTab ? activeSafeTab - waveCount :
     isTableTab ? activeSafeTab - waveCount - barCount :
@@ -347,10 +350,12 @@ export default function App() {
     menu_inst_count: menuCount,
     button_count: data.button_count,
     page_count: data.page_count ?? 1,
+    binding_count: data.binding_count ?? 0,
     wave_profiles: ensureCount(data.wave_profiles, waveCount, cloneWaveProfile),
     bar_profiles: ensureCount(data.bar_profiles, barCount, cloneBarProfile),
     table_profiles: ensureCount(data.table_profiles ?? [], tableCount, cloneTableProfile),
     menu_profiles: ensureCount(data.menu_profiles ?? [], menuCount, cloneMenuProfile),
+    bindings: data.bindings ?? [],
   });
 
   const validateAll = (): string | null => {
@@ -590,6 +595,13 @@ export default function App() {
             <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteMenu(i); }}>×</span>
           </button>
         ))}
+        <span className="tab-sep" />
+        <button
+          className={`tab ${isEventTab ? "active" : ""}`}
+          onClick={() => setActiveTab(totalComponentTabs)}
+        >
+          EVENT
+        </button>
       </div>
 
       {previewPages.length > 0 && (
@@ -612,7 +624,18 @@ export default function App() {
       )}
 
       <div className="editor-scroll">
-        {totalTabs === 0 ? (
+        {isEventTab ? (
+          <EventEditor
+            bindings={data.bindings ?? []}
+            buttonCount={data.button_count}
+            waveInstCount={data.wave_inst_count}
+            barInstCount={data.bar_inst_count}
+            tableInstCount={data.table_inst_count}
+            menuInstCount={data.menu_inst_count}
+            menuProfiles={data.menu_profiles ?? []}
+            onChange={(bindings) => setData({ ...data, bindings, binding_count: bindings.length })}
+          />
+        ) : totalComponentTabs === 0 ? (
           <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>
         ) : isWaveTab ? (
           <ProfileEditor profile={currentWaveProfile} onChange={updateWaveProfile} />

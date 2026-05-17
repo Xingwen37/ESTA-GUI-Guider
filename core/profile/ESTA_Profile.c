@@ -11,6 +11,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .menu_inst_count = 1,
     .button_count = 6,
     .page_count = 1,
+    .binding_count = 5,
     .wave_profiles = {
 
         {
@@ -97,7 +98,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
         {
             .x_origin = 102,
-            .y_origin = 324,
+            .y_origin = 336,
             .x_width = 93,
             .y_width = 80,
             .display_num_min = 0,
@@ -118,36 +119,32 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
         {
             .x_origin = 0,
             .y_origin = 260,
-            .x_width = 224,
-            .y_width = 60,
+            .x_width = 110,
+            .y_width = 72,
             .row_count = 2,
-            .col_count = 5,
+            .col_count = 3,
             .row_height = 20,
-            .is_show_header = true,
+            .is_show_header = false,
             .is_show_frame = true,
             .is_show_row_line = false,
             .is_show_col_line = false,
             .is_fill_background = true,
             .font_size = ESTA_FONT_1608,
-            .theme_type = TABLE_THEME_DEFAULT,
+            .theme_type = TABLE_THEME_LIGHT,
             .cols = {
 
-                { .header = "WAVE", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 },
+                { .header = "Name", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 },
 
                 { .header = "Value", .cell_type = TABLE_CELL_UINT32, .width = 0, .precision = 0 },
 
-                { .header = "uint", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 },
-
-                { .header = "Value", .cell_type = TABLE_CELL_UINT32, .width = 0, .precision = 0 },
-
-                { .header = "uint", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 }
+                { .header = "Unit", .cell_type = TABLE_CELL_TEXT, .width = 0, .precision = 0 }
 
             },
             .default_cells = {
 
-                { { .text = "Wave1" }, { .u32 = 1000 }, { .text = "mV" }, { .u32 = 1000 }, { .text = "Hz" } },
+                { { .text = "Vpp" }, { .u32 = 1000 }, { .text = "mV" } },
 
-                { { .text = "Wave2" }, { .u32 = 1230 }, { .text = "mV" }, { .u32 = 2000 }, { .text = "Hz" } }
+                { { .text = "Fre" }, { .u32 = 1230 }, { .text = "Hz" } }
 
             },
             .page = 0
@@ -158,7 +155,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
         {
             .x_origin = 0,
-            .y_origin = 324,
+            .y_origin = 336,
             .x_width = 98,
             .y_width = 80,
             .item_count = 8,
@@ -230,6 +227,19 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             },
             .page = 0
         }
+
+    },
+    .bindings = {
+
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 5 },
+
+        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 6 },
+
+        { .trigger = 1, .source_id = 3, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 7 },
+
+        { .trigger = 1, .source_id = 4, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 8 },
+
+        { .trigger = 3, .source_id = 0, .trigger_id = 10, .target_type = 0, .target_inst = 0, .action = 3 }
 
     }
 };
@@ -373,9 +383,28 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx,
     return MENU_Init(inst_idx, &config);
 }
 
-ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
-    (void)profile_set;
+static App_BindingContext g_binding_ctx[ESTA_PROFILE_MAX_BINDINGS];
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set, void *user_data) {
+    if (profile_set == NULL) return ESTA_ERROR;
     ESTA_EventInit();
+    App_EventInit();
+
+    for (uint8_t i = 0; i < profile_set->binding_count; i++) {
+        if (i >= ESTA_PROFILE_MAX_BINDINGS) break;
+        const ESTA_EventBinding_TypeDef *b = &profile_set->bindings[i];
+        ESTA_EventHandler handler = App_ActionGetHandler((ESTA_ActionType)b->action);
+        if (handler == NULL) continue;
+
+        g_binding_ctx[i].app = user_data;
+        g_binding_ctx[i].target_type = b->target_type;
+        g_binding_ctx[i].target_inst = b->target_inst;
+
+        App_Subscribe((ESTA_EventType)b->trigger,
+                      b->source_id,
+                      b->trigger_id,
+                      handler, &g_binding_ctx[i]);
+    }
     return ESTA_OK;
 }
 

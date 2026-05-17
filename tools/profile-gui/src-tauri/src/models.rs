@@ -170,6 +170,19 @@ fn default_font_size() -> String {
     "ESTA_FONT_1608".into()
 }
 
+fn default_trigger_id() -> u16 { 0xFFFF }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EventBinding {
+    pub trigger: u8,
+    pub source_id: u8,
+    #[serde(default = "default_trigger_id")]
+    pub trigger_id: u16,
+    pub target_type: u8,
+    pub target_inst: u8,
+    pub action: u8,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProfileSet {
     pub wave_inst_count: u16,
@@ -181,12 +194,16 @@ pub struct ProfileSet {
     pub button_count: u16,
     #[serde(default = "default_page_count")]
     pub page_count: u8,
+    #[serde(default)]
+    pub binding_count: u8,
     pub wave_profiles: Vec<WaveProfile>,
     pub bar_profiles: Vec<BarChartProfile>,
     #[serde(default)]
     pub table_profiles: Vec<TableProfile>,
     #[serde(default)]
     pub menu_profiles: Vec<MenuProfile>,
+    #[serde(default)]
+    pub bindings: Vec<EventBinding>,
 }
 
 fn default_page_count() -> u8 { 1 }

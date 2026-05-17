@@ -10,6 +10,7 @@ typedef struct {
     int bar_inst_count;
     int table_inst_count;
     int menu_inst_count;
+    bool wave_trigger;
 } App_MainState;
 
 void App_MainInit(App_MainState *state, uint16_t screen_w, uint16_t screen_h);

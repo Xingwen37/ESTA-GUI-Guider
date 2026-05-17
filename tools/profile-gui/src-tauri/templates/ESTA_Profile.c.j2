@@ -11,6 +11,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .menu_inst_count = {{ menu_inst_count }},
     .button_count = {{ button_count }},
     .page_count = {{ page_count }},
+    .binding_count = {{ binding_count }},
     .wave_profiles = {
 {% for p in wave_profiles %}
         {
@@ -131,6 +132,11 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             },
             .page = {{ p.page }}
         }{% if not loop.last %},{% endif %}
+{% endfor %}
+    },
+    .bindings = {
+{% for b in bindings %}
+        { .trigger = {{ b.trigger }}, .source_id = {{ b.source_id }}, .trigger_id = {{ b.trigger_id }}, .target_type = {{ b.target_type }}, .target_inst = {{ b.target_inst }}, .action = {{ b.action }} }{% if not loop.last %},{% endif %}
 {% endfor %}
     }
 };
@@ -274,9 +280,28 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx,
     return MENU_Init(inst_idx, &config);
 }
 
-ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set) {
-    (void)profile_set;
+static App_BindingContext g_binding_ctx[ESTA_PROFILE_MAX_BINDINGS];
+
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set, void *user_data) {
+    if (profile_set == NULL) return ESTA_ERROR;
     ESTA_EventInit();
+    App_EventInit();
+
+    for (uint8_t i = 0; i < profile_set->binding_count; i++) {
+        if (i >= ESTA_PROFILE_MAX_BINDINGS) break;
+        const ESTA_EventBinding_TypeDef *b = &profile_set->bindings[i];
+        ESTA_EventHandler handler = App_ActionGetHandler((ESTA_ActionType)b->action);
+        if (handler == NULL) continue;
+
+        g_binding_ctx[i].app = user_data;
+        g_binding_ctx[i].target_type = b->target_type;
+        g_binding_ctx[i].target_inst = b->target_inst;
+
+        App_Subscribe((ESTA_EventType)b->trigger,
+                      b->source_id,
+                      b->trigger_id,
+                      handler, &g_binding_ctx[i]);
+    }
     return ESTA_OK;
 }
 

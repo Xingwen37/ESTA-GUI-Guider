@@ -14,6 +14,9 @@ static uint16_t s_batch_window_len[SIM_SCENARIO_WAVE_COUNT];
 static uint16_t s_bar_count[SIM_SCENARIO_BARCHART_COUNT];
 
 static bool sim_feed_wave(App_MainState *app, SimScenarioRuntime *scenario) {
+    if (!app->wave_trigger) return true;
+    app->wave_trigger = false;
+
     uint8_t active = App_GetActivePage(&app->page_state);
     for (int i = 0; i < app->wave_inst_count; i++) {
         if (app->page_state.profiles->wave_profiles[i].page != active) continue;
@@ -83,10 +86,8 @@ void SimFeed_Init(App_MainState *app, SimScenarioRuntime *scenario) {
     }
 }
 
-bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario, bool wave_trigger) {
-    if (wave_trigger) {
-        if (!sim_feed_wave(app, scenario)) return false;
-    }
+bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario) {
+    if (!sim_feed_wave(app, scenario)) return false;
     sim_feed_barchart(app, scenario);
     sim_feed_table(app, scenario);
     return true;

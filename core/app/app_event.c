@@ -3,8 +3,8 @@
 
 typedef struct {
     uint8_t type;
-    uint8_t source_min;
-    uint8_t source_max;
+    uint8_t source_id;
+    uint16_t event_id;
     ESTA_EventHandler handler;
     void *user_data;
     bool active;
@@ -18,14 +18,14 @@ void App_EventInit(void) {
     }
 }
 
-int App_Subscribe(ESTA_EventType type, uint8_t source_min, uint8_t source_max,
+int App_Subscribe(ESTA_EventType type, uint8_t source_id, uint16_t event_id,
                   ESTA_EventHandler handler, void *user_data) {
     if (handler == NULL) return -1;
     for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
         if (!g_subs[i].active) {
             g_subs[i].type = (uint8_t)type;
-            g_subs[i].source_min = source_min;
-            g_subs[i].source_max = source_max;
+            g_subs[i].source_id = source_id;
+            g_subs[i].event_id = event_id;
             g_subs[i].handler = handler;
             g_subs[i].user_data = user_data;
             g_subs[i].active = true;
@@ -48,13 +48,12 @@ void App_DispatchEvents(void) {
         for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
             if (!g_subs[i].active) continue;
             if (g_subs[i].type != evt.type) continue;
-            if (g_subs[i].source_max == APP_SOURCE_ANY) continue;
-            if (evt.source >= g_subs[i].source_min &&
-                evt.source <= g_subs[i].source_max) {
-                if (g_subs[i].handler(&evt, g_subs[i].user_data)) {
-                    consumed = true;
-                    break;
-                }
+            if (g_subs[i].source_id == APP_SOURCE_ANY) continue;
+            if (g_subs[i].source_id != evt.source) continue;
+            if (g_subs[i].event_id != APP_TRIGGER_ID_ANY && g_subs[i].event_id != evt.id) continue;
+            if (g_subs[i].handler(&evt, g_subs[i].user_data)) {
+                consumed = true;
+                break;
             }
         }
 
@@ -62,7 +61,8 @@ void App_DispatchEvents(void) {
             for (int i = 0; i < APP_MAX_SUBSCRIPTIONS; i++) {
                 if (!g_subs[i].active) continue;
                 if (g_subs[i].type != evt.type) continue;
-                if (g_subs[i].source_max != APP_SOURCE_ANY) continue;
+                if (g_subs[i].source_id != APP_SOURCE_ANY) continue;
+                if (g_subs[i].event_id != APP_TRIGGER_ID_ANY && g_subs[i].event_id != evt.id) continue;
                 g_subs[i].handler(&evt, g_subs[i].user_data);
                 break;
             }

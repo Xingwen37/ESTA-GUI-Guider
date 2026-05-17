@@ -5,11 +5,12 @@
 
 #define APP_MAX_SUBSCRIPTIONS 8
 #define APP_SOURCE_ANY        0xFF
+#define APP_TRIGGER_ID_ANY    0xFFFF
 
 typedef bool (*ESTA_EventHandler)(const ESTA_Event *event, void *user_data);
 
 void App_EventInit(void);
-int  App_Subscribe(ESTA_EventType type, uint8_t source_min, uint8_t source_max,
+int  App_Subscribe(ESTA_EventType type, uint8_t source_id, uint16_t event_id,
                    ESTA_EventHandler handler, void *user_data);
 void App_Unsubscribe(int subscription_id);
 void App_DispatchEvents(void);

@@ -438,3 +438,60 @@ bool MENU_HandleEvent(int inst, const ESTA_Event *event) {
     }
     return true;
 }
+
+bool MENU_NavUp(int inst) {
+    if (!IS_VALID_MENU_INST(inst)) return false;
+    if (MENU_PRIVATE_MEMBER(inst, selected_idx) > 0) {
+        MENU_WRITE_PRIVATE(inst, selected_idx,
+            (uint8_t)(MENU_PRIVATE_MEMBER(inst, selected_idx) - 1U));
+        MENU_ReDraw(inst);
+        return true;
+    }
+    return false;
+}
+
+bool MENU_NavDown(int inst) {
+    if (!IS_VALID_MENU_INST(inst)) return false;
+    if (MENU_PRIVATE_MEMBER(inst, selected_idx) + 1U <
+        MENU_PRIVATE_MEMBER(inst, local_count)) {
+        MENU_WRITE_PRIVATE(inst, selected_idx,
+            (uint8_t)(MENU_PRIVATE_MEMBER(inst, selected_idx) + 1U));
+        MENU_ReDraw(inst);
+        return true;
+    }
+    return false;
+}
+
+bool MENU_NavEnter(int inst) {
+    if (!IS_VALID_MENU_INST(inst)) return false;
+    uint8_t sel = MENU_PRIVATE_MEMBER(inst, selected_idx);
+    if (sel >= MENU_PRIVATE_MEMBER(inst, local_count)) return false;
+    uint8_t global_idx = MENU_PRIVATE_MEMBER_ARRAY(inst, local_items, sel);
+    const MENU_ItemConfig *item = &MENU_PRIVATE_MEMBER_ARRAY(inst, items, global_idx);
+    if (item->is_submenu) {
+        uint8_t depth = MENU_PRIVATE_MEMBER(inst, nav_depth);
+        if (depth < MENU_MAX_DEPTH) {
+            MENU_WRITE_PRIVATE_ARRAY(inst, nav_stack, depth, global_idx);
+            MENU_WRITE_PRIVATE(inst, nav_depth, (uint8_t)(depth + 1U));
+            MENU_RebuildLocalList(inst);
+            MENU_ReDraw(inst);
+            return true;
+        }
+    } else {
+        ESTA_EventEmitMenuSelect((uint8_t)inst, item->event_id);
+        return true;
+    }
+    return false;
+}
+
+bool MENU_NavBack(int inst) {
+    if (!IS_VALID_MENU_INST(inst)) return false;
+    uint8_t depth = MENU_PRIVATE_MEMBER(inst, nav_depth);
+    if (depth > 0) {
+        MENU_WRITE_PRIVATE(inst, nav_depth, (uint8_t)(depth - 1U));
+        MENU_RebuildLocalList(inst);
+        MENU_ReDraw(inst);
+        return true;
+    }
+    return false;
+}

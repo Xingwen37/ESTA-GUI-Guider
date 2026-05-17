@@ -121,5 +121,9 @@ void              MENU_ProcessInput(int inst);
 
 #include "event/event.h"
 bool              MENU_HandleEvent(int inst, const ESTA_Event *event);
+bool              MENU_NavUp(int inst);
+bool              MENU_NavDown(int inst);
+bool              MENU_NavEnter(int inst);
+bool              MENU_NavBack(int inst);
 
 #endif

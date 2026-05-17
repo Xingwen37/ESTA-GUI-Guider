@@ -9,6 +9,7 @@
 #include "ui/TABLE.h"
 #include "ui/MENU.h"
 #include "event/event.h"
+#include "app/app_action.h"
 
 #define ESTA_PROFILE_MAX_WAVE_INST 4
 #define ESTA_PROFILE_MAX_BARCHART_INST 4
@@ -118,10 +119,12 @@ typedef struct {
     uint16_t menu_inst_count;
     uint16_t button_count;
     uint8_t page_count;
+    uint8_t binding_count;
     ESTA_WaveProfile_TypeDef wave_profiles[ESTA_PROFILE_MAX_WAVE_INST];
     ESTA_BarChartProfile_TypeDef bar_profiles[ESTA_PROFILE_MAX_BARCHART_INST];
     ESTA_TableProfile_TypeDef table_profiles[ESTA_PROFILE_MAX_TABLE_INST];
     ESTA_MenuProfile_TypeDef menu_profiles[ESTA_PROFILE_MAX_MENU_INST];
+    ESTA_EventBinding_TypeDef bindings[ESTA_PROFILE_MAX_BINDINGS];
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);
@@ -136,6 +139,6 @@ bool ESTA_Profile_ToTABLE_Config(const ESTA_TableProfile_TypeDef *profile, TABLE
 ESTA_StatusTypeDef ESTA_Profile_ApplyTABLE(int inst_idx, const ESTA_TableProfile_TypeDef *profile);
 bool ESTA_Profile_ToMENU_Config(const ESTA_MenuProfile_TypeDef *profile, MENU_Config_TypeDef *out_config);
 ESTA_StatusTypeDef ESTA_Profile_ApplyMENU(int inst_idx, const ESTA_MenuProfile_TypeDef *profile);
-ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set);
+ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profile_set, void *user_data);
 
 #endif

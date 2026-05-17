@@ -6,8 +6,8 @@ use serde_json::json;
 use tauri::State;
 
 use crate::models::{
-    BarChartProfile, MenuItemProfile, MenuProfile, ProfileSet, TableProfile, TableColProfile,
-    TableCellProfile, WaveProfile, WaveRulerLabelProfile,
+    BarChartProfile, EventBinding, MenuItemProfile, MenuProfile, ProfileSet, TableProfile,
+    TableColProfile, TableCellProfile, WaveProfile, WaveRulerLabelProfile,
 };
 
 const PROFILE_JSON: &str = "core/profile/ESTA_Profile.json";
@@ -207,6 +207,21 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         })
         .collect();
 
+    let bindings_for_template: Vec<serde_json::Value> = data
+        .bindings
+        .iter()
+        .map(|b| {
+            json!({
+                "trigger": b.trigger,
+                "source_id": b.source_id,
+                "trigger_id": b.trigger_id,
+                "target_type": b.target_type,
+                "target_inst": b.target_inst,
+                "action": b.action,
+            })
+        })
+        .collect();
+
     let mut ctx = tera::Context::new();
     ctx.insert("wave_inst_count", &data.wave_inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
@@ -218,6 +233,8 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     ctx.insert("bar_profiles", &bar_profiles_for_template);
     ctx.insert("table_profiles", &table_profiles_for_template);
     ctx.insert("menu_profiles", &menu_profiles_for_template);
+    ctx.insert("binding_count", &data.binding_count);
+    ctx.insert("bindings", &bindings_for_template);
 
     let c_code = state
         .tera
@@ -386,6 +403,15 @@ fn default_profile() -> ProfileSet {
         )],
         table_profiles: vec![default_table_profile()],
         menu_profiles: vec![default_menu_profile()],
+        binding_count: 6,
+        bindings: vec![
+            EventBinding { trigger: 1, source_id: 0, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 3 },
+            EventBinding { trigger: 1, source_id: 1, trigger_id: 0xFFFF, target_type: 4, target_inst: 0, action: 1 },
+            EventBinding { trigger: 1, source_id: 2, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 4 },
+            EventBinding { trigger: 1, source_id: 3, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 5 },
+            EventBinding { trigger: 1, source_id: 4, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 6 },
+            EventBinding { trigger: 1, source_id: 5, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 7 },
+        ],
     }
 }
 
