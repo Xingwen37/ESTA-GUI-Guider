@@ -5,10 +5,10 @@
 
 #include "ui/WAVE.h"
 #include "app/app_main.h"
+#include "event/event_flag.h"
 #include "sim_scenario.h"
 #include "sim_feed.h"
 #include "sim_input.h"
-#include "sim_gpio.h"
 #include "esta_port_sdl2.h"
 
 #define SIM_TARGET_FRAME_MS  20  /* 50 FPS */
@@ -25,8 +25,7 @@ static SimScenarioRuntime g_scenario;
  *   while (1) {
  *       采集数据 → WAVE_CurveDrawBatch() / BARCHART_UpdateAll()
  *       检测按键 → ESTA_EventEmitButton(btn_id, ESTA_EVENT_BUTTON_PRESS)
- *       App_MainTick(&app);
- *       HAL_Delay(20);
+. *       HAL_Delay(20);
  *   }
  */
 
@@ -68,7 +67,6 @@ int main(int argc, char *argv[])
     }
 
     SimFeed_Init(&g_app, &g_scenario);
-    SimGPIO_Init();
 
     while (true) {
         uint32_t frame_start = SDL_GetTicks();
@@ -76,8 +74,9 @@ int main(int argc, char *argv[])
         SimInputResult input = SimInput_Poll(profiles->button_count);
         if (input.quit_requested) break;
 
-        if (!SimFeed_Update(&g_app, &g_scenario)) break;
+        ESTA_FlagPoll();
         App_MainTick(&g_app);
+        if (!SimFeed_Update(&g_app, &g_scenario)) break;
 
         ESTA_SDL2_Update();
 

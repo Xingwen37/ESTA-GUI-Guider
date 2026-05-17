@@ -3,6 +3,7 @@
 #include "ui/BARCHART.h"
 #include "ui/TABLE.h"
 #include "ui/MENU.h"
+#include "event/event_flag.h"
 
 void App_MainInit(App_MainState *state, uint16_t screen_w, uint16_t screen_h) {
     if (state == NULL) return;
@@ -18,6 +19,10 @@ void App_MainInit(App_MainState *state, uint16_t screen_w, uint16_t screen_h) {
     if (state->table_inst_count > TABLE_MAX_NUM) state->table_inst_count = TABLE_MAX_NUM;
     state->menu_inst_count  = profiles->menu_inst_count;
     if (state->menu_inst_count > MENU_MAX_NUM) state->menu_inst_count = MENU_MAX_NUM;
+
+    ESTA_FlagInit();
+    ESTA_FlagConfig wave_flag = { .mode = ESTA_FLAG_MODE_MANUAL };
+    ESTA_FlagRegister(ESTA_FLAG_WAVE_REDRAW, &wave_flag);
 
     App_PageInit(&state->page_state, profiles, screen_w, screen_h);
     App_ApplyAndDrawPage(&state->page_state, 0);

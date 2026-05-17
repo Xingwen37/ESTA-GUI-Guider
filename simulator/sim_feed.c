@@ -4,6 +4,7 @@
 #include "ui/WAVE.h"
 #include "ui/BARCHART.h"
 #include "ui/TABLE.h"
+#include "event/event_flag.h"
 
 #define SIM_BATCH_MAX_POINTS 320
 
@@ -14,8 +15,7 @@ static uint16_t s_batch_window_len[SIM_SCENARIO_WAVE_COUNT];
 static uint16_t s_bar_count[SIM_SCENARIO_BARCHART_COUNT];
 
 static bool sim_feed_wave(App_MainState *app, SimScenarioRuntime *scenario) {
-    if (!app->wave_trigger) return true;
-    app->wave_trigger = false;
+    if (!ESTA_FlagCheck(ESTA_FLAG_WAVE_REDRAW)) return true;
 
     uint8_t active = App_GetActivePage(&app->page_state);
     for (int i = 0; i < app->wave_inst_count; i++) {

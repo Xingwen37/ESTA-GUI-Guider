@@ -2,6 +2,7 @@
 #include "app/app_main.h"
 #include "ui/WAVE.h"
 #include "ui/MENU.h"
+#include "event/event_flag.h"
 
 #include <stdio.h>
 
@@ -49,10 +50,8 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 
 static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
     (void)evt;
-    App_BindingContext *ctx = (App_BindingContext *)user_data;
-    App_MainState *s = (App_MainState *)ctx->app;
-    if (s == NULL) return false;
-    s->wave_trigger = true;
+    (void)user_data;
+    ESTA_FlagSet(ESTA_FLAG_WAVE_REDRAW);
     return true;
 }
 
