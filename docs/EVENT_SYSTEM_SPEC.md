@@ -130,6 +130,7 @@ typedef enum {
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
     ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
+    ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 ```
@@ -140,8 +141,8 @@ typedef enum {
 |-------------|------------|
 | WAVE (0) | THEME_TOGGLE, WAVE_REDRAW |
 | BARCHART (1) | THEME_TOGGLE |
-| TABLE (2) | （暂无） |
-| MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK |
+| TABLE (2) | TEXT_SET |
+| MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET |
 | PAGE (4) | PAGE_NEXT, PAGE_PREV |
 | GLOBAL (5) | THEME_TOGGLE |
 | FLAG (6) | FLAG_SET |
@@ -169,6 +170,7 @@ typedef struct {
     void *app;            // App_MainState 指针
     uint8_t target_type;  // ESTA_TargetType
     uint8_t target_inst;  // 目标实例索引
+    uint8_t param;        // action 参数（TEXT_SET: 字符串表索引）
 } App_BindingContext;
 ```
 
@@ -191,8 +193,12 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 {
   "binding_count": 5,
   "bindings": [
-    { "trigger": 1, "source_id": 1, "trigger_id": 65535, "target_type": 3, "target_inst": 0, "action": 5 },
-    { "trigger": 3, "source_id": 0, "trigger_id": 10,    "target_type": 0, "target_inst": 0, "action": 3 }
+    { "trigger": 1, "source_id": 1, "trigger_id": 65535, "target_type": 3, "target_inst": 0, "action": 5, "param": 0 },
+    { "trigger": 1, "source_id": 0, "trigger_id": 65535, "target_type": 2, "target_inst": 0, "action": 10, "param": 0 }
+  ],
+  "string_count": 1,
+  "strings": [
+    { "target_type": 2, "target_inst": 0, "sub_addr": 1, "text": "Running" }
   ]
 }
 ```
@@ -201,8 +207,12 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 
 ```c
 .bindings = {
-    { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 5 },
-    { .trigger = 3, .source_id = 0, .trigger_id = 10,    .target_type = 0, .target_inst = 0, .action = 3 }
+    { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 5, .param = 0 },
+    { .trigger = 1, .source_id = 0, .trigger_id = 65535, .target_type = 2, .target_inst = 0, .action = 10, .param = 0 }
+},
+.string_count = 1,
+.strings = {
+    { .target_type = 2, .target_inst = 0, .sub_addr = 1, .text = "Running" }
 }
 ```
 
@@ -319,10 +329,81 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 |------|--------|------|
 | 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, MENU_* | handler 直接执行效果 |
 | 延迟 | FLAG_SET | handler 仅设置标志，效果由外部消费 |
+| 参数化 | TEXT_SET | handler 从字符串表取数据，写入目标组件 |
 
 ### 容量
 
 `ESTA_FLAG_MAX = 8`，Flag ID 范围 0~7。
+
+## 字符串表系统
+
+字符串表是 Profile 中的静态数据池，供 TEXT_SET action 引用。每个条目包含目标地址和预定义文本。
+
+### 数据结构
+
+```c
+#define ESTA_MAX_STRING_ENTRIES 16
+#define ESTA_STRING_MAX_LEN     16
+
+typedef struct {
+    uint8_t  target_type;   // ESTA_TargetType
+    uint8_t  target_inst;   // 组件实例
+    uint8_t  sub_addr;      // 组件内子地址（TABLE: row*MAX_COLS+col, MENU: item_idx）
+    char     text[ESTA_STRING_MAX_LEN + 1];
+} ESTA_StringEntry_TypeDef;
+```
+
+### 绑定结构体
+
+```c
+typedef struct {
+    uint8_t  trigger;
+    uint8_t  source_id;
+    uint16_t trigger_id;
+    uint8_t  target_type;
+    uint8_t  target_inst;
+    uint8_t  action;       // = ESTA_ACTION_TEXT_SET (10)
+    uint8_t  param;        // 字符串表索引
+} ESTA_EventBinding_TypeDef;
+```
+
+当 `action == TEXT_SET` 时，handler 从 `profiles->strings[param]` 取出条目，根据 `target_type` 分发到对应组件的更新 API。
+
+### Handler 实现
+
+```c
+static bool action_text_set(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL) return false;
+
+    const ESTA_StringEntry_TypeDef *entry = &s->page_state.profiles->strings[ctx->param];
+
+    switch (entry->target_type) {
+        case ESTA_TARGET_TABLE: {
+            uint8_t row = entry->sub_addr / TABLE_MAX_COLS;
+            uint8_t col = entry->sub_addr % TABLE_MAX_COLS;
+            TABLE_UpdateText(entry->target_inst, row, col, entry->text);
+            TABLE_ReDraw(entry->target_inst);
+            return true;
+        }
+        case ESTA_TARGET_MENU: {
+            MENU_UpdateItemLabel(entry->target_inst, entry->sub_addr, entry->text);
+            MENU_ReDraw(entry->target_inst);
+            return true;
+        }
+        default: return false;
+    }
+}
+```
+
+### sub_addr 编码
+
+| target_type | sub_addr 含义 | 计算方式 |
+|-------------|--------------|---------|
+| TABLE (2) | 单元格位置 | `row * TABLE_MAX_COLS + col` |
+| MENU (3) | 菜单项索引 | `item_idx`（0~31） |
 
 ## 全链路文件清单
 
@@ -333,14 +414,15 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table |
 | C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
-| C Profile 绑定 | `core/profile/ESTA_Profile.c` | ApplyEvents、g_binding_ctx |
-| C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back |
-| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings 数组 |
-| Rust 模型 | `src-tauri/src/models.rs` | EventBinding struct |
+| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry |
+| C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
+| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings 数组 |
+| Rust 模型 | `src-tauri/src/models.rs` | EventBinding、StringEntry struct |
 | Rust 命令 | `src-tauri/src/commands.rs` | 模板数据构建 |
 | Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成 |
-| TS 类型 | `src/lib/types.ts` | EventBinding 接口、常量、约束表 |
+| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry 接口、常量、约束表 |
 | React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器 |
+| React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器 |
 
 ## 扩展指南
 

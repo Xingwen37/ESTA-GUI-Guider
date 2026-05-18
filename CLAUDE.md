@@ -106,9 +106,10 @@ WAVE 标尺布局：Y 轴标注在绘图区左侧（右对齐），X 轴标注�
 - **事件队列**（容量 16）：`ESTA_EventPush()` / `ESTA_EventPoll()`
 - **事件类型**：`BUTTON_PRESS`(1)、`BUTTON_RELEASE`(2)、`MENU_SELECT`(3)、`ENCODER_ROTATE`(4)、`TIMER`(5)、`FLAG`(6)
 - **事件绑定**：Profile 中的 `bindings[]` 数组，通过 `ESTA_Profile_ApplyEvents()` 注册到订阅系统
-- **绑定结构体**：`trigger + source_id + trigger_id + target_type + target_inst + action`
+- **绑定结构体**：`trigger + source_id + trigger_id + target_type + target_inst + action + param`
 - **Flag 系统**（`core/event/event_flag.h/.c`）：轻量级内部信号，`ESTA_FlagSet()` 自动推送 FLAG 事件到队列
-- **Action 语义**：即时（WAVE_REDRAW 通过回调直接绘制）vs 延迟（FLAG_SET 仅设标志）
+- **字符串表**（`ESTA_StringEntry_TypeDef`）：预定义文本资源池，TEXT_SET action 通过 `param` 索引引用
+- **Action 语义**：即时（WAVE_REDRAW 回调绘制）/ 延迟（FLAG_SET 设标志）/ 参数化（TEXT_SET 写字符串）
 
 ### 应用骨架（`core/app/`）
 
