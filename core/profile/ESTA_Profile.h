@@ -15,6 +15,15 @@
 #define ESTA_PROFILE_MAX_BARCHART_INST 4
 #define ESTA_PROFILE_MAX_TABLE_INST 4
 #define ESTA_PROFILE_MAX_MENU_INST 4
+#define ESTA_MAX_STRING_ENTRIES 16
+#define ESTA_STRING_MAX_LEN 16
+
+typedef struct {
+    uint8_t  target_type;
+    uint8_t  target_inst;
+    uint8_t  sub_addr;
+    char     text[ESTA_STRING_MAX_LEN + 1];
+} ESTA_StringEntry_TypeDef;
 
 typedef struct {
     uint16_t x_origin;
@@ -125,6 +134,8 @@ typedef struct {
     ESTA_TableProfile_TypeDef table_profiles[ESTA_PROFILE_MAX_TABLE_INST];
     ESTA_MenuProfile_TypeDef menu_profiles[ESTA_PROFILE_MAX_MENU_INST];
     ESTA_EventBinding_TypeDef bindings[ESTA_PROFILE_MAX_BINDINGS];
+    uint8_t string_count;
+    ESTA_StringEntry_TypeDef strings[ESTA_MAX_STRING_ENTRIES];
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);

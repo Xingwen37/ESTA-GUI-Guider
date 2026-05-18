@@ -11,7 +11,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .menu_inst_count = 1,
     .button_count = 6,
     .page_count = 1,
-    .binding_count = 4,
+    .binding_count = 5,
     .wave_profiles = {
 
         {
@@ -231,13 +231,21 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 
-        { .trigger = 6, .source_id = 1, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 3 },
+        { .trigger = 6, .source_id = 1, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 3, .param = 0 },
 
-        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9 },
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0 },
 
-        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 2, .action = 9 },
+        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 2, .action = 9, .param = 0 },
 
-        { .trigger = 6, .source_id = 2, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4 }
+        { .trigger = 6, .source_id = 2, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0 },
+
+        { .trigger = 1, .source_id = 0, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 10, .param = 0 }
+
+    },
+    .string_count = 1,
+    .strings = {
+
+        { .target_type = 2, .target_inst = 0, .sub_addr = 0, .text = "111" }
 
     }
 };

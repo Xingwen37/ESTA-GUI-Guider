@@ -125,5 +125,6 @@ bool              MENU_NavUp(int inst);
 bool              MENU_NavDown(int inst);
 bool              MENU_NavEnter(int inst);
 bool              MENU_NavBack(int inst);
+ESTA_StatusTypeDef MENU_UpdateItemLabel(int inst, uint8_t item_idx, const char *label);
 
 #endif

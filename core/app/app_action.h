@@ -28,6 +28,7 @@ typedef enum {
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
     ESTA_ACTION_FLAG_SET      = 9,
+    ESTA_ACTION_TEXT_SET      = 10,
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 
@@ -38,12 +39,14 @@ typedef struct {
     uint8_t  target_type;  /* ESTA_TargetType */
     uint8_t  target_inst;  /* target instance (0 for PAGE/GLOBAL) */
     uint8_t  action;       /* ESTA_ActionType */
+    uint8_t  param;        /* action parameter (TEXT_SET: string table index) */
 } ESTA_EventBinding_TypeDef;
 
 typedef struct {
     void *app;
     uint8_t target_type;
     uint8_t target_inst;
+    uint8_t param;
 } App_BindingContext;
 
 ESTA_EventHandler App_ActionGetHandler(ESTA_ActionType action);

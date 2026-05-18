@@ -4,6 +4,7 @@ import BarChartEditor from "./components/BarChartEditor";
 import TableEditor from "./components/TableEditor";
 import MenuEditor from "./components/MenuEditor";
 import EventEditor from "./components/EventEditor";
+import StringTableEditor from "./components/StringTableEditor";
 import * as api from "./lib/tauri-api";
 import type { ProfileSet, WaveProfile, BarChartProfile, TableProfile, MenuProfile } from "./lib/types";
 import {
@@ -356,6 +357,8 @@ export default function App() {
     table_profiles: ensureCount(data.table_profiles ?? [], tableCount, cloneTableProfile),
     menu_profiles: ensureCount(data.menu_profiles ?? [], menuCount, cloneMenuProfile),
     bindings: data.bindings ?? [],
+    string_count: data.string_count ?? 0,
+    strings: data.strings ?? [],
   });
 
   const validateAll = (): string | null => {
@@ -624,7 +627,7 @@ export default function App() {
       )}
 
       <div className="editor-scroll">
-        {isEventTab ? (
+        {isEventTab ? (<>
           <EventEditor
             bindings={data.bindings ?? []}
             buttonCount={data.button_count}
@@ -633,8 +636,16 @@ export default function App() {
             tableInstCount={data.table_inst_count}
             menuInstCount={data.menu_inst_count}
             menuProfiles={data.menu_profiles ?? []}
+            strings={data.strings ?? []}
             onChange={(bindings) => setData({ ...data, bindings, binding_count: bindings.length })}
           />
+          <StringTableEditor
+            strings={data.strings ?? []}
+            tableInstCount={data.table_inst_count}
+            menuInstCount={data.menu_inst_count}
+            onChange={(strings) => setData({ ...data, strings, string_count: strings.length })}
+          />
+        </>
         ) : totalComponentTabs === 0 ? (
           <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>
         ) : isWaveTab ? (

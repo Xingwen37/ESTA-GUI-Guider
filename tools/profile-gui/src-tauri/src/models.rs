@@ -181,6 +181,16 @@ pub struct EventBinding {
     pub target_type: u8,
     pub target_inst: u8,
     pub action: u8,
+    #[serde(default)]
+    pub param: u8,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct StringEntry {
+    pub target_type: u8,
+    pub target_inst: u8,
+    pub sub_addr: u8,
+    pub text: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -204,6 +214,10 @@ pub struct ProfileSet {
     pub menu_profiles: Vec<MenuProfile>,
     #[serde(default)]
     pub bindings: Vec<EventBinding>,
+    #[serde(default)]
+    pub string_count: u8,
+    #[serde(default)]
+    pub strings: Vec<StringEntry>,
 }
 
 fn default_page_count() -> u8 { 1 }

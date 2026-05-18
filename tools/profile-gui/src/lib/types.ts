@@ -114,6 +114,14 @@ export interface EventBinding {
   target_type: number;
   target_inst: number;
   action: number;
+  param: number;
+}
+
+export interface StringEntry {
+  target_type: number;
+  target_inst: number;
+  sub_addr: number;
+  text: string;
 }
 
 export interface ProfileSet {
@@ -129,6 +137,8 @@ export interface ProfileSet {
   table_profiles: TableProfile[];
   menu_profiles: MenuProfile[];
   bindings: EventBinding[];
+  string_count: number;
+  strings: StringEntry[];
 }
 
 export const WAVE_THEME_OPTIONS = [
@@ -193,6 +203,8 @@ export const MAX_MENU_ITEMS = 32;
 export const MAX_MENU_STRING_LEN = 16;
 export const MAX_MENU_DEPTH = 8;
 export const MAX_BINDINGS = 8;
+export const MAX_STRING_ENTRIES = 16;
+export const MAX_STRING_LEN = 16;
 
 export const TRIGGER_OPTIONS = [
   [1, "BUTTON_PRESS"],
@@ -223,15 +235,16 @@ export const ACTION_TYPE_OPTIONS = [
   [7, "MENU_ENTER"],
   [8, "MENU_BACK"],
   [9, "FLAG_SET"],
+  [10, "TEXT_SET"],
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {
-  0: [3, 4],          // WAVE: THEME_TOGGLE, WAVE_REDRAW
-  1: [3],             // BARCHART: THEME_TOGGLE
-  2: [],              // TABLE: (none)
-  3: [5, 6, 7, 8],   // MENU: UP, DOWN, ENTER, BACK
-  4: [1, 2],          // PAGE: PAGE_NEXT, PAGE_PREV
-  5: [3],             // GLOBAL: THEME_TOGGLE
+  0: [3, 4],             // WAVE: THEME_TOGGLE, WAVE_REDRAW
+  1: [3],                // BARCHART: THEME_TOGGLE
+  2: [10],               // TABLE: TEXT_SET
+  3: [5, 6, 7, 8, 10],  // MENU: UP, DOWN, ENTER, BACK, TEXT_SET
+  4: [1, 2],             // PAGE: PAGE_NEXT, PAGE_PREV
+  5: [3],                // GLOBAL: THEME_TOGGLE
   6: [9],             // FLAG: FLAG_SET
 };
 

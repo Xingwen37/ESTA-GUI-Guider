@@ -136,7 +136,13 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 {% for b in bindings %}
-        { .trigger = {{ b.trigger }}, .source_id = {{ b.source_id }}, .trigger_id = {{ b.trigger_id }}, .target_type = {{ b.target_type }}, .target_inst = {{ b.target_inst }}, .action = {{ b.action }} }{% if not loop.last %},{% endif %}
+        { .trigger = {{ b.trigger }}, .source_id = {{ b.source_id }}, .trigger_id = {{ b.trigger_id }}, .target_type = {{ b.target_type }}, .target_inst = {{ b.target_inst }}, .action = {{ b.action }}, .param = {{ b.param }} }{% if not loop.last %},{% endif %}
+{% endfor %}
+    },
+    .string_count = {{ string_count }},
+    .strings = {
+{% for s in strings %}
+        { .target_type = {{ s.target_type }}, .target_inst = {{ s.target_inst }}, .sub_addr = {{ s.sub_addr }}, .text = "{{ s.text }}" }{% if not loop.last %},{% endif %}
 {% endfor %}
     }
 };

@@ -1,7 +1,9 @@
 #include "app/app_action.h"
 #include "app/app_main.h"
+#include "profile/ESTA_Profile.h"
 #include "ui/WAVE.h"
 #include "ui/MENU.h"
+#include "ui/TABLE.h"
 #include "event/event_flag.h"
 
 #include <stdio.h>
@@ -112,6 +114,36 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
     return true;
 }
 
+static bool action_text_set(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL) return false;
+
+    uint8_t str_idx = ctx->param;
+    const ESTA_ProfileSet_TypeDef *p = s->page_state.profiles;
+    if (str_idx >= p->string_count) return false;
+
+    const ESTA_StringEntry_TypeDef *entry = &p->strings[str_idx];
+
+    switch (entry->target_type) {
+        case ESTA_TARGET_TABLE: {
+            uint8_t row = entry->sub_addr / TABLE_MAX_COLS;
+            uint8_t col = entry->sub_addr % TABLE_MAX_COLS;
+            TABLE_UpdateText(entry->target_inst, row, col, entry->text);
+            TABLE_ReDraw(entry->target_inst);
+            return true;
+        }
+        case ESTA_TARGET_MENU: {
+            MENU_UpdateItemLabel(entry->target_inst, entry->sub_addr, entry->text);
+            MENU_ReDraw(entry->target_inst);
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
 static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_NONE]          = NULL,
     [ESTA_ACTION_PAGE_NEXT]     = action_page_next,
@@ -123,6 +155,7 @@ static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_MENU_ENTER]    = action_menu_enter,
     [ESTA_ACTION_MENU_BACK]     = action_menu_back,
     [ESTA_ACTION_FLAG_SET]      = action_flag_set,
+    [ESTA_ACTION_TEXT_SET]      = action_text_set,
 };
 
 #define ACTION_TABLE_SIZE (sizeof(g_action_table) / sizeof(g_action_table[0]))

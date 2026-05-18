@@ -495,3 +495,13 @@ bool MENU_NavBack(int inst) {
     }
     return false;
 }
+
+ESTA_StatusTypeDef MENU_UpdateItemLabel(int inst, uint8_t item_idx, const char *label) {
+    if (!IS_VALID_MENU_INST(inst) || !IS_VALID_MENU_ITEM(item_idx) || label == NULL)
+        return ESTA_ERROR;
+    uint16_t item_count = MENU_CONFIG_MEMBER(inst, item_count);
+    if (item_idx >= item_count) return ESTA_ERROR;
+    strncpy(MENU_PRIVATE_MEMBER_ARRAY(inst, items, item_idx).label, label, MENU_MAX_STRING_LEN);
+    MENU_PRIVATE_MEMBER_ARRAY(inst, items, item_idx).label[MENU_MAX_STRING_LEN] = '\0';
+    return ESTA_OK;
+}

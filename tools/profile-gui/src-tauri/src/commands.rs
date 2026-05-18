@@ -218,6 +218,20 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
                 "target_type": b.target_type,
                 "target_inst": b.target_inst,
                 "action": b.action,
+                "param": b.param,
+            })
+        })
+        .collect();
+
+    let strings_for_template: Vec<serde_json::Value> = data
+        .strings
+        .iter()
+        .map(|s| {
+            json!({
+                "target_type": s.target_type,
+                "target_inst": s.target_inst,
+                "sub_addr": s.sub_addr,
+                "text": s.text,
             })
         })
         .collect();
@@ -235,6 +249,8 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     ctx.insert("menu_profiles", &menu_profiles_for_template);
     ctx.insert("binding_count", &data.binding_count);
     ctx.insert("bindings", &bindings_for_template);
+    ctx.insert("string_count", &data.string_count);
+    ctx.insert("strings", &strings_for_template);
 
     let c_code = state
         .tera
@@ -405,13 +421,15 @@ fn default_profile() -> ProfileSet {
         menu_profiles: vec![default_menu_profile()],
         binding_count: 6,
         bindings: vec![
-            EventBinding { trigger: 1, source_id: 0, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 3 },
-            EventBinding { trigger: 1, source_id: 1, trigger_id: 0xFFFF, target_type: 4, target_inst: 0, action: 1 },
-            EventBinding { trigger: 1, source_id: 2, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 4 },
-            EventBinding { trigger: 1, source_id: 3, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 5 },
-            EventBinding { trigger: 1, source_id: 4, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 6 },
-            EventBinding { trigger: 1, source_id: 5, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 7 },
+            EventBinding { trigger: 1, source_id: 0, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 3, param: 0 },
+            EventBinding { trigger: 1, source_id: 1, trigger_id: 0xFFFF, target_type: 4, target_inst: 0, action: 1, param: 0 },
+            EventBinding { trigger: 1, source_id: 2, trigger_id: 0xFFFF, target_type: 0, target_inst: 0, action: 4, param: 0 },
+            EventBinding { trigger: 1, source_id: 3, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 5, param: 0 },
+            EventBinding { trigger: 1, source_id: 4, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 6, param: 0 },
+            EventBinding { trigger: 1, source_id: 5, trigger_id: 0xFFFF, target_type: 3, target_inst: 0, action: 7, param: 0 },
         ],
+        string_count: 0,
+        strings: vec![],
     }
 }
 

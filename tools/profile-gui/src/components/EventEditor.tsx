@@ -1,4 +1,4 @@
-import type { EventBinding, MenuProfile } from "../lib/types";
+import type { EventBinding, MenuProfile, StringEntry } from "../lib/types";
 import {
   TRIGGER_OPTIONS,
   TARGET_TYPE_OPTIONS,
@@ -17,6 +17,7 @@ interface Props {
   tableInstCount: number;
   menuInstCount: number;
   menuProfiles: MenuProfile[];
+  strings: StringEntry[];
   onChange: (bindings: EventBinding[]) => void;
 }
 
@@ -27,6 +28,7 @@ const EMPTY_BINDING: EventBinding = {
   target_type: 4,
   target_inst: 0,
   action: 1,
+  param: 0,
 };
 
 function getInstCount(targetType: number, props: Props): number {
@@ -49,7 +51,7 @@ function isButtonTrigger(trigger: number): boolean {
 }
 
 export default function EventEditor(props: Props) {
-  const { bindings, buttonCount, menuProfiles, onChange } = props;
+  const { bindings, buttonCount, menuProfiles, strings, onChange } = props;
 
   const addBinding = () => {
     if (bindings.length >= MAX_BINDINGS) return;
@@ -102,6 +104,7 @@ export default function EventEditor(props: Props) {
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Target</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Inst</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Action</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }}>Param</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
@@ -206,6 +209,22 @@ export default function EventEditor(props: Props) {
                         })
                       )}
                     </select>
+                  </td>
+                  <td style={{ padding: "4px 6px" }}>
+                    {b.action === 10 ? (
+                      <select value={b.param}
+                        onChange={(e) => updateBinding(i, "param", Number(e.target.value))}>
+                        {strings.length === 0 ? (
+                          <option value={0}>(none)</option>
+                        ) : (
+                          strings.map((s, si) => (
+                            <option key={si} value={si}>#{si}: "{s.text}"</option>
+                          ))
+                        )}
+                      </select>
+                    ) : (
+                      <span style={{ color: "#888" }}>—</span>
+                    )}
                   </td>
                   <td style={{ padding: "4px 6px", textAlign: "center" }}>
                     <button onClick={() => removeBinding(i)} title="删除"
