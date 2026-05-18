@@ -194,6 +194,21 @@ pub struct StringEntry {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ActionStep {
+    pub action: u8,
+    pub target_type: u8,
+    pub target_inst: u8,
+    #[serde(default)]
+    pub param: u8,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ActionSequence {
+    pub step_count: u8,
+    pub steps: Vec<ActionStep>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProfileSet {
     pub wave_inst_count: u16,
     pub bar_inst_count: u16,
@@ -218,6 +233,10 @@ pub struct ProfileSet {
     pub string_count: u8,
     #[serde(default)]
     pub strings: Vec<StringEntry>,
+    #[serde(default)]
+    pub sequence_count: u8,
+    #[serde(default)]
+    pub sequences: Vec<ActionSequence>,
 }
 
 fn default_page_count() -> u8 { 1 }

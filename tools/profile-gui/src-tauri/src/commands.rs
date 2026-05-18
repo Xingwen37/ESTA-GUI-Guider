@@ -236,6 +236,29 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         })
         .collect();
 
+    let sequences_for_template: Vec<serde_json::Value> = data
+        .sequences
+        .iter()
+        .map(|seq| {
+            let steps: Vec<serde_json::Value> = seq
+                .steps
+                .iter()
+                .map(|step| {
+                    json!({
+                        "action": step.action,
+                        "target_type": step.target_type,
+                        "target_inst": step.target_inst,
+                        "param": step.param,
+                    })
+                })
+                .collect();
+            json!({
+                "step_count": seq.step_count,
+                "steps": steps,
+            })
+        })
+        .collect();
+
     let mut ctx = tera::Context::new();
     ctx.insert("wave_inst_count", &data.wave_inst_count);
     ctx.insert("bar_inst_count", &data.bar_inst_count);
@@ -251,6 +274,8 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
     ctx.insert("bindings", &bindings_for_template);
     ctx.insert("string_count", &data.string_count);
     ctx.insert("strings", &strings_for_template);
+    ctx.insert("sequence_count", &data.sequence_count);
+    ctx.insert("sequences", &sequences_for_template);
 
     let c_code = state
         .tera
@@ -430,6 +455,8 @@ fn default_profile() -> ProfileSet {
         ],
         string_count: 0,
         strings: vec![],
+        sequence_count: 0,
+        sequences: vec![],
     }
 }
 

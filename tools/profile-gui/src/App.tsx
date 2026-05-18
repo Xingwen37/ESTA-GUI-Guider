@@ -5,6 +5,7 @@ import TableEditor from "./components/TableEditor";
 import MenuEditor from "./components/MenuEditor";
 import EventEditor from "./components/EventEditor";
 import StringTableEditor from "./components/StringTableEditor";
+import SequenceEditor from "./components/SequenceEditor";
 import * as api from "./lib/tauri-api";
 import type { ProfileSet, WaveProfile, BarChartProfile, TableProfile, MenuProfile } from "./lib/types";
 import {
@@ -359,6 +360,8 @@ export default function App() {
     bindings: data.bindings ?? [],
     string_count: data.string_count ?? 0,
     strings: data.strings ?? [],
+    sequence_count: data.sequence_count ?? 0,
+    sequences: data.sequences ?? [],
   });
 
   const validateAll = (): string | null => {
@@ -637,6 +640,7 @@ export default function App() {
             menuInstCount={data.menu_inst_count}
             menuProfiles={data.menu_profiles ?? []}
             strings={data.strings ?? []}
+            sequences={data.sequences ?? []}
             onChange={(bindings) => setData({ ...data, bindings, binding_count: bindings.length })}
           />
           <StringTableEditor
@@ -644,6 +648,14 @@ export default function App() {
             tableInstCount={data.table_inst_count}
             menuInstCount={data.menu_inst_count}
             onChange={(strings) => setData({ ...data, strings, string_count: strings.length })}
+          />
+          <SequenceEditor
+            sequences={data.sequences ?? []}
+            waveInstCount={data.wave_inst_count}
+            barInstCount={data.bar_inst_count}
+            tableInstCount={data.table_inst_count}
+            menuInstCount={data.menu_inst_count}
+            onChange={(sequences) => setData({ ...data, sequences, sequence_count: sequences.length })}
           />
         </>
         ) : totalComponentTabs === 0 ? (

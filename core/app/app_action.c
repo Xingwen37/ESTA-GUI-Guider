@@ -144,6 +144,46 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
     }
 }
 
+static bool action_sequence(const ESTA_Event *evt, void *user_data) {
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL) return false;
+    uint8_t seq_idx = ctx->param;
+    const ESTA_ProfileSet_TypeDef *p = s->page_state.profiles;
+    if (seq_idx >= p->sequence_count) return false;
+
+    const ESTA_ActionSequence_TypeDef *seq = &p->sequences[seq_idx];
+    bool any = false;
+    for (uint8_t i = 0; i < seq->step_count; i++) {
+        const ESTA_ActionStep_TypeDef *step = &seq->steps[i];
+        ESTA_EventHandler h = App_ActionGetHandler((ESTA_ActionType)step->action);
+        if (h == NULL) continue;
+        App_BindingContext step_ctx = {
+            .app = ctx->app,
+            .target_type = step->target_type,
+            .target_inst = step->target_inst,
+            .param = step->param,
+        };
+        if (h(evt, &step_ctx)) any = true;
+    }
+    return any;
+}
+
+static ESTA_EventHandler g_custom_actions[ESTA_CUSTOM_ACTION_MAX];
+
+static bool action_custom_dispatch(const ESTA_Event *evt, void *user_data) {
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    uint8_t id = ctx->param;
+    if (id >= ESTA_CUSTOM_ACTION_MAX || g_custom_actions[id] == NULL) return false;
+    return g_custom_actions[id](evt, user_data);
+}
+
+void App_RegisterCustomAction(uint8_t custom_id, ESTA_EventHandler handler) {
+    if (custom_id < ESTA_CUSTOM_ACTION_MAX) {
+        g_custom_actions[custom_id] = handler;
+    }
+}
+
 static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_NONE]          = NULL,
     [ESTA_ACTION_PAGE_NEXT]     = action_page_next,
@@ -156,12 +196,16 @@ static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_MENU_BACK]     = action_menu_back,
     [ESTA_ACTION_FLAG_SET]      = action_flag_set,
     [ESTA_ACTION_TEXT_SET]      = action_text_set,
+    [ESTA_ACTION_SEQUENCE]      = action_sequence,
 };
 
 #define ACTION_TABLE_SIZE (sizeof(g_action_table) / sizeof(g_action_table[0]))
 
 ESTA_EventHandler App_ActionGetHandler(ESTA_ActionType action) {
-    if (action == ESTA_ACTION_CUSTOM || (unsigned)action >= ACTION_TABLE_SIZE) {
+    if (action == ESTA_ACTION_CUSTOM) {
+        return action_custom_dispatch;
+    }
+    if ((unsigned)action >= ACTION_TABLE_SIZE) {
         return NULL;
     }
     return g_action_table[action];

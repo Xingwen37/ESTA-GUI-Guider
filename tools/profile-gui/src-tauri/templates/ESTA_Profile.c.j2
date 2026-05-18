@@ -144,6 +144,19 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 {% for s in strings %}
         { .target_type = {{ s.target_type }}, .target_inst = {{ s.target_inst }}, .sub_addr = {{ s.sub_addr }}, .text = "{{ s.text }}" }{% if not loop.last %},{% endif %}
 {% endfor %}
+    },
+    .sequence_count = {{ sequence_count }},
+    .sequences = {
+{% for seq in sequences %}
+        {
+            .step_count = {{ seq.step_count }},
+            .steps = {
+{% for step in seq.steps %}
+                { .action = {{ step.action }}, .target_type = {{ step.target_type }}, .target_inst = {{ step.target_inst }}, .param = {{ step.param }} }{% if not loop.last %},{% endif %}
+{% endfor %}
+            }
+        }{% if not loop.last %},{% endif %}
+{% endfor %}
     }
 };
 

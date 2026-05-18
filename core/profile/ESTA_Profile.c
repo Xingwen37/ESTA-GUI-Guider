@@ -247,7 +247,9 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 
         { .target_type = 2, .target_inst = 0, .sub_addr = 0, .text = "111" }
 
-    }
+    },
+    .sequence_count = 0,
+    .sequences = {}
 };
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void) {

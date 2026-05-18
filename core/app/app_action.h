@@ -6,6 +6,7 @@
 #define ESTA_PROFILE_MAX_BINDINGS 8
 #define ESTA_SOURCE_ANY 0xFF
 #define ESTA_TRIGGER_ID_ANY 0xFFFF
+#define ESTA_CUSTOM_ACTION_MAX 8
 
 typedef enum {
     ESTA_TARGET_WAVE = 0,
@@ -29,6 +30,7 @@ typedef enum {
     ESTA_ACTION_MENU_BACK     = 8,
     ESTA_ACTION_FLAG_SET      = 9,
     ESTA_ACTION_TEXT_SET      = 10,
+    ESTA_ACTION_SEQUENCE      = 11,
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 
@@ -50,5 +52,6 @@ typedef struct {
 } App_BindingContext;
 
 ESTA_EventHandler App_ActionGetHandler(ESTA_ActionType action);
+void App_RegisterCustomAction(uint8_t custom_id, ESTA_EventHandler handler);
 
 #endif

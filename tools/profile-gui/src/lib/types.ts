@@ -124,6 +124,18 @@ export interface StringEntry {
   text: string;
 }
 
+export interface ActionStep {
+  action: number;
+  target_type: number;
+  target_inst: number;
+  param: number;
+}
+
+export interface ActionSequence {
+  step_count: number;
+  steps: ActionStep[];
+}
+
 export interface ProfileSet {
   wave_inst_count: number;
   bar_inst_count: number;
@@ -139,6 +151,8 @@ export interface ProfileSet {
   bindings: EventBinding[];
   string_count: number;
   strings: StringEntry[];
+  sequence_count: number;
+  sequences: ActionSequence[];
 }
 
 export const WAVE_THEME_OPTIONS = [
@@ -205,6 +219,8 @@ export const MAX_MENU_DEPTH = 8;
 export const MAX_BINDINGS = 8;
 export const MAX_STRING_ENTRIES = 16;
 export const MAX_STRING_LEN = 16;
+export const MAX_SEQUENCES = 4;
+export const MAX_SEQUENCE_STEPS = 4;
 
 export const TRIGGER_OPTIONS = [
   [1, "BUTTON_PRESS"],
@@ -236,16 +252,18 @@ export const ACTION_TYPE_OPTIONS = [
   [8, "MENU_BACK"],
   [9, "FLAG_SET"],
   [10, "TEXT_SET"],
+  [11, "SEQUENCE"],
+  [255, "CUSTOM"],
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {
-  0: [3, 4],             // WAVE: THEME_TOGGLE, WAVE_REDRAW
-  1: [3],                // BARCHART: THEME_TOGGLE
-  2: [10],               // TABLE: TEXT_SET
-  3: [5, 6, 7, 8, 10],  // MENU: UP, DOWN, ENTER, BACK, TEXT_SET
-  4: [1, 2],             // PAGE: PAGE_NEXT, PAGE_PREV
-  5: [3],                // GLOBAL: THEME_TOGGLE
-  6: [9],             // FLAG: FLAG_SET
+  0: [3, 4, 11, 255],             // WAVE: THEME_TOGGLE, WAVE_REDRAW, SEQUENCE, CUSTOM
+  1: [3, 11, 255],                // BARCHART: THEME_TOGGLE, SEQUENCE, CUSTOM
+  2: [10, 11, 255],               // TABLE: TEXT_SET, SEQUENCE, CUSTOM
+  3: [5, 6, 7, 8, 10, 11, 255],  // MENU: UP, DOWN, ENTER, BACK, TEXT_SET, SEQUENCE, CUSTOM
+  4: [1, 2, 11, 255],             // PAGE: PAGE_NEXT, PAGE_PREV, SEQUENCE, CUSTOM
+  5: [3, 11, 255],                // GLOBAL: THEME_TOGGLE, SEQUENCE, CUSTOM
+  6: [9, 11, 255],                // FLAG: FLAG_SET, SEQUENCE, CUSTOM
 };
 
 export const SOURCE_ANY = 0xFF;

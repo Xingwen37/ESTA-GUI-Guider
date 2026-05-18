@@ -17,6 +17,8 @@
 #define ESTA_PROFILE_MAX_MENU_INST 4
 #define ESTA_MAX_STRING_ENTRIES 16
 #define ESTA_STRING_MAX_LEN 16
+#define ESTA_MAX_SEQUENCES 4
+#define ESTA_MAX_SEQUENCE_STEPS 4
 
 typedef struct {
     uint8_t  target_type;
@@ -24,6 +26,18 @@ typedef struct {
     uint8_t  sub_addr;
     char     text[ESTA_STRING_MAX_LEN + 1];
 } ESTA_StringEntry_TypeDef;
+
+typedef struct {
+    uint8_t action;
+    uint8_t target_type;
+    uint8_t target_inst;
+    uint8_t param;
+} ESTA_ActionStep_TypeDef;
+
+typedef struct {
+    uint8_t step_count;
+    ESTA_ActionStep_TypeDef steps[ESTA_MAX_SEQUENCE_STEPS];
+} ESTA_ActionSequence_TypeDef;
 
 typedef struct {
     uint16_t x_origin;
@@ -136,6 +150,8 @@ typedef struct {
     ESTA_EventBinding_TypeDef bindings[ESTA_PROFILE_MAX_BINDINGS];
     uint8_t string_count;
     ESTA_StringEntry_TypeDef strings[ESTA_MAX_STRING_ENTRIES];
+    uint8_t sequence_count;
+    ESTA_ActionSequence_TypeDef sequences[ESTA_MAX_SEQUENCES];
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);

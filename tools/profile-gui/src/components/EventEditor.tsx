@@ -1,4 +1,4 @@
-import type { EventBinding, MenuProfile, StringEntry } from "../lib/types";
+import type { ActionSequence, EventBinding, MenuProfile, StringEntry } from "../lib/types";
 import {
   TRIGGER_OPTIONS,
   TARGET_TYPE_OPTIONS,
@@ -7,6 +7,7 @@ import {
   SOURCE_ANY,
   TRIGGER_ID_ANY,
   MAX_BINDINGS,
+  MAX_SEQUENCE_STEPS,
 } from "../lib/types";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
   menuInstCount: number;
   menuProfiles: MenuProfile[];
   strings: StringEntry[];
+  sequences: ActionSequence[];
   onChange: (bindings: EventBinding[]) => void;
 }
 
@@ -51,7 +53,7 @@ function isButtonTrigger(trigger: number): boolean {
 }
 
 export default function EventEditor(props: Props) {
-  const { bindings, buttonCount, menuProfiles, strings, onChange } = props;
+  const { bindings, buttonCount, menuProfiles, strings, sequences, onChange } = props;
 
   const addBinding = () => {
     if (bindings.length >= MAX_BINDINGS) return;
@@ -222,6 +224,21 @@ export default function EventEditor(props: Props) {
                           ))
                         )}
                       </select>
+                    ) : b.action === 11 ? (
+                      <select value={b.param}
+                        onChange={(e) => updateBinding(i, "param", Number(e.target.value))}>
+                        {sequences.length === 0 ? (
+                          <option value={0}>(none)</option>
+                        ) : (
+                          sequences.map((_, si) => (
+                            <option key={si} value={si}>Seq #{si} ({sequences[si].step_count} steps)</option>
+                          ))
+                        )}
+                      </select>
+                    ) : b.action === 255 ? (
+                      <input type="number" value={b.param} min={0} max={MAX_SEQUENCE_STEPS - 1}
+                        style={{ width: 50 }} title="Custom ID (0~7)"
+                        onChange={(e) => updateBinding(i, "param", Math.min(7, Number(e.target.value) || 0))} />
                     ) : (
                       <span style={{ color: "#888" }}>—</span>
                     )}

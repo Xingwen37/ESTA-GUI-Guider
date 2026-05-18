@@ -345,5 +345,7 @@
       "sub_addr": 0,
       "text": "111"
     }
-  ]
+  ],
+  "sequence_count": 0,
+  "sequences": []
 }
