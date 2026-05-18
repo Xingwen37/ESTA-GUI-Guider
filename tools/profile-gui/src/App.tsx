@@ -645,8 +645,6 @@ export default function App() {
           />
           <StringTableEditor
             strings={data.strings ?? []}
-            tableInstCount={data.table_inst_count}
-            menuInstCount={data.menu_inst_count}
             onChange={(strings) => setData({ ...data, strings, string_count: strings.length })}
           />
           <SequenceEditor

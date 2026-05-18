@@ -228,8 +228,6 @@ pub fn save_profile(state: State<AppState>, data: ProfileSet) -> Result<(), Stri
         .iter()
         .map(|s| {
             json!({
-                "target_type": s.target_type,
-                "target_inst": s.target_inst,
                 "sub_addr": s.sub_addr,
                 "text": s.text,
             })

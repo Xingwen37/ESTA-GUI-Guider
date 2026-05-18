@@ -337,7 +337,7 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 
 ## 字符串表系统
 
-字符串表是 Profile 中的静态数据池，供 TEXT_SET action 引用。每个条目包含目标地址和预定义文本。
+字符串表是 Profile 中的静态数据池，供 TEXT_SET action 引用。每个条目仅存储子地址和文本，目标组件信息由 binding（或 sequence 步骤）的 `target_type` / `target_inst` 决定，避免冗余并支持同一条目被不同 target 的 binding 复用。
 
 ### 数据结构
 
@@ -346,8 +346,6 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 #define ESTA_STRING_MAX_LEN     16
 
 typedef struct {
-    uint8_t  target_type;   // ESTA_TargetType
-    uint8_t  target_inst;   // 组件实例
     uint8_t  sub_addr;      // 组件内子地址（TABLE: row*MAX_COLS+col, MENU: item_idx）
     char     text[ESTA_STRING_MAX_LEN + 1];
 } ESTA_StringEntry_TypeDef;
@@ -360,14 +358,14 @@ typedef struct {
     uint8_t  trigger;
     uint8_t  source_id;
     uint16_t trigger_id;
-    uint8_t  target_type;
-    uint8_t  target_inst;
-    uint8_t  action;       // = ESTA_ACTION_TEXT_SET (10)
-    uint8_t  param;        // 字符串表索引
+    uint8_t  target_type;   // 决定 sub_addr 的解释方式
+    uint8_t  target_inst;   // 决定写入哪个组件实例
+    uint8_t  action;        // = ESTA_ACTION_TEXT_SET (10)
+    uint8_t  param;         // 字符串表索引
 } ESTA_EventBinding_TypeDef;
 ```
 
-当 `action == TEXT_SET` 时，handler 从 `profiles->strings[param]` 取出条目，根据 `target_type` 分发到对应组件的更新 API。
+当 `action == TEXT_SET` 时，handler 从 `profiles->strings[param]` 取出条目，结合 `ctx->target_type` 和 `ctx->target_inst` 分发到对应组件的更新 API。
 
 ### Handler 实现
 
@@ -378,19 +376,22 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
     App_MainState *s = (App_MainState *)ctx->app;
     if (s == NULL) return false;
 
-    const ESTA_StringEntry_TypeDef *entry = &s->page_state.profiles->strings[ctx->param];
+    uint8_t str_idx = ctx->param;
+    const ESTA_ProfileSet_TypeDef *p = s->page_state.profiles;
+    if (str_idx >= p->string_count) return false;
+    const ESTA_StringEntry_TypeDef *entry = &p->strings[str_idx];
 
-    switch (entry->target_type) {
+    switch (ctx->target_type) {          // 从 binding context 取，不从 entry 取
         case ESTA_TARGET_TABLE: {
             uint8_t row = entry->sub_addr / TABLE_MAX_COLS;
             uint8_t col = entry->sub_addr % TABLE_MAX_COLS;
-            TABLE_UpdateText(entry->target_inst, row, col, entry->text);
-            TABLE_ReDraw(entry->target_inst);
+            TABLE_UpdateText(ctx->target_inst, row, col, entry->text);
+            TABLE_ReDraw(ctx->target_inst);
             return true;
         }
         case ESTA_TARGET_MENU: {
-            MENU_UpdateItemLabel(entry->target_inst, entry->sub_addr, entry->text);
-            MENU_ReDraw(entry->target_inst);
+            MENU_UpdateItemLabel(ctx->target_inst, entry->sub_addr, entry->text);
+            MENU_ReDraw(ctx->target_inst);
             return true;
         }
         default: return false;

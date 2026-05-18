@@ -11,7 +11,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .menu_inst_count = 1,
     .button_count = 6,
     .page_count = 1,
-    .binding_count = 5,
+    .binding_count = 2,
     .wave_profiles = {
 
         {
@@ -231,25 +231,25 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 
-        { .trigger = 6, .source_id = 1, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 3, .param = 0 },
+        { .trigger = 1, .source_id = 0, .trigger_id = 65535, .target_type = 2, .target_inst = 0, .action = 10, .param = 1 },
 
-        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0 },
-
-        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 2, .action = 9, .param = 0 },
-
-        { .trigger = 6, .source_id = 2, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0 },
-
-        { .trigger = 1, .source_id = 0, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 10, .param = 0 }
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 3, .target_inst = 0, .action = 10, .param = 0 }
 
     },
-    .string_count = 1,
+    .string_count = 3,
     .strings = {
 
-        { .target_type = 2, .target_inst = 0, .sub_addr = 0, .text = "111" }
+        { .sub_addr = 3, .text = "223" },
+
+        { .sub_addr = 8, .text = "333" },
+
+        { .sub_addr = 0, .text = "112" }
 
     },
     .sequence_count = 0,
-    .sequences = {}
+    .sequences = {
+
+    }
 };
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void) {
@@ -407,6 +407,7 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
         g_binding_ctx[i].app = user_data;
         g_binding_ctx[i].target_type = b->target_type;
         g_binding_ctx[i].target_inst = b->target_inst;
+        g_binding_ctx[i].param = b->param;
 
         App_Subscribe((ESTA_EventType)b->trigger,
                       b->source_id,

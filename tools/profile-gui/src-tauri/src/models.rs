@@ -187,8 +187,6 @@ pub struct EventBinding {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StringEntry {
-    pub target_type: u8,
-    pub target_inst: u8,
     pub sub_addr: u8,
     pub text: String,
 }

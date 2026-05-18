@@ -118,8 +118,6 @@ export interface EventBinding {
 }
 
 export interface StringEntry {
-  target_type: number;
-  target_inst: number;
   sub_addr: number;
   text: string;
 }

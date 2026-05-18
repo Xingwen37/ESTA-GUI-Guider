@@ -126,17 +126,17 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 
     const ESTA_StringEntry_TypeDef *entry = &p->strings[str_idx];
 
-    switch (entry->target_type) {
+    switch (ctx->target_type) {
         case ESTA_TARGET_TABLE: {
             uint8_t row = entry->sub_addr / TABLE_MAX_COLS;
             uint8_t col = entry->sub_addr % TABLE_MAX_COLS;
-            TABLE_UpdateText(entry->target_inst, row, col, entry->text);
-            TABLE_ReDraw(entry->target_inst);
+            TABLE_UpdateText(ctx->target_inst, row, col, entry->text);
+            TABLE_ReDraw(ctx->target_inst);
             return true;
         }
         case ESTA_TARGET_MENU: {
-            MENU_UpdateItemLabel(entry->target_inst, entry->sub_addr, entry->text);
-            MENU_ReDraw(entry->target_inst);
+            MENU_UpdateItemLabel(ctx->target_inst, entry->sub_addr, entry->text);
+            MENU_ReDraw(ctx->target_inst);
             return true;
         }
         default:

@@ -21,9 +21,7 @@
 #define ESTA_MAX_SEQUENCE_STEPS 4
 
 typedef struct {
-    uint8_t  target_type;
-    uint8_t  target_inst;
-    uint8_t  sub_addr;
+    uint8_t  sub_addr;      /* TABLE: row*MAX_COLS+col, MENU: item_idx */
     char     text[ESTA_STRING_MAX_LEN + 1];
 } ESTA_StringEntry_TypeDef;
 

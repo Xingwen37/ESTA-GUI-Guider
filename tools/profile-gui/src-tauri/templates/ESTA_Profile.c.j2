@@ -142,7 +142,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .string_count = {{ string_count }},
     .strings = {
 {% for s in strings %}
-        { .target_type = {{ s.target_type }}, .target_inst = {{ s.target_inst }}, .sub_addr = {{ s.sub_addr }}, .text = "{{ s.text }}" }{% if not loop.last %},{% endif %}
+        { .sub_addr = {{ s.sub_addr }}, .text = "{{ s.text }}" }{% if not loop.last %},{% endif %}
 {% endfor %}
     },
     .sequence_count = {{ sequence_count }},
@@ -315,6 +315,7 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
         g_binding_ctx[i].app = user_data;
         g_binding_ctx[i].target_type = b->target_type;
         g_binding_ctx[i].target_inst = b->target_inst;
+        g_binding_ctx[i].param = b->param;
 
         App_Subscribe((ESTA_EventType)b->trigger,
                       b->source_id,
