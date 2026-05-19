@@ -645,6 +645,10 @@ export default function App() {
           />
           <StringTableEditor
             strings={data.strings ?? []}
+            bindings={data.bindings ?? []}
+            sequences={data.sequences ?? []}
+            tableProfiles={data.table_profiles ?? []}
+            menuProfiles={data.menu_profiles ?? []}
             onChange={(strings) => setData({ ...data, strings, string_count: strings.length })}
           />
           <SequenceEditor

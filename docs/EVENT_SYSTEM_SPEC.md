@@ -75,6 +75,7 @@ typedef struct {
     uint8_t  target_type;  // ESTA_TargetType
     uint8_t  target_inst;  // 目标实例索引
     uint8_t  action;       // ESTA_ActionType
+    uint8_t  param;        // action 参数（TEXT_SET: 字符串索引；SEQUENCE: 序列索引；CUSTOM: custom_id）
 } ESTA_EventBinding_TypeDef;
 ```
 
@@ -86,8 +87,9 @@ typedef struct {
 | `source_id` | 事件源（按钮 ID / MENU 实例） | `0xFF` = 匹配任意源 |
 | `trigger_id` | 事件语义 ID（MENU 项的 event_id） | `0xFFFF` = 匹配任意 ID |
 | `target_type` | 动作目标组件类型 | — |
-| `target_inst` | 目标组件实例索引 | PAGE/GLOBAL 时为 0 |
+| `target_inst` | 目标组件实例索引 | PAGE/GLOBAL 时为 0；SEQUENCE/CUSTOM 时无意义（填 0） |
 | `action` | 执行的动作 | — |
+| `param` | action 参数 | TEXT_SET: 字符串表索引；SEQUENCE: 序列索引；CUSTOM: custom_id (0~7)；其他: 0 |
 
 ### 各事件类型的字段映射
 
@@ -131,7 +133,8 @@ typedef enum {
     ESTA_ACTION_MENU_BACK     = 8,
     ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
     ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
-    ESTA_ACTION_CUSTOM        = 0xFF
+    ESTA_ACTION_SEQUENCE      = 11,  // 序列：触发一组子动作
+    ESTA_ACTION_CUSTOM        = 0xFF // 自定义：由用户注册的 handler
 } ESTA_ActionType;
 ```
 
@@ -139,13 +142,15 @@ typedef enum {
 
 | target_type | 可用 action |
 |-------------|------------|
-| WAVE (0) | THEME_TOGGLE, WAVE_REDRAW |
-| BARCHART (1) | THEME_TOGGLE |
-| TABLE (2) | TEXT_SET |
-| MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET |
-| PAGE (4) | PAGE_NEXT, PAGE_PREV |
-| GLOBAL (5) | THEME_TOGGLE |
-| FLAG (6) | FLAG_SET |
+| WAVE (0) | THEME_TOGGLE, WAVE_REDRAW, SEQUENCE, CUSTOM |
+| BARCHART (1) | THEME_TOGGLE, SEQUENCE, CUSTOM |
+| TABLE (2) | TEXT_SET, SEQUENCE, CUSTOM |
+| MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET, SEQUENCE, CUSTOM |
+| PAGE (4) | PAGE_NEXT, PAGE_PREV, SEQUENCE, CUSTOM |
+| GLOBAL (5) | THEME_TOGGLE, SEQUENCE, CUSTOM |
+| FLAG (6) | FLAG_SET, SEQUENCE, CUSTOM |
+
+> SEQUENCE 和 CUSTOM 对所有 target_type 均可用，因为实际目标由序列步骤或自定义 handler 内部决定。
 
 ## 分发机制
 
@@ -170,7 +175,7 @@ typedef struct {
     void *app;            // App_MainState 指针
     uint8_t target_type;  // ESTA_TargetType
     uint8_t target_inst;  // 目标实例索引
-    uint8_t param;        // action 参数（TEXT_SET: 字符串表索引）
+    uint8_t param;        // action 参数（TEXT_SET: 字符串表索引；SEQUENCE: 序列索引；CUSTOM: custom_id）
 } App_BindingContext;
 ```
 
@@ -191,15 +196,17 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 
 ```json
 {
-  "binding_count": 5,
+  "binding_count": 2,
   "bindings": [
     { "trigger": 1, "source_id": 1, "trigger_id": 65535, "target_type": 3, "target_inst": 0, "action": 5, "param": 0 },
     { "trigger": 1, "source_id": 0, "trigger_id": 65535, "target_type": 2, "target_inst": 0, "action": 10, "param": 0 }
   ],
   "string_count": 1,
   "strings": [
-    { "target_type": 2, "target_inst": 0, "sub_addr": 1, "text": "Running" }
-  ]
+    { "sub_addr": 1, "text": "Running" }
+  ],
+  "sequence_count": 0,
+  "sequences": []
 }
 ```
 
@@ -212,7 +219,10 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 },
 .string_count = 1,
 .strings = {
-    { .target_type = 2, .target_inst = 0, .sub_addr = 1, .text = "Running" }
+    { .sub_addr = 1, .text = "Running" }
+},
+.sequence_count = 0,
+.sequences = {
 }
 ```
 
@@ -330,6 +340,8 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 | 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, MENU_* | handler 直接执行效果 |
 | 延迟 | FLAG_SET | handler 仅设置标志，效果由外部消费 |
 | 参数化 | TEXT_SET | handler 从字符串表取数据，写入目标组件 |
+| 序列 | SEQUENCE | handler 依次执行 Profile 中定义的子动作步骤 |
+| 自定义 | CUSTOM | handler 分发到用户注册的函数（运行时注册） |
 
 ### 容量
 
@@ -413,17 +425,162 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体、队列、Emit 函数 |
 | C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT 转换 |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents |
-| C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table |
+| C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
 | C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
-| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry |
+| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
-| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings 数组 |
-| Rust 模型 | `src-tauri/src/models.rs` | EventBinding、StringEntry struct |
+| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences 数组 |
+| Rust 模型 | `src-tauri/src/models.rs` | EventBinding、StringEntry、ActionStep、ActionSequence struct |
 | Rust 命令 | `src-tauri/src/commands.rs` | 模板数据构建 |
-| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成 |
-| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry 接口、常量、约束表 |
-| React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器 |
-| React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器 |
+| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体） |
+| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry、ActionStep、ActionSequence 接口、常量、约束表 |
+| React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（param 列根据 action 类型切换 UI） |
+| React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器（sub_addr + text） |
+| React UI | `src/components/SequenceEditor.tsx` | 序列编辑器（序列列表 + 步骤列表） |
+
+## Action 序列系统（SEQUENCE）
+
+一条 binding 触发多个子动作。`param` 字段指向 Profile 中 `sequences[]` 数组的索引。
+
+### 数据结构
+
+```c
+#define ESTA_MAX_SEQUENCES      4
+#define ESTA_MAX_SEQUENCE_STEPS 4
+
+typedef struct {
+    uint8_t action;
+    uint8_t target_type;
+    uint8_t target_inst;
+    uint8_t param;
+} ESTA_ActionStep_TypeDef;
+
+typedef struct {
+    uint8_t step_count;
+    ESTA_ActionStep_TypeDef steps[ESTA_MAX_SEQUENCE_STEPS];
+} ESTA_ActionSequence_TypeDef;
+
+// 在 ESTA_ProfileSet_TypeDef 中：
+uint8_t sequence_count;
+ESTA_ActionSequence_TypeDef sequences[ESTA_MAX_SEQUENCES];
+```
+
+每个步骤拥有独立的 `target_type`、`target_inst`、`param`，与触发 binding 的 target 无关。
+
+### Handler 实现
+
+```c
+static bool action_sequence(const ESTA_Event *evt, void *user_data) {
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL) return false;
+    uint8_t seq_idx = ctx->param;
+    const ESTA_ProfileSet_TypeDef *p = s->page_state.profiles;
+    if (seq_idx >= p->sequence_count) return false;
+    const ESTA_ActionSequence_TypeDef *seq = &p->sequences[seq_idx];
+    bool any = false;
+    for (uint8_t i = 0; i < seq->step_count; i++) {
+        const ESTA_ActionStep_TypeDef *step = &seq->steps[i];
+        ESTA_EventHandler h = App_ActionGetHandler((ESTA_ActionType)step->action);
+        if (h == NULL) continue;
+        App_BindingContext step_ctx = {
+            .app = ctx->app,
+            .target_type = step->target_type,
+            .target_inst = step->target_inst,
+            .param = step->param,
+        };
+        if (h(evt, &step_ctx)) any = true;
+    }
+    return any;
+}
+```
+
+### Profile JSON 格式
+
+```json
+{
+  "binding_count": 1,
+  "bindings": [
+    { "trigger": 1, "source_id": 0, "trigger_id": 65535,
+      "target_type": 0, "target_inst": 0, "action": 11, "param": 0 }
+  ],
+  "sequence_count": 1,
+  "sequences": [
+    {
+      "step_count": 2,
+      "steps": [
+        { "action": 3, "target_type": 0, "target_inst": 0, "param": 0 },
+        { "action": 10, "target_type": 2, "target_inst": 0, "param": 1 }
+      ]
+    }
+  ]
+}
+```
+
+含义：Button 0 按下 → 执行序列 #0 → ① WAVE #0 切换主题；② TABLE #0 写入字符串表 #1。
+
+> binding 的 `target_type`/`target_inst` 在 SEQUENCE action 下无实际意义（步骤各自携带目标信息），填 0 即可。
+
+---
+
+## 自定义 Action 注册（CUSTOM）
+
+允许用户在运行时注册自己的 handler，无需修改 Profile 或 action 枚举。
+
+### API
+
+```c
+// core/app/app_action.h
+#define ESTA_CUSTOM_ACTION_MAX 8
+
+void App_RegisterCustomAction(uint8_t custom_id, ESTA_EventHandler handler);
+```
+
+`custom_id` 范围 0~7，对应 binding 的 `param` 字段。
+
+### 使用方式
+
+```c
+// 用户代码（MCU 初始化阶段）
+static bool my_handler(const ESTA_Event *evt, void *user_data) {
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    // ctx->target_type / ctx->target_inst 来自 binding 配置
+    // 执行自定义逻辑...
+    return true;
+}
+
+App_RegisterCustomAction(0, my_handler);  // 注册为 custom_id = 0
+```
+
+对应 binding 配置：
+
+```json
+{ "trigger": 1, "source_id": 2, "trigger_id": 65535,
+  "target_type": 2, "target_inst": 0, "action": 255, "param": 0 }
+```
+
+含义：Button 2 按下 → 调用 custom_id=0 的 handler，target 为 TABLE #0。
+
+### 分发机制
+
+```c
+static ESTA_EventHandler g_custom_actions[ESTA_CUSTOM_ACTION_MAX];
+
+static bool action_custom_dispatch(const ESTA_Event *evt, void *user_data) {
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    uint8_t id = ctx->param;
+    if (id >= ESTA_CUSTOM_ACTION_MAX || g_custom_actions[id] == NULL) return false;
+    return g_custom_actions[id](evt, user_data);
+}
+```
+
+`App_ActionGetHandler(ESTA_ACTION_CUSTOM)` 返回 `action_custom_dispatch`（而非 NULL），由它根据 `ctx->param` 路由到具体 handler。
+
+### 容量
+
+`ESTA_CUSTOM_ACTION_MAX = 8`，custom_id 范围 0~7。
+
+---
 
 ## 扩展指南
 
@@ -433,6 +590,8 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 2. `app_action.c`：实现 handler 函数，加入 `g_action_table`
 3. `types.ts`：`ACTION_TYPE_OPTIONS` 新增选项，`VALID_ACTIONS` 更新约束
 4. 无需改动 dispatch 逻辑或 binding 结构体
+
+> 若新 action 需要 `param` 字段携带额外信息，在 `EventEditor.tsx` 的 param 列中为该 action 添加对应的 UI 控件（参考 TEXT_SET 的字符串下拉、SEQUENCE 的序列下拉、CUSTOM 的数字输入）。
 
 ### 添加新事件类型
 
