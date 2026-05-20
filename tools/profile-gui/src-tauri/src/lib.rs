@@ -1,7 +1,13 @@
 mod commands;
+mod defaults;
 mod models;
+mod plugin;
+mod plugins;
+mod registry;
+mod util;
 
 use commands::AppState;
+use registry::Registry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,14 +28,24 @@ pub fn run() {
         }
     };
 
+    let mut registry = Registry::new();
+    registry.register(Box::new(plugins::wave::WavePlugin));
+    registry.register(Box::new(plugins::bar::BarChartPlugin));
+    registry.register(Box::new(plugins::table::TablePlugin));
+    registry.register(Box::new(plugins::menu::MenuPlugin));
+
     tauri::Builder::default()
-        .manage(AppState { repo_root, tera })
+        .manage(AppState {
+            repo_root,
+            tera,
+            registry,
+        })
         .invoke_handler(tauri::generate_handler![
-            commands::load_profile,
-            commands::save_profile,
-            commands::build_simulator,
-            commands::run_simulator,
-            commands::preview_simulator,
+            commands::profile_io::load_profile,
+            commands::profile_io::save_profile,
+            commands::build::build_simulator,
+            commands::build::run_simulator,
+            commands::build::preview_simulator,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

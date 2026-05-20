@@ -1,6 +1,6 @@
 # TL-ESTA 新 UI 组件集成规范
 
-版本：v1.0
+版本：v2.0
 适用范围：为代码配置器、生成器与仿真器添加新 UI 组件支持的全部步骤
 参考实现：WAVE（第一个组件）、BARCHART（第二个组件，验证了集成模式）
 
@@ -19,9 +19,11 @@
                        │ invoke("save_profile", { data })
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Rust 后端 (tools/profile-gui/src-tauri/)                     │
-│   models.rs → commands.rs → Tera 模板渲染                    │
-│   ProfileSet → json!({...}) 上下文 → ESTA_Profile.c.j2      │
+│ Rust 后端 (tools/profile-gui/src-tauri/src/)                 │
+│   Plugin 架构 (v2.0):                                       │
+│   plugins/xxx.rs (模型+impl) → registry.rs →                 │
+│   commands/profile_io.rs (注册表驱动) → Tera 模板渲染         │
+│   ProfileSet(HashMap) → fill_template_context() → 模板       │
 └──────────────────────┬──────────────────────────────────────┘
                        │ 写入文件
                        ▼
@@ -45,13 +47,16 @@
 | C-仿真 | `simulator/sim_scenario.h` | 修改 | +2 行 |
 | C-仿真 | `simulator/sim_scenario.c` | 修改 | +15 行 |
 | C-仿真 | `simulator/main.c` | 修改 | +25 行 |
-| Rust | `src-tauri/src/models.rs` | 修改 | +13 行 |
-| Rust | `src-tauri/src/commands.rs` | 修改 | +16 行 |
+| Rust | `src-tauri/src/plugins/bar.rs` | **新建**（自包含） | ~100 行 |
+| Rust | `src-tauri/src/plugins/mod.rs` | 修改 | +1 行 |
+| Rust | `src-tauri/src/lib.rs` | 修改（注册） | +1 行 |
 | Rust | `src-tauri/templates/ESTA_Profile.c.j2` | 修改 | +28 行 |
 | TS | `src/lib/types.ts` | 修改 | +10 行 |
 | TS | `src/components/XxxEditor.tsx` | **新建** | ~100 行 |
 | TS | `src/App.tsx` | 修改 | ~40 行 |
 | 可选 | `src/styles/app.css` | 修改 | 按需 |
+
+> **v2.0 插件化**：Rust 后端不再需要修改 `models.rs` 或 `commands.rs`。每个组件自包含在一个插件文件（`plugins/xxx.rs`）中，只需在 `plugins/mod.rs` + `lib.rs` 各加 1 行注册。
 
 ### 1.3 约定
 
@@ -275,98 +280,123 @@ if (SimScenario_NEWCOMP_GetData(&scenario, data_NEWCOMP, count)) {
 
 ---
 
-## 第三章：Rust 后端集成
+## 第三章：Rust 后端集成（插件化架构 v2.0）
 
-### 步骤 1：扩展数据模型
+Rust 后端已重构为插件架构。核心变化：
+- `ProfileSet.components` 使用 `#[serde(flatten)] HashMap<String, serde_json::Value>`（JSON 平铺格式不变）
+- 每个组件是一个**自包含插件文件**，实现 `ComponentPlugin` trait
+- `save_profile` 遍历注册表驱动模板上下文构建，不感知具体组件
+- 新增组件**无需修改** `models.rs`、`commands/`、`defaults.rs`
 
-**文件**：`src-tauri/src/models.rs`
+### 步骤 1：创建 Rust 插件文件
 
-(1) 在 `EstaProfile` 结构体末尾追加字段（在右花括号 `}` 之前）：
+**文件**：`src-tauri/src/plugins/newcomp.rs` — **新建**
+
+每个组件插件自包含：模型结构体 + `ComponentPlugin` trait 实现。
 
 ```rust
-pub struct EstaProfile {
-    // ... 现有 WAVE 字段 ...
-    pub is_auto_clear: bool,
-    // ... 现有 BARCHART 字段 ...
-    pub bar_theme_type: String,
-    // ---- NEWCOMP 字段 ----
-    pub newcomp_x_origin: u16,
-    pub newcomp_y_origin: u16,
-    pub newcomp_x_width: u16,
-    pub newcomp_y_width: u16,
-    pub newcomp_theme_type: String,
-    // ... 其他字段 ...
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use tera::Context;
+use crate::plugin::ComponentPlugin;
+
+// ── 数据模型 ──
+fn default_font_size() -> String { "ESTA_FONT_1608".into() }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NewCompProfile {
+    pub x_origin: u16,
+    pub y_origin: u16,
+    pub x_width: u16,
+    pub y_width: u16,
+    pub theme_type: String,
+    #[serde(default)]
+    pub page: u8,
+}
+
+// ── 插件实现 ──
+pub struct NewCompPlugin;
+
+impl ComponentPlugin for NewCompPlugin {
+    fn type_name(&self) -> &'static str { "newcomp" }
+
+    fn set_defaults(&self, components: &mut HashMap<String, Value>) {
+        let profile = NewCompProfile {
+            x_origin: 10, y_origin: 10, x_width: 200, y_width: 100,
+            theme_type: "NEWCOMP_THEME_DEFAULT".into(),
+            page: 0,
+        };
+        components.insert("newcomp_inst_count".into(), json!(1));
+        components.insert("newcomp_profiles".into(), json!([profile]));
+    }
+
+    fn fill_template_context(
+        &self,
+        components: &HashMap<String, Value>,
+        ctx: &mut Context,
+    ) {
+        if let Some(count) = components.get("newcomp_inst_count") {
+            ctx.insert("newcomp_inst_count", count);
+        }
+        if let Some(raw) = components.get("newcomp_profiles") {
+            let values: Vec<Value> = raw
+                .as_array().into_iter().flatten()
+                .map(|v| match serde_json::from_value::<NewCompProfile>(v.clone()) {
+                    Ok(p) => json!({
+                        "x_origin": p.x_origin,
+                        "y_origin": p.y_origin,
+                        "x_width": p.x_width,
+                        "y_width": p.y_width,
+                        "theme_type": p.theme_type,
+                        "page": p.page,
+                    }),
+                    Err(_) => v.clone(),
+                })
+                .collect();
+            ctx.insert("newcomp_profiles", &values);
+        }
+    }
+
+    // normalize() 可选覆盖，用于向后兼容（默认 no-op）
 }
 ```
 
-(2) 在 `ProfileSet` 结构体中追加实例计数：
+**关键约定**：
+- `type_name()` 返回值 = JSON/Tera 中字段前缀（`"newcomp"` → `newcomp_inst_count` / `newcomp_profiles`）
+- `set_defaults()` 插入 `{type}_inst_count` 和 `{type}_profiles` 到 components HashMap
+- `fill_template_context()` 将 HashMap 中的 Value 反序列化为类型化模型，再转换为 Tera 模板需要的 JSON 格式
+- `json!({...})` 内的字段名必须与 Tera 模板 `{{ p.xxx }}` 一致
 
+### 步骤 2：注册插件
+
+只需在两个文件各加 1 行：
+
+**(A)** `src-tauri/src/plugins/mod.rs`：
 ```rust
-pub struct ProfileSet {
-    pub inst_count: u16,
-    pub bar_inst_count: u16,
-    pub newcomp_inst_count: u16,   // 新增
-    pub profiles: Vec<EstaProfile>,
-}
+pub mod newcomp;  // 追加
 ```
 
-### 步骤 2：更新命令处理
-
-**文件**：`src-tauri/src/commands.rs`
-
-三处修改：
-
-**(A)** `default_profile()` 函数 — ProfileSet 构造：
-
+**(B)** `src-tauri/src/lib.rs` — `run()` 函数中的注册块：
 ```rust
-ProfileSet {
-    inst_count: 2,
-    bar_inst_count: 1,
-    newcomp_inst_count: 1,   // 新增
-    profiles: vec![ ... ],
-}
+registry.register(Box::new(plugins::newcomp::NewCompPlugin));  // 追加
 ```
 
-同时在每个 `EstaProfile { ... }` 实例化中添加新组件字段的默认值。
-
-**(B)** `save_profile()` 函数 — `json!({...})` 映射块（第 50-83 行区域）：
-
-```rust
-"bar_theme_type": p.bar_theme_type,
-// ---- NEWCOMP 字段 ----
-"newcomp_x_origin": p.newcomp_x_origin,
-"newcomp_y_origin": p.newcomp_y_origin,
-"newcomp_x_width": p.newcomp_x_width,
-"newcomp_y_width": p.newcomp_y_width,
-"newcomp_theme_type": p.newcomp_theme_type,
-// ... 其他字段 ...
-```
-
-**(C)** `save_profile()` 函数 — 模板上下文插入（第 87-90 行区域）：
-
-```rust
-ctx.insert("inst_count", &data.inst_count);
-ctx.insert("bar_inst_count", &data.bar_inst_count);
-ctx.insert("newcomp_inst_count", &data.newcomp_inst_count);
-ctx.insert("profiles", &profiles_for_template);
-```
+**无需修改**：`models.rs`、`commands/profile_io.rs`、`commands/build.rs`、`defaults.rs`。
 
 ### 步骤 3：更新 Tera 模板
 
 **文件**：`src-tauri/templates/ESTA_Profile.c.j2`
 
-**(A)** 顶层结构体初始化（第 7-8 行区域）：
+**(A)** 顶层结构体初始化：
 
 ```c
-.inst_count = {{ inst_count }},
-.bar_inst_count = {{ bar_inst_count }},
 .newcomp_inst_count = {{ newcomp_inst_count }},
 ```
 
-**(B)** profile 循环内字段（第 42 行之后，右花括号之前）：
+**(B)** profile 循环内字段：
 
 ```c
-            .bar_theme_type = {{ p.bar_theme_type }},
             .newcomp_x_origin = {{ p.newcomp_x_origin }},
             .newcomp_y_origin = {{ p.newcomp_y_origin }},
             .newcomp_x_width = {{ p.newcomp_x_width }},
@@ -386,7 +416,6 @@ bool ESTA_Profile_ToNEWCOMP_Config(const ESTA_Profile_TypeDef *profile,
         profile->newcomp_x_origin, profile->newcomp_y_origin,
         profile->newcomp_x_width, profile->newcomp_y_width);
     NEWCOMP_ConfigSetXxx(out_config, profile->newcomp_xxx);
-    // ... 其他 Setter ...
 
     return true;
 }
@@ -678,8 +707,9 @@ await api.saveProfile({
 - [ ] `simulator/sim_scenario.h` 添加声明
 - [ ] `simulator/sim_scenario.c` 添加实现
 - [ ] `simulator/main.c` 添加 include + 初始化 + 循环更新
-- [ ] `src-tauri/src/models.rs` Rust 结构体字段
-- [ ] `src-tauri/src/commands.rs` default_profile + json! + ctx.insert
+- [ ] `src-tauri/src/plugins/newcomp.rs` **新建**（模型 + Plugin impl，自包含）
+- [ ] `src-tauri/src/plugins/mod.rs` 追加 `pub mod newcomp;`
+- [ ] `src-tauri/src/lib.rs` 追加 `registry.register(Box::new(plugins::newcomp::NewCompPlugin));`
 - [ ] `src-tauri/templates/ESTA_Profile.c.j2` 模板字段 + ToConfig + Apply
 - [ ] `src/lib/types.ts` 类型 + 主题选项 + MAX 常量
 - [ ] `src/components/NewCompEditor.tsx` 新建

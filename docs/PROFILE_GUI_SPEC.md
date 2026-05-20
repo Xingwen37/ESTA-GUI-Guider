@@ -1,6 +1,6 @@
 # profile-gui 新组件与事件支持规范
 
-版本：v2.0（注册表架构）
+版本：v3.0（插件化后端）
 适用范围：为 profile-gui 代码配置器与生成器添加新 UI 组件和新事件类型支持的全部步骤
 参考实现：BARCHART、TABLE、MENU
 
@@ -19,9 +19,11 @@
                        │ invoke("save_profile", { data })
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Rust 后端 (tools/profile-gui/src-tauri/)                     │
-│   models.rs → commands.rs → Tera 模板渲染                    │
-│   ProfileSet → json!({...}) 上下文 → ESTA_Profile.c.j2      │
+│ Rust 后端 (tools/profile-gui/src-tauri/src/)                 │
+│   plugin.rs (trait) → registry.rs (注册表)                   │
+│   plugins/xxx.rs (组件自包含: 模型 + 默认值 + 模板转换)        │
+│   commands/profile_io.rs → Tera 模板渲染 (注册表驱动)         │
+│   ProfileSet(HashMap) → fill_template_context() → 模板       │
 └──────────────────────┬──────────────────────────────────────┘
                        │ 写入文件
                        ▼
@@ -33,6 +35,8 @@
 
 > **注意**：C 核心层、模拟器、Port 层的集成规范见 `docs/INTEGRATION_SPEC.md`。本规范仅覆盖上图中 profile-gui 内部的三层（TS → Rust → Tera → 生成文件）。
 
+> **v3.0 插件化**：Rust 后端已重构为插件架构。`ProfileSet` 不再硬编码组件字段，改用 `#[serde(flatten)] HashMap<String, Value>` 存储。每个组件是一个独立插件文件，实现 `ComponentPlugin` trait。`save_profile` 遍历注册表驱动模板上下文构建，无需感知具体组件。
+
 ### 1.2 当前目录映射
 
 | profile-gui 文件 | 说明 |
@@ -42,8 +46,15 @@
 | `src/lib/types.ts` | 全局类型（ProfileSet、事件相关类型和常量） |
 | `src/components/XxxEditor.tsx` | 编辑器组件 |
 | `src/App.tsx` | 主应用（注册表驱动，新增组件无需修改） |
-| `src-tauri/src/models.rs` | Rust 数据模型 |
-| `src-tauri/src/commands.rs` | 生成逻辑，输出 `core/profile/ESTA_Profile.c` |
+| `src-tauri/src/lib.rs` | Tauri 启动 + 插件注册中心（1行/组件） |
+| `src-tauri/src/models.rs` | 非组件类型（ProfileSet、EventBinding、StringEntry 等） |
+| `src-tauri/src/plugin.rs` | `ComponentPlugin` trait 定义 |
+| `src-tauri/src/registry.rs` | 注册表容器（manual registration） |
+| `src-tauri/src/util.rs` | 共享辅助函数（如 `c_string_literal`） |
+| `src-tauri/src/plugins/xxx.rs` | 组件插件（模型 + 默认值 + 模板转换 + 向后兼容，自包含） |
+| `src-tauri/src/commands/mod.rs` | 命令模块入口 + AppState |
+| `src-tauri/src/commands/profile_io.rs` | load/save（注册表驱动，无组件硬编码） |
+| `src-tauri/src/commands/build.rs` | build/run/preview 命令 |
 | `src-tauri/templates/ESTA_Profile.c.j2` | Tera 模板 |
 
 ### 1.3 涉及文件总览
@@ -55,11 +66,14 @@
 | TS | `src/lib/types.ts` | 改（2处） | 改 |
 | TS | `src/components/XxxEditor.tsx` | **新建** | 按需 |
 | TS | `src/App.tsx` | **无需修改** | 改（1处） |
-| Rust | `src-tauri/src/models.rs` | 改 | 改 |
-| Rust | `src-tauri/src/commands.rs` | 改（3处） | 改（2处） |
+| Rust | `src-tauri/src/plugins/xxx.rs` | **新建**（自包含） | — |
+| Rust | `src-tauri/src/plugins/mod.rs` | 改（1处） | — |
+| Rust | `src-tauri/src/lib.rs` | 改（1处） | — |
+| Rust | `src-tauri/src/models.rs` | **无需修改** | 改 |
+| Rust | `src-tauri/src/commands/` | **无需修改** | **无需修改** |
 | Tera | `src-tauri/templates/ESTA_Profile.c.j2` | 改（3处） | 改（1处） |
 
-> **关键变化**：App.tsx 对新组件**无需修改**——工具栏、标签栏、编辑器切换均由 COMPONENT_REGISTRY 自动驱动。
+> **v3.0 关键变化**：`models.rs` 不再包含组件字段（改用 `HashMap<String, Value>`），`commands/profile_io.rs` 的 save 完全由注册表驱动——新增组件时 Rust 后端**仅需新建 1 个插件文件 + 2 行注册**，无需修改 models.rs 和任何 commands 文件。
 
 ### 1.4 数据模型约定
 
@@ -92,6 +106,8 @@ bar_profiles: BarChartProfile[]; // BarChartProfile 定义在 bar.registry.ts
 | 后续组件 | `xxx_` | `xxx_x_origin`, `xxx_theme_type` |
 
 **命名一致性**：C 层 `snake_case` → Rust 层 `snake_case` → TS 层 `snake_case`。
+
+**Rust 后端插件化存储**：`ProfileSet.components` 为 `HashMap<String, serde_json::Value>`，通过 `#[serde(flatten)]` 保持 JSON 平铺格式不变。`fill_template_context()` 内部将 Value 反序列化为类型化模型进行模板转换，确保类型安全。
 
 ---
 
@@ -246,53 +262,101 @@ export interface ProfileSet {
 }
 ```
 
-### 步骤 5：扩展 Rust 数据模型
+### 步骤 5：创建 Rust 插件文件
 
-**文件**：`src-tauri/src/models.rs`
+**文件**：`src-tauri/src/plugins/newcomp.rs` — **新建**
 
-**(A)** `EstaProfile` 结构体末尾追加字段：
-
-```rust
-// ---- NEWCOMP 字段 ----
-pub newcomp_x_origin: u16,
-pub newcomp_y_origin: u16,
-pub newcomp_x_width: u16,
-pub newcomp_y_width: u16,
-pub newcomp_theme_type: String,
-```
-
-**(B)** `ProfileSet` 结构体追加：
+每个组件插件是**一个自包含文件**，包含：模型结构体 + `ComponentPlugin` trait 实现。
 
 ```rust
-pub newcomp_inst_count: u16,
-pub newcomp_profiles: Vec<EstaProfile>,
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use tera::Context;
+use crate::plugin::ComponentPlugin;
+
+// ── 模型 ──
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NewCompProfile {
+    pub x_origin: u16,
+    pub y_origin: u16,
+    pub x_width: u16,
+    pub y_width: u16,
+    // ... 组件专属字段 ...
+    pub theme_type: String,
+    #[serde(default)]
+    pub page: u8,
+}
+
+// ── 辅助函数 ──
+fn default_font_size() -> String { "ESTA_FONT_1608".into() }
+
+// ── 插件实现 ──
+pub struct NewCompPlugin;
+
+impl ComponentPlugin for NewCompPlugin {
+    fn type_name(&self) -> &'static str { "newcomp" }
+
+    fn set_defaults(&self, components: &mut HashMap<String, Value>) {
+        let profile = NewCompProfile {
+            x_origin: 10, y_origin: 10, x_width: 200, y_width: 100,
+            theme_type: "NEWCOMP_THEME_DEFAULT".into(),
+            page: 0,
+        };
+        components.insert("newcomp_inst_count".into(), json!(1));
+        components.insert("newcomp_profiles".into(), json!([profile]));
+    }
+
+    fn fill_template_context(
+        &self,
+        components: &HashMap<String, Value>,
+        ctx: &mut Context,
+    ) {
+        if let Some(count) = components.get("newcomp_inst_count") {
+            ctx.insert("newcomp_inst_count", count);
+        }
+        if let Some(raw) = components.get("newcomp_profiles") {
+            let values: Vec<Value> = raw
+                .as_array().into_iter().flatten()
+                .map(|v| match serde_json::from_value::<NewCompProfile>(v.clone()) {
+                    Ok(p) => json!({
+                        "x_origin": p.x_origin,
+                        "y_origin": p.y_origin,
+                        "x_width": p.x_width,
+                        "y_width": p.y_width,
+                        "theme_type": p.theme_type,
+                        "page": p.page,
+                    }),
+                    Err(_) => v.clone(),
+                })
+                .collect();
+            ctx.insert("newcomp_profiles", &values);
+        }
+    }
+}
 ```
 
-### 步骤 6：更新命令处理
+**关键规则**：
+- `type_name()` 返回值必须是 JSON/Tera 中的字段前缀（如 `"newcomp"` → `newcomp_inst_count` / `newcomp_profiles`）
+- `set_defaults()` 插入 `{type}_inst_count` 和 `{type}_profiles` 到 HashMap
+- `fill_template_context()` 将组件数据反序列化为类型化模型，转换为模板友好的 JSON 格式后插入 Tera context
+- 可覆盖 `normalize()` 方法处理向后兼容（默认 no-op）
 
-**文件**：`src-tauri/src/commands.rs`
+### 步骤 6：注册插件
 
-**(A)** `default_profile()` — ProfileSet 构造追加：
+只需在 `lib.rs` 和 `plugins/mod.rs` 各加 1 行：
+
+**(A)** `src-tauri/src/plugins/mod.rs` — 追加模块声明：
 ```rust
-newcomp_inst_count: 1,
-newcomp_profiles: vec![ EstaProfile { newcomp_x_origin: 10, newcomp_y_origin: 10,
-    newcomp_x_width: 200, newcomp_y_width: 100,
-    newcomp_theme_type: "NEWCOMP_THEME_DEFAULT".into(), ..Default::default() } ],
+pub mod newcomp;
 ```
 
-**(B)** `save_profile()` — `json!({...})` 映射块追加：
+**(B)** `src-tauri/src/lib.rs` — 在 `run()` 函数的注册块中追加：
 ```rust
-"newcomp_x_origin": p.newcomp_x_origin,
-"newcomp_y_origin": p.newcomp_y_origin,
-"newcomp_x_width": p.newcomp_x_width,
-"newcomp_y_width": p.newcomp_y_width,
-"newcomp_theme_type": p.newcomp_theme_type,
+registry.register(Box::new(plugins::newcomp::NewCompPlugin));
 ```
 
-**(C)** `save_profile()` — `ctx.insert()` 块追加：
-```rust
-ctx.insert("newcomp_inst_count", &data.newcomp_inst_count);
-```
+**无需修改** `models.rs`、`commands/profile_io.rs`、`commands/build.rs`、`defaults.rs`——这些文件对组件完全无感知。
 
 ### 步骤 7：更新 Tera 模板
 
@@ -465,7 +529,7 @@ for (const entry of COMPONENT_REGISTRY) {
 
 ## 附录 A：文件修改速查表
 
-### A.1 组件集成修改点（v2.0 注册表架构）
+### A.1 组件集成修改点（v3.0 插件化后端）
 
 | # | 文件 | 修改位置 | 操作 |
 |:---:|------|------|:---:|
@@ -475,16 +539,14 @@ for (const entry of COMPONENT_REGISTRY) {
 | 4 | `componentRegistry.ts` | `COMPONENT_REGISTRY` 数组 | 追加 `newcompEntry as unknown as ComponentEntry` |
 | 5 | `types.ts` | `ProfileSet` 接口 | 追加 `newcomp_inst_count: number` |
 | 6 | `types.ts` | `ProfileSet` 接口 | 追加 `newcomp_profiles: import(...).NewCompProfile[]` |
-| 7 | `models.rs` | `EstaProfile` | 追加 `newcomp_*` 字段 |
-| 8 | `models.rs` | `ProfileSet` | 追加 `pub newcomp_inst_count: u16` + `pub newcomp_profiles: Vec<EstaProfile>` |
-| 9 | `commands.rs` | `default_profile()` | 追加 `newcomp_inst_count` + 默认 profile |
-| 10 | `commands.rs` | `save_profile()` json! 映射 | 追加所有 `newcomp_*` 条目 |
-| 11 | `commands.rs` | `save_profile()` ctx.insert | 追加 `"newcomp_inst_count"` |
-| 12 | `ESTA_Profile.c.j2` | 顶层结构体 | 追加 `.newcomp_inst_count` |
-| 13 | `ESTA_Profile.c.j2` | profile 循环 | 追加所有 `newcomp_*` 字段 |
-| 14 | `ESTA_Profile.c.j2` | 文件末尾 | 追加 `ToNEWCOMP_Config` + `ApplyNEWCOMP` |
+| 7 | `plugins/newcomp.rs` | — | **新建**（模型 + `ComponentPlugin` impl，自包含） |
+| 8 | `plugins/mod.rs` | 模块声明 | 追加 `pub mod newcomp;` |
+| 9 | `lib.rs` | `run()` 注册块 | 追加 `registry.register(Box::new(plugins::newcomp::NewCompPlugin));` |
+| 10 | `ESTA_Profile.c.j2` | 顶层结构体 | 追加 `.newcomp_inst_count` |
+| 11 | `ESTA_Profile.c.j2` | profile 循环 | 追加所有 `newcomp_*` 字段 |
+| 12 | `ESTA_Profile.c.j2` | 文件末尾 | 追加 `ToNEWCOMP_Config` + `ApplyNEWCOMP` |
 
-**对比 v1.0**：修改点从 22 个减少到 14 个，且 App.tsx 完全不需要修改。
+**对比 v2.0**：修改点从 14 个减少到 12 个。`models.rs`、`commands/`、`defaults.rs` **不再需要修改**——Rust 后端仅需新建 1 个插件文件 + 2 行注册。
 
 ### A.2 事件集成修改点（v1 简单计数型）
 
@@ -515,7 +577,7 @@ for (const entry of COMPONENT_REGISTRY) {
 
 ---
 
-## 附录 C：BARCHART 完整修改参考（v2.0 注册表架构）
+## 附录 C：BARCHART 完整修改参考（v3.0 插件化后端）
 
 以下列出 BARCHART 作为第二个组件集成到 profile-gui 时的所有实际修改，作为 `NEWCOMP` 的对照参考。
 
@@ -542,21 +604,27 @@ bar_inst_count: number;
 bar_profiles: import("./bar.registry").BarChartProfile[];
 ```
 
-### models.rs（+13 行）
+### plugins/bar.rs（新建，约 100 行）
+
+模型 + `ComponentPlugin` impl：`type_name()` 返回 `"bar"`、`set_defaults()` 插入 `bar_inst_count` 和 `bar_profiles` 到 HashMap、`fill_template_context()` 将 `BarChartProfile` 转换为 Tera 模板变量。
+
+### plugins/mod.rs（+1 行）
 
 ```rust
-// EstaProfile 追加 12 个 bar_* 字段
-// ProfileSet 追加 pub bar_inst_count: u16 + pub bar_profiles: Vec<EstaProfile>
+pub mod bar;
 ```
 
-### commands.rs（+16 行）
+### lib.rs（+1 行）
 
-default_profile 加 `bar_inst_count: 1` + 每个 profile 的 12 个 bar_* 默认值；
-json! 映射加 12 个 `"bar_xxx": p.bar_xxx`；ctx.insert 加 `"bar_inst_count"`。
+```rust
+registry.register(Box::new(plugins::bar::BarChartPlugin));
+```
 
 ### ESTA_Profile.c.j2（+28 行）
 
 顶层 `.bar_inst_count`；循环内 12 个 `.bar_*` 字段；末尾 `ToBARCHART_Config` + `ApplyBARCHART` 函数。
+
+**关键变化**：不再需要修改 `models.rs`、`commands.rs`、`defaults.rs`。
 
 
 ---

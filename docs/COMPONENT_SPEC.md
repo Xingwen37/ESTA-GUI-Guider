@@ -775,7 +775,7 @@ ESTA_Profile.json（JSON 数据源）
 | `core/ESTA_Profile.h` | 在 `ESTA_Profile_TypeDef` 中添加新字段 |
 | `core/ESTA_Profile.json` | 添加新组件的默认 JSON 数据 |
 | `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2` | 添加新组件的 Tera 渲染逻辑 |
-| `tools/profile-gui/src-tauri/src/models.rs` | 添加 Rust 结构体字段 |
+| `tools/profile-gui/src-tauri/src/plugins/xxx.rs` | **新建**（模型 + `ComponentPlugin` impl，自包含） |
 | `tools/profile-gui/src/lib/types.ts` | 添加 TypeScript 类型字段 |
 
 ---
@@ -961,7 +961,7 @@ typedef struct {
 2. 在 `core/ESTA_Profile.c` 中实现 `ToConfig` 和 `Apply` 对 XXX 的支持
 3. 更新 `core/ESTA_Profile.json`
 4. 更新 Tera 模板
-5. 更新 Rust `models.rs`
+5. 创建 Rust 插件文件 `plugins/xxx.rs` 并注册
 6. 更新 TypeScript `types.ts`
 
 ### 第 13 步：添加到构建系统
@@ -1174,7 +1174,7 @@ XXX_StatusTypeDef XXX_ReDraw(int inst) {
 | 4 | `core/ESTA_Profile.c` | 修改 | 添加 ToConfig/Apply 对 XXX 的支持 |
 | 5 | `core/ESTA_Profile.json` | 修改 | 添加默认配置数据 |
 | 6 | `tools/profile-gui/src-tauri/templates/ESTA_Profile.c.j2` | 修改 | 添加模板渲染逻辑 |
-| 7 | `tools/profile-gui/src-tauri/src/models.rs` | 修改 | 添加 Rust 结构体字段 |
+| 7 | `tools/profile-gui/src-tauri/src/plugins/xxx.rs` | **新建** | 模型 + ComponentPlugin impl（自包含） |
 | 8 | `tools/profile-gui/src/lib/types.ts` | 修改 | 添加 TypeScript 类型字段 |
 | 9 | `simulator/sim_scenario.h` | 修改 | 添加场景测试声明 |
 | 10 | `simulator/sim_scenario.c` | 修改 | 添加场景测试实现 |

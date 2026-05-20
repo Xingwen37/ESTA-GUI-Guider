@@ -431,7 +431,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
 | JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences 数组 |
 | Rust 模型 | `src-tauri/src/models.rs` | EventBinding、StringEntry、ActionStep、ActionSequence struct |
-| Rust 命令 | `src-tauri/src/commands.rs` | 模板数据构建 |
+| Rust 命令 | `src-tauri/src/commands/profile_io.rs` | 模板数据构建（注册表驱动，无需修改） |
 | Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体） |
 | TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry、ActionStep、ActionSequence 接口、常量、约束表 |
 | React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（param 列根据 action 类型切换 UI） |
