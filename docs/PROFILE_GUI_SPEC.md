@@ -1,8 +1,8 @@
 # profile-gui 新组件与事件支持规范
 
-版本：v1.0
+版本：v2.0（注册表架构）
 适用范围：为 profile-gui 代码配置器与生成器添加新 UI 组件和新事件类型支持的全部步骤
-参考实现：BARCHART（第二个组件）、button_event（第一个事件类型）
+参考实现：BARCHART、TABLE、MENU
 
 ---
 
@@ -13,7 +13,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ TypeScript 前端 (tools/profile-gui/src/)                     │
-│   types.ts → App.tsx → XxxEditor.tsx                        │
+│   xxx.registry.ts → componentRegistry.ts → App.tsx          │
 │   用户编辑 ProfileSet → 调用 saveProfile()                   │
 └──────────────────────┬──────────────────────────────────────┘
                        │ invoke("save_profile", { data })
@@ -35,34 +35,31 @@
 
 ### 1.2 当前目录映射
 
-| profile-gui 文件 | 生成的 C 文件 | 说明 |
-|------|------|------|
-| `src/lib/types.ts` | — | TS 类型定义 |
-| `src/components/XxxEditor.tsx` | — | 编辑器组件 |
-| `src/App.tsx` | — | 主应用 |
-| `src-tauri/src/models.rs` | — | Rust 数据模型 |
-| `src-tauri/src/commands.rs` | `core/profile/ESTA_Profile.c` | 生成逻辑 |
-| `src-tauri/templates/ESTA_Profile.c.j2` | 同上 | Tera 模板 |
-
-C 代码库目录结构：
-```
-core/
-  event/     — 事件系统 (event.h/c)
-  infra/     — 基础设施 (ui_base, ui_theme, font, helper)
-  profile/   — Profile 系统 (ESTA_Profile.h/c/json)
-  ui/        — UI 组件 (WAVE.h/c, BARCHART.h/c)
-```
+| profile-gui 文件 | 说明 |
+|------|------|
+| `src/lib/xxx.registry.ts` | 组件类型、常量、默认值、验证器、ComponentEntry（每组件一个文件） |
+| `src/lib/componentRegistry.ts` | 注册表聚合器（仅导入 + 数组） |
+| `src/lib/types.ts` | 全局类型（ProfileSet、事件相关类型和常量） |
+| `src/components/XxxEditor.tsx` | 编辑器组件 |
+| `src/App.tsx` | 主应用（注册表驱动，新增组件无需修改） |
+| `src-tauri/src/models.rs` | Rust 数据模型 |
+| `src-tauri/src/commands.rs` | 生成逻辑，输出 `core/profile/ESTA_Profile.c` |
+| `src-tauri/templates/ESTA_Profile.c.j2` | Tera 模板 |
 
 ### 1.3 涉及文件总览
 
 | 层 | 文件 | 组件集成 | 事件集成 |
 |----|------|:---:|:---:|
-| TS | `src/lib/types.ts` | 改 | 改 |
+| TS | `src/lib/xxx.registry.ts` | **新建** | — |
+| TS | `src/lib/componentRegistry.ts` | 改（2处） | — |
+| TS | `src/lib/types.ts` | 改（2处） | 改 |
 | TS | `src/components/XxxEditor.tsx` | **新建** | 按需 |
-| TS | `src/App.tsx` | 改 (8处) | 改 (3处) |
+| TS | `src/App.tsx` | **无需修改** | 改（1处） |
 | Rust | `src-tauri/src/models.rs` | 改 | 改 |
-| Rust | `src-tauri/src/commands.rs` | 改 (3处) | 改 (2处) |
-| Tera | `src-tauri/templates/ESTA_Profile.c.j2` | 改 (3处) | 改 (1处) |
+| Rust | `src-tauri/src/commands.rs` | 改（3处） | 改（2处） |
+| Tera | `src-tauri/templates/ESTA_Profile.c.j2` | 改（3处） | 改（1处） |
+
+> **关键变化**：App.tsx 对新组件**无需修改**——工具栏、标签栏、编辑器切换均由 COMPONENT_REGISTRY 自动驱动。
 
 ### 1.4 数据模型约定
 
@@ -70,91 +67,119 @@ core/
 
 | 结构 | 级别 | 内容 |
 |------|------|------|
-| `ProfileSet` | 全局 | 各组件的实例计数 + 事件类型计数 + profiles 数组 |
-| `EstaProfile` | 每个实例 | 单个 UI 实例的所有可编辑字段 |
+| `ProfileSet` | 全局 | 各组件的实例计数 + 各组件的 profiles 数组 + 事件相关字段 |
+| `XxxProfile` | 每个实例 | 单个 UI 实例的所有可编辑字段（定义在 `xxx.registry.ts`） |
 
-**字段前缀约定**（在共享的 `EstaProfile` 中区分组件归属）：
+**每组件独立 Profile 类型**（不再共享 `EstaProfile` 平铺结构）：
+
+```typescript
+// ProfileSet 中的组件字段示例
+wave_inst_count: number;
+wave_profiles: WaveProfile[];    // WaveProfile 定义在 wave.registry.ts
+
+bar_inst_count: number;
+bar_profiles: BarChartProfile[]; // BarChartProfile 定义在 bar.registry.ts
+```
+
+**字段前缀约定**（Rust 模型和 Tera 模板中区分组件归属）：
 
 | 组件 | 前缀 | 示例 |
 |------|------|------|
 | WAVE | 无前缀 | `x_origin`, `theme_type` |
 | BARCHART | `bar_` | `bar_x_origin`, `bar_theme_type` |
-| 后续组件 | 描述性前缀 | `newcomp_x_origin`, `newcomp_theme_type` |
-
-**事件字段**放 `ProfileSet` 级别（全局，不属于某个组件实例）。
+| TABLE | `table_` | `table_x_origin`, `table_theme_type` |
+| MENU | `menu_` | `menu_x_origin`, `menu_theme_type` |
+| 后续组件 | `xxx_` | `xxx_x_origin`, `xxx_theme_type` |
 
 **命名一致性**：C 层 `snake_case` → Rust 层 `snake_case` → TS 层 `snake_case`。
 
 ---
 
-## 第二章：新组件集成
+## 第二章：新组件集成（注册表架构）
 
-本章以虚构组件 `NEWCOMP` 为例（前缀 `newcomp_`），以 `BARCHART` 为参考实现。
+本章以虚构组件 `NEWCOMP` 为例（前缀 `newcomp_`），以 `bar.registry.ts` 为参考实现。
 
-### 步骤 1：扩展 TypeScript 类型
+### 步骤 1：创建注册表文件
 
-**文件**：`src/lib/types.ts`
-
-**(A)** `EstaProfile` 接口末尾追加 `newcomp_` 字段块：
+**文件**：`src/lib/newcomp.registry.ts` — **新建**
 
 ```typescript
-export interface EstaProfile {
-  // ... 现有 WAVE 字段 ...
-  bar_theme_type: string;
-  // ---- NEWCOMP 字段 ----
-  newcomp_x_origin: number;
-  newcomp_y_origin: number;
-  newcomp_x_width: number;
-  newcomp_y_width: number;
-  // ... 其他组件专属字段 ...
-  newcomp_theme_type: string;
+import type React from "react";
+import type { ProfileSet } from "./types";
+import NewCompEditor from "../components/NewCompEditor";
+import type { ComponentEntry } from "./componentRegistry";
+
+export interface NewCompProfile {
+  x_origin: number;
+  y_origin: number;
+  x_width: number;
+  y_width: number;
+  // ... 组件专属字段 ...
+  theme_type: string;
+  page: number;
 }
-```
 
-**(B)** 追加主题选项常量：
+export const MAX_NEWCOMP_INST = 4;
 
-```typescript
 export const NEWCOMP_THEME_OPTIONS = [
   ["NEWCOMP_THEME_DEFAULT", "Default"],
   ["NEWCOMP_THEME_LIGHT", "Light"],
 ] as const;
+
+const EMPTY_NEWCOMP: NewCompProfile = {
+  x_origin: 10, y_origin: 10, x_width: 200, y_width: 100,
+  theme_type: "NEWCOMP_THEME_DEFAULT",
+  page: 0,
+};
+
+export function makeDefaultNewComp(): NewCompProfile {
+  return { ...EMPTY_NEWCOMP };
+}
+
+function validateNewComp(profiles: NewCompProfile[], count: number): string | null {
+  for (let i = 0; i < count; i++) {
+    const p = profiles[i];
+    if (p.x_width < 1) return `NEWCOMP${i}: x_width 无效`;
+  }
+  return null;
+}
+
+export const newcompEntry: ComponentEntry<NewCompProfile> = {
+  key: "newcomp",
+  label: "NEWCOMP",
+  countField: "newcomp_inst_count" as keyof ProfileSet,
+  profilesField: "newcomp_profiles" as keyof ProfileSet,
+  maxCount: MAX_NEWCOMP_INST,
+  makeDefault: makeDefaultNewComp,
+  validate: validateNewComp as ComponentEntry["validate"],
+  Editor: NewCompEditor as unknown as React.ComponentType<{
+    profile: NewCompProfile; onChange: (p: NewCompProfile) => void
+  }>,
+};
 ```
 
-**(C)** 追加最大实例数常量：
-
-```typescript
-export const MAX_NEWCOMP_INST = 2;
-```
+**关键字段**：
+- `key`：小写标识符，用于 `instCounts` 查找（需与 `countField` 前缀一致）
+- `countField` / `profilesField`：必须与 `ProfileSet` 中的字段名完全一致
+- `validate`：返回第一条错误字符串，无错误返回 `null`
+- `Editor` 的双重 `as unknown as` 转型是绕过 TypeScript 逆变检查的标准写法
 
 ### 步骤 2：创建编辑器组件
 
 **文件**：`src/components/NewCompEditor.tsx` — **新建**
 
-标准模板（约 100 行），以 `BarChartEditor.tsx` 为参考：
-
 ```typescript
-import type { EstaProfile } from "../lib/types";
-import { NEWCOMP_THEME_OPTIONS } from "../lib/types";
+import type { NewCompProfile } from "../lib/newcomp.registry";
+import { NEWCOMP_THEME_OPTIONS } from "../lib/newcomp.registry";
+import { UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 interface Props {
-  profile: EstaProfile;
-  onChange: (p: EstaProfile) => void;
-}
-
-function spin(value: number, min: number, max: number, onChange: (v: number) => void) {
-  return (
-    <input
-      type="number"
-      value={value}
-      min={min}
-      max={max}
-      onChange={(e) => onChange(Number(e.target.value) || 0)}
-    />
-  );
+  profile: NewCompProfile;
+  onChange: (p: NewCompProfile) => void;
 }
 
 export default function NewCompEditor({ profile, onChange }: Props) {
-  const set = (key: keyof EstaProfile, value: unknown) =>
+  const set = <K extends keyof NewCompProfile>(key: K, value: NewCompProfile[K]) =>
     onChange({ ...profile, [key]: value });
 
   return (
@@ -162,25 +187,17 @@ export default function NewCompEditor({ profile, onChange }: Props) {
       <fieldset className="group-box">
         <legend>位置与尺寸</legend>
         <div className="form-row">
-          <label>newcomp_x_origin</label>
-          {spin(profile.newcomp_x_origin, 0, 65535, (v) => set("newcomp_x_origin", v))}
+          <label>x_origin</label>
+          <input type="number" value={profile.x_origin} min={0} max={65535}
+            onChange={(e) => set("x_origin", Number(e.target.value) || 0)} />
         </div>
-        {/* ... newcomp_y_origin, newcomp_x_width, newcomp_y_width ... */}
+        {/* y_origin, x_width, y_width ... */}
       </fieldset>
-
-      <fieldset className="group-box">
-        <legend>组件专属配置</legend>
-        {/* 组件特定的数字/布尔字段 */}
-      </fieldset>
-
       <fieldset className="group-box">
         <legend>显示选项</legend>
         <div className="form-row">
-          <label>newcomp_theme_type</label>
-          <select
-            value={profile.newcomp_theme_type}
-            onChange={(e) => set("newcomp_theme_type", e.target.value)}
-          >
+          <label>theme_type</label>
+          <select value={profile.theme_type} onChange={(e) => set("theme_type", e.target.value)}>
             {NEWCOMP_THEME_OPTIONS.map(([value, text]) => (
               <option key={value} value={value}>{text}</option>
             ))}
@@ -193,225 +210,78 @@ export default function NewCompEditor({ profile, onChange }: Props) {
 ```
 
 **关键规则**：
-- Props 固定为 `{ profile: EstaProfile; onChange: (p: EstaProfile) => void }`
-- 使用 `set("field_name", value)` 更新任意字段（展开 + 覆盖模式）
-- 数字输入使用 `spin()` 辅助函数（含 min/max/默认值保护）
-- 布尔字段使用 `<input type="checkbox">` + `e.target.checked`
-- 主题选择使用 `<select>` + `XXX_THEME_OPTIONS.map()`
+- Props 固定为 `{ profile: NewCompProfile; onChange: (p: NewCompProfile) => void }`（每组件独立类型）
+- 从 `newcomp.registry.ts` 导入类型和常量，从 `types.ts` 导入 `UI_FONT_SIZE_OPTIONS`
 - 布局使用 `fieldset.group-box` > `legend` + `div.form-row` > `label` + 控件
-- 提示文字使用 `<span className="hint">`
 
-### 步骤 3：修改 App.tsx — 8 处变更
+### 步骤 3：注册到 componentRegistry.ts
 
-**文件**：`src/App.tsx`
-
-#### 3a. 导入
+**文件**：`src/lib/componentRegistry.ts` — **改（2处）**
 
 ```typescript
-import NewCompEditor from "./components/NewCompEditor";
-import { ..., MAX_NEWCOMP_INST } from "./lib/types";
+import { newcompEntry } from "./newcomp.registry";  // 新增导入
+
+export const COMPONENT_REGISTRY: ComponentEntry[] = [
+  waveEntry as unknown as ComponentEntry,
+  barEntry as unknown as ComponentEntry,
+  tableEntry as unknown as ComponentEntry,
+  menuEntry as unknown as ComponentEntry,
+  newcompEntry as unknown as ComponentEntry,  // 新增条目
+];
 ```
 
-#### 3b. EMPTY_PROFILE 默认值
+完成此步骤后，App.tsx 的工具栏、标签栏、编辑器切换**自动包含** NEWCOMP，无需任何其他 App.tsx 修改。
+
+### 步骤 4：扩展 ProfileSet
+
+**文件**：`src/lib/types.ts` — **改（2处）**
 
 ```typescript
-const EMPTY_PROFILE: EstaProfile = {
-  // ... 现有 WAVE + BARCHART 默认值 ...
-  newcomp_x_origin: 10, newcomp_y_origin: 0,
-  newcomp_x_width: 200, newcomp_y_width: 100,
-  newcomp_theme_type: "NEWCOMP_THEME_DEFAULT",
-};
-```
-
-#### 3c. 验证函数
-
-```typescript
-function validateNewComp(profiles: EstaProfile[], count: number): string | null {
-  for (let i = 0; i < count; i++) {
-    const p = profiles[i];
-    // 组件专属校验逻辑
-    // if (p.newcomp_xxx < 1) return `NEWCOMP${i}: xxx 无效`;
-  }
-  return null;
+export interface ProfileSet {
+  // ... 现有字段 ...
+  newcomp_inst_count: number;   // 新增
+  // ...
+  newcomp_profiles: import("./newcomp.registry").NewCompProfile[];  // 新增
+  // ...
 }
 ```
 
-#### 3d. 标签索引计算
-
-当前 2 组件公式：
-```typescript
-const waveCount = data.inst_count;
-const barCount = data.bar_inst_count;
-```
-
-扩展为 3 组件：
-```typescript
-const waveCount = data.inst_count;
-const barCount = data.bar_inst_count;
-const newcompCount = data.newcomp_inst_count;
-const totalTabs = waveCount + barCount + newcompCount;
-
-const isWaveTab    = activeTab < waveCount;
-const isBarTab     = activeTab >= waveCount && activeTab < waveCount + barCount;
-const isNewCompTab = activeTab >= waveCount + barCount;
-
-const profileIndex = isWaveTab
-  ? activeTab
-  : isBarTab
-    ? activeTab - waveCount
-    : activeTab - waveCount - barCount;
-```
-
-**通用递推公式**（N 个组件）：
-```
-counts = [count0, count1, count2, ...]
-totalTabs = sum(counts)
-offset[k] = sum(counts[0..k-1])
-
-is[k]Tab = activeTab >= offset[k] && activeTab < offset[k] + counts[k]
-profileIndex = activeTab - offset[k]   (其中 k 满足 is[k]Tab)
-```
-
-#### 3e. 标签页渲染
-
-在 BARCHART 标签块之后追加：
-
-```tsx
-{barCount > 0 && newcompCount > 0 && <span className="tab-sep" />}
-{Array.from({ length: newcompCount }, (_, i) => (
-  <button
-    key={`n${i}`}
-    className={`tab ${activeTab === waveCount + barCount + i ? "active" : ""}`}
-    onClick={() => setActiveTab(waveCount + barCount + i)}
-  >
-    NEWCOMP{i}
-  </button>
-))}
-```
-
-#### 3f. 编辑器切换
-
-```tsx
-{totalTabs === 0 ? (
-  <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>
-) : isWaveTab ? (
-  <ProfileEditor profile={currentProfile} onChange={updateProfile} />
-) : isBarTab ? (
-  <BarChartEditor profile={currentProfile} onChange={updateProfile} />
-) : (
-  <NewCompEditor profile={currentProfile} onChange={updateProfile} />
-)}
-```
-
-> **设计决策**：≤3 组件时使用嵌套三元，≥4 组件时重构为配置驱动的数组方案。
-
-#### 3g. 工具栏计数控件
-
-在 BARCHART 输入框之后追加：
-
-```tsx
-<label style={{ marginLeft: 12 }}>NEWCOMP</label>
-<input
-  type="number"
-  value={data.newcomp_inst_count}
-  min={0}
-  max={MAX_NEWCOMP_INST}
-  onChange={(e) =>
-    setData({
-      ...data,
-      newcomp_inst_count: Math.max(0, Math.min(MAX_NEWCOMP_INST, Number(e.target.value) || 0)),
-    })
-  }
-/>
-```
-
-#### 3h. saveProfile 调用
-
-`handleGenerate` 和 `handleBuildRun` 两处都需更新：
-
-```typescript
-const newcompErr = validateNewComp(data.profiles, newcompCount);
-if (newcompErr) { showStatus({ type: "error", msg: newcompErr }); return; }
-
-await api.saveProfile({
-  inst_count: waveCount,
-  bar_inst_count: barCount,
-  newcomp_inst_count: newcompCount,
-  button_count: data.button_count,
-  profiles: data.profiles.slice(0, Math.max(waveCount, barCount, newcompCount)),
-});
-```
-
-`Math.max(...)` 参数 = 所有组件实例数的最大值，确保 profiles 数组足够长。
-
-### 步骤 4：扩展 Rust 数据模型
+### 步骤 5：扩展 Rust 数据模型
 
 **文件**：`src-tauri/src/models.rs`
 
 **(A)** `EstaProfile` 结构体末尾追加字段：
 
 ```rust
-pub struct EstaProfile {
-    // ... 现有字段 ...
-    pub bar_theme_type: String,
-    // ---- NEWCOMP 字段 ----
-    pub newcomp_x_origin: u16,
-    pub newcomp_y_origin: u16,
-    pub newcomp_x_width: u16,
-    pub newcomp_y_width: u16,
-    pub newcomp_theme_type: String,
-}
+// ---- NEWCOMP 字段 ----
+pub newcomp_x_origin: u16,
+pub newcomp_y_origin: u16,
+pub newcomp_x_width: u16,
+pub newcomp_y_width: u16,
+pub newcomp_theme_type: String,
 ```
 
-**(B)** `ProfileSet` 结构体追加实例计数：
+**(B)** `ProfileSet` 结构体追加：
 
 ```rust
-pub struct ProfileSet {
-    pub inst_count: u16,
-    pub bar_inst_count: u16,
-    pub newcomp_inst_count: u16,   // 新增
-    pub button_count: u16,
-    pub profiles: Vec<EstaProfile>,
-}
+pub newcomp_inst_count: u16,
+pub newcomp_profiles: Vec<EstaProfile>,
 ```
 
-> 如需特殊序列化方法（类似 `channel_mask_expr()`），在 `impl EstaProfile` 块中添加。
-
-### 步骤 5：更新命令处理
+### 步骤 6：更新命令处理
 
 **文件**：`src-tauri/src/commands.rs`
 
-**(A)** `default_profile()` 函数 — 两处修改：
-
-ProfileSet 构造追加计数：
+**(A)** `default_profile()` — ProfileSet 构造追加：
 ```rust
-ProfileSet {
-    inst_count: 2,
-    bar_inst_count: 1,
-    newcomp_inst_count: 1,   // 新增
-    button_count: 2,
-    profiles: vec![ ... ],
-}
+newcomp_inst_count: 1,
+newcomp_profiles: vec![ EstaProfile { newcomp_x_origin: 10, newcomp_y_origin: 10,
+    newcomp_x_width: 200, newcomp_y_width: 100,
+    newcomp_theme_type: "NEWCOMP_THEME_DEFAULT".into(), ..Default::default() } ],
 ```
 
-每个 `EstaProfile { ... }` 实例化追加默认字段值：
+**(B)** `save_profile()` — `json!({...})` 映射块追加：
 ```rust
-EstaProfile {
-    // ... 现有字段 ...
-    bar_theme_type: "BARCHART_THEME_DEFAULT".into(),
-    newcomp_x_origin: 10,
-    newcomp_y_origin: 0,
-    newcomp_x_width: 200,
-    newcomp_y_width: 100,
-    newcomp_theme_type: "NEWCOMP_THEME_DEFAULT".into(),
-}
-```
-
-**(B)** `save_profile()` 函数 — `json!({...})` 映射块（第 50-83 行区域）：
-
-```rust
-"bar_theme_type": p.bar_theme_type,
-// ---- NEWCOMP 字段 ----
 "newcomp_x_origin": p.newcomp_x_origin,
 "newcomp_y_origin": p.newcomp_y_origin,
 "newcomp_x_width": p.newcomp_x_width,
@@ -419,61 +289,45 @@ EstaProfile {
 "newcomp_theme_type": p.newcomp_theme_type,
 ```
 
-**(C)** `save_profile()` 函数 — `ctx.insert()` 块（第 87-91 行区域）：
-
+**(C)** `save_profile()` — `ctx.insert()` 块追加：
 ```rust
-ctx.insert("inst_count", &data.inst_count);
-ctx.insert("bar_inst_count", &data.bar_inst_count);
 ctx.insert("newcomp_inst_count", &data.newcomp_inst_count);
-ctx.insert("button_count", &data.button_count);
-ctx.insert("profiles", &profiles_for_template);
 ```
 
-### 步骤 6：更新 Tera 模板
+### 步骤 7：更新 Tera 模板
 
 **文件**：`src-tauri/templates/ESTA_Profile.c.j2`
 
-**(A)** 顶层结构体初始化（`.bar_inst_count` 之后）：
-
+**(A)** 顶层结构体初始化追加：
 ```c
-.bar_inst_count = {{ bar_inst_count }},
 .newcomp_inst_count = {{ newcomp_inst_count }},
 ```
 
-**(B)** profile 循环内（BARCHART 字段之后，右花括号之前）：
-
+**(B)** profile 循环内追加：
 ```c
-            .bar_theme_type = {{ p.bar_theme_type }},
-            .newcomp_x_origin = {{ p.newcomp_x_origin }},
-            .newcomp_y_origin = {{ p.newcomp_y_origin }},
-            .newcomp_x_width = {{ p.newcomp_x_width }},
-            .newcomp_y_width = {{ p.newcomp_y_width }},
-            .newcomp_theme_type = {{ p.newcomp_theme_type }},
+.newcomp_x_origin = {{ p.newcomp_x_origin }},
+.newcomp_y_origin = {{ p.newcomp_y_origin }},
+.newcomp_x_width  = {{ p.newcomp_x_width }},
+.newcomp_y_width  = {{ p.newcomp_y_width }},
+.newcomp_theme_type = {{ p.newcomp_theme_type }},
 ```
 
-**(C)** 文件末尾追加两个函数模板（以 BARCHART 的 `ToBARCHART_Config` / `ApplyBARCHART` 为模板）：
-
+**(C)** 文件末尾追加两个函数（以 `ToBARCHART_Config` / `ApplyBARCHART` 为模板）：
 ```c
 bool ESTA_Profile_ToNEWCOMP_Config(const ESTA_Profile_TypeDef *profile,
     NEWCOMP_Config_TypeDef *out_config) {
     if (profile == NULL || out_config == NULL) return false;
     memset(out_config, 0, sizeof(*out_config));
-
     ESTA_ConfigSetPositionAndSize((ESTA_BaseConfig *)out_config,
         profile->newcomp_x_origin, profile->newcomp_y_origin,
         profile->newcomp_x_width, profile->newcomp_y_width);
-    NEWCOMP_ConfigSetXxx(out_config, profile->newcomp_xxx);
-    // ... 其他 Setter 调用 ...
-
     return true;
 }
 
 ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
     const ESTA_Profile_TypeDef *profile) {
     NEWCOMP_Config_TypeDef config;
-    if (!ESTA_Profile_ToNEWCOMP_Config(profile, &config)) {
-        return ESTA_ERROR;
-    }
+    if (!ESTA_Profile_ToNEWCOMP_Config(profile, &config)) return ESTA_ERROR;
     return NEWCOMP_Init(inst_idx, &config);
 }
 ```
@@ -483,8 +337,6 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
 ## 第三章：新事件类型集成
 
 ### 3.1 事件数据模型分层
-
-事件的 profile-gui 数据分为两个层级：
 
 | 层级 | 位置 | 示例（v1） | 说明 |
 |------|------|------|------|
@@ -502,135 +354,15 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyNEWCOMP(int inst_idx,
 | 1 | `types.ts` | `ProfileSet` 加 `button_count: number` |
 | 2 | `types.ts` | 加 `export const MAX_BUTTON_COUNT = 8` |
 | 3 | `App.tsx` 工具栏 | 加 `<label>BUTTON</label>` + `<input>` 数量控件 |
-| 4 | `App.tsx` saveProfile | 传 `button_count: data.button_count` |
+| 4 | `App.tsx` useProfileState | 传 `button_count: data.button_count` |
 | 5 | `models.rs` | `ProfileSet` 加 `pub button_count: u16` |
 | 6 | `commands.rs` default_profile | 加 `button_count: N` |
 | 7 | `commands.rs` ctx.insert | 加 `("button_count", &data.button_count)` |
 | 8 | `ESTA_Profile.c.j2` | 加 `.button_count = {{ button_count }}` |
 
-**类型定义**：
-
-```typescript
-// types.ts
-export interface ProfileSet {
-  // ... 组件实例计数 ...
-  button_count: number;
-  profiles: EstaProfile[];
-}
-export const MAX_BUTTON_COUNT = 8;
-```
-
-```rust
-// models.rs
-pub struct ProfileSet {
-    pub inst_count: u16,
-    pub bar_inst_count: u16,
-    pub button_count: u16,   // 事件计数
-    pub profiles: Vec<EstaProfile>,
-}
-```
-
-**工具栏控件**（App.tsx）：
-
-```tsx
-<label style={{ marginLeft: 12 }}>BUTTON</label>
-<input type="number" value={data.button_count} min={0} max={MAX_BUTTON_COUNT}
-  onChange={(e) => setData({
-    ...data,
-    button_count: Math.max(0, Math.min(MAX_BUTTON_COUNT, Number(e.target.value) || 0)),
-  })} />
-```
-
 > 简单计数型事件**不需要**新建编辑器组件——仅一个工具栏数字输入框即足够。
 
-### 3.3 v2 扩展框架：实例配置型
-
-当事件需要每个实例的自定义参数时（如按钮名称、触摸区域坐标），扩展为此模式。
-
-**以自定义按钮名称为例**，数据模型变化：
-
-```typescript
-// types.ts — 新增
-export interface ButtonDef {
-  id: number;
-  name: string;
-}
-
-export interface ProfileSet {
-  // ... 现有字段 ...
-  button_count: number;
-  buttons: ButtonDef[];          // 新增：实例配置数组
-  profiles: EstaProfile[];
-}
-```
-
-```rust
-// models.rs — 新增
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ButtonDef {
-    pub id: u8,
-    pub name: String,
-}
-
-pub struct ProfileSet {
-    // ... 现有字段 ...
-    pub button_count: u16,
-    pub buttons: Vec<ButtonDef>, // 新增
-    pub profiles: Vec<EstaProfile>,
-}
-```
-
-**编辑器组件**（`src/components/ButtonEditor.tsx` — 新建）：
-
-```typescript
-interface ButtonDef {
-  id: number;
-  name: string;
-}
-
-interface Props {
-  buttons: ButtonDef[];
-  onChange: (btns: ButtonDef[]) => void;
-}
-
-export default function ButtonEditor({ buttons, onChange }: Props) {
-  const update = (i: number, name: string) => {
-    const next = [...buttons];
-    next[i] = { ...next[i], name };
-    onChange(next);
-  };
-
-  return (
-    <fieldset className="group-box">
-      <legend>按钮配置</legend>
-      {buttons.map((btn, i) => (
-        <div className="form-row" key={btn.id}>
-          <label>BTN_{btn.id}</label>
-          <input type="text" value={btn.name}
-            onChange={(e) => update(i, e.target.value)} />
-        </div>
-      ))}
-    </fieldset>
-  );
-}
-```
-
-**App.tsx 集成**：
-- 新增 `BUTTON` 标签页（位于组件标签之后），渲染 `ButtonEditor`
-- 标签索引公式扩展（buttons 视为新增的"标签组"）
-- `saveProfile` 传 `buttons: data.buttons`
-
-**Tera 模板**：
-
-```c
-{% for btn in buttons %}
-.button_{{ btn.id }}_name = "{{ btn.name }}",
-{% endfor %}
-```
-
-> **v2 模式当前为预留设计**，待有具体需求时按此框架实现。v1 仅需实现 3.2 节的简单计数型。
-
-### 3.4 事件类型注册清单（通用模板）
+### 3.3 事件类型注册清单（通用模板）
 
 每种新事件类型需在以下 8 个位置注册（以未来的 `touch_event` 为例）：
 
@@ -639,101 +371,79 @@ export default function ButtonEditor({ buttons, onChange }: Props) {
 | 1 | `types.ts` ProfileSet | 加 `touch_count: number` |
 | 2 | `types.ts` | 加 `MAX_TOUCH_COUNT` 常量 |
 | 3 | `App.tsx` 工具栏 | 加 TOUCH 数量输入框 |
-| 4 | `App.tsx` saveProfile | 传 `touch_count: data.touch_count` |
+| 4 | `App.tsx` useProfileState | 传 `touch_count: data.touch_count` |
 | 5 | `models.rs` ProfileSet | 加 `pub touch_count: u16` |
 | 6 | `commands.rs` default_profile | 加 `touch_count: N` |
-| 7 | `commands.rs` ctx.insert | 加 `("touch_count", &data.touch_count)` |
+| 7 | `commands.rs` ctx.insert | 加 `("touch_count", ...)` |
 | 8 | `ESTA_Profile.c.j2` | 加 `.touch_count = {{ touch_count }}` |
 
 ---
 
-## 第四章：App.tsx 核心模式
+## 第四章：App.tsx 核心模式（注册表驱动）
 
-### 4.1 标签索引系统
+### 4.1 注册表驱动原理
 
-**当前布局**（2 组件 + 事件设置）：
-```
-[WAVE0] [WAVE1] | [BARCHART0] [BARCHART1]          [BUTTON: 工具栏]
- ←── waveCount ──→   ←──── barCount ────→
-```
+App.tsx 不再包含任何组件专属逻辑。所有组件相关的渲染均由 `COMPONENT_REGISTRY` 数组驱动：
 
-**3 组件扩展后**：
-```
-[WAVE0] [WAVE1] | [BARCHART0] | [NEWCOMP0]          [BUTTON: 工具栏]
-```
+- **工具栏**：遍历 `COMPONENT_REGISTRY`，为每个 entry 渲染 `<label>` + `<input>`
+- **标签栏**：遍历 `COMPONENT_REGISTRY`，为每个 entry 的实例渲染 `<button>`
+- **编辑器**：使用 `activeEntry.Editor` 动态渲染当前活跃组件的编辑器
 
-**关键原则**：
-- 组件标签按加入顺序水平排列
-- 不同组件组之间用 `<span className="tab-sep" />` 分隔
-- 全局事件设置（button_count 等）不放标签栏，放工具栏
-- 每个组件的标签起始索引 = 前面所有组件实例数之和
-
-**当前标签索引公式**（2 组件）：
-```typescript
-const waveCount = data.inst_count;
-const barCount = data.bar_inst_count;
-const totalTabs = waveCount + barCount;
-
-const isWaveTab = activeTab < waveCount;
-const isBarTab  = activeTab >= waveCount;  // 即 activeTab >= waveCount && activeTab < totalTabs
-const profileIndex = isWaveTab ? activeTab : activeTab - waveCount;
-```
-
-### 4.2 编辑器切换
-
-嵌套三元模式：
-```tsx
-{totalTabs === 0 ? (
-  <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>
-) : isWaveTab ? (
-  <ProfileEditor profile={currentProfile} onChange={updateProfile} />
-) : isBarTab ? (
-  <BarChartEditor profile={currentProfile} onChange={updateProfile} />
-) : isNewCompTab ? (
-  <NewCompEditor profile={currentProfile} onChange={updateProfile} />
-) : (
-  <div style={{ color: "#999", padding: 24 }}>未知标签页</div>
-)}
-```
-
-> **渐进式设计**：≤3 组件保持嵌套三元（可读性尚可），≥4 组件时重构为配置驱动的数组方案。
-
-### 4.3 验证模式
-
-每个组件一个验证函数，签名统一：
-```typescript
-function validateXxx(profiles: EstaProfile[], count: number): string | null
-```
-
-返回第一条错误信息字符串，无错误返回 `null`。在 `handleGenerate` 和 `handleBuildRun` 中依次调用：
+### 4.2 标签索引系统
 
 ```typescript
-const waveErr = validateWave(data.profiles, waveCount);
-if (waveErr) { showStatus({ type: "error", msg: waveErr }); return; }
-const barErr = validateBar(data.profiles, barCount);
-if (barErr) { showStatus({ type: "error", msg: barErr }); return; }
+// 总标签数 = 所有组件实例数之和
+const totalComponentTabs = COMPONENT_REGISTRY.reduce(
+  (sum, e) => sum + ((data[e.countField] as number) ?? 0), 0
+);
+
+// 查找当前活跃的 entry 和 profileIndex
+let tabOffset = 0;
+for (const entry of COMPONENT_REGISTRY) {
+  const count = (data[entry.countField] as number) ?? 0;
+  if (activeSafeTab < tabOffset + count) {
+    activeEntry = entry;
+    profileIndex = activeSafeTab - tabOffset;
+    break;
+  }
+  tabOffset += count;
+}
 ```
 
-### 4.4 saveProfile 调用模式
+新增组件后，此逻辑**无需修改**——COMPONENT_REGISTRY 的遍历自动覆盖新组件。
+
+### 4.3 instCounts 模式（EventEditor / SequenceEditor）
 
 ```typescript
-await api.saveProfile({
-  inst_count: waveCount,
-  bar_inst_count: barCount,
-  newcomp_inst_count: newcompCount,     // 每增加一个组件加一行
-  button_count: data.button_count,      // 每增加一个事件类型加一行
-  profiles: data.profiles.slice(0, Math.max(waveCount, barCount, newcompCount)),
-});
+const instCounts = Object.fromEntries(
+  COMPONENT_REGISTRY.map((e) => [e.key, (data[e.countField] as number) ?? 0])
+);
+// 结果示例：{ wave: 2, bar: 1, table: 1, menu: 1 }
 ```
 
-`Math.max(...)` 确保 `profiles` 数组至少覆盖最大实例索引。每个新组件都需加入该参数。
+`EventEditor` 和 `SequenceEditor` 接收 `instCounts: Record<string, number>`，通过 `entry.key` 查找实例数。新增组件后，这两个组件**无需修改**。
+
+### 4.4 验证模式
+
+验证逻辑已移入各组件的 `xxx.registry.ts`，由 `entry.validate` 字段持有。`useProfileState` hook 在 `handleGenerate` / `handleBuildRun` 中遍历 `COMPONENT_REGISTRY` 调用：
+
+```typescript
+for (const entry of COMPONENT_REGISTRY) {
+  const count = (data[entry.countField] as number) ?? 0;
+  const profiles = (data[entry.profilesField] as unknown[]) ?? [];
+  const err = entry.validate(profiles as never[], count);
+  if (err) { showStatus({ type: "error", msg: err }); return; }
+}
+```
+
+新增组件后，验证逻辑**无需修改 App.tsx**——只需在 `xxx.registry.ts` 的 `validate` 函数中实现。
 
 ### 4.5 工具栏布局约定
 
-- 组件实例数控件在左侧，格式：`<label>NAME</label> <input>`，间距 `marginLeft: 12`
-- 事件计数控件紧随组件控件之后
+- 组件实例数控件由 COMPONENT_REGISTRY 自动生成，格式：`<label>NAME</label> <input>`
+- 事件计数控件（如 BUTTON）手动追加在组件控件之后
 - `toolbar-spacer` 分隔左侧控件和右侧按钮
-- 生成和 Build&Run 按钮在右侧
+- Screen 尺寸控件和操作按钮在右侧
 
 ---
 
@@ -755,32 +465,26 @@ await api.saveProfile({
 
 ## 附录 A：文件修改速查表
 
-### A.1 组件集成修改点
+### A.1 组件集成修改点（v2.0 注册表架构）
 
 | # | 文件 | 修改位置 | 操作 |
 |:---:|------|------|:---:|
-| 1 | `types.ts` | `EstaProfile` 接口 | 追加 `newcomp_*` 字段 |
-| 2 | `types.ts` | 常量区 | 追加 `NEWCOMP_THEME_OPTIONS` |
-| 3 | `types.ts` | 常量区 | 追加 `MAX_NEWCOMP_INST` |
-| 4 | `NewCompEditor.tsx` | — | **新建** |
-| 5 | `App.tsx` | 导入区 | 导入 `NewCompEditor` + `MAX_NEWCOMP_INST` |
-| 6 | `App.tsx` | `EMPTY_PROFILE` | 追加默认字段值 |
-| 7 | `App.tsx` | 验证函数区 | 新增 `validateNewComp()` |
-| 8 | `App.tsx` | 标签索引 | 扩展 `xxxCount`/`totalTabs`/`isXxxTab`/`profileIndex` |
-| 9 | `App.tsx` | 标签渲染 | 追加 `tab-sep` + `Array.from` 按钮组 |
-| 10 | `App.tsx` | 编辑器切换 | 追加三元分支 |
-| 11 | `App.tsx` | 工具栏 | 追加 `<label>` + `<input>` |
-| 12 | `App.tsx` | `handleGenerate` | 追加验证 + 更新 saveProfile |
-| 13 | `App.tsx` | `handleBuildRun` | 追加验证 + 更新 saveProfile |
-| 14 | `models.rs` | `EstaProfile` | 追加 `newcomp_*` 字段 |
-| 15 | `models.rs` | `ProfileSet` | 追加 `newcomp_inst_count` |
-| 16 | `commands.rs` | `default_profile()` ProfileSet | 追加 `newcomp_inst_count` |
-| 17 | `commands.rs` | `default_profile()` EstaProfile | 追加默认字段值 |
-| 18 | `commands.rs` | `save_profile()` json! 映射 | 追加所有 `newcomp_*` 条目 |
-| 19 | `commands.rs` | `save_profile()` ctx.insert | 追加 `"newcomp_inst_count"` |
-| 20 | `ESTA_Profile.c.j2` | 顶层结构体 | 追加 `.newcomp_inst_count` |
-| 21 | `ESTA_Profile.c.j2` | profile 循环 | 追加所有 `newcomp_*` 字段 |
-| 22 | `ESTA_Profile.c.j2` | 文件末尾 | 追加 `ToNEWCOMP_Config` + `ApplyNEWCOMP` |
+| 1 | `newcomp.registry.ts` | — | **新建**（类型 + 常量 + 默认值 + 验证器 + ComponentEntry） |
+| 2 | `NewCompEditor.tsx` | — | **新建** |
+| 3 | `componentRegistry.ts` | 导入区 | 追加 `import { newcompEntry }` |
+| 4 | `componentRegistry.ts` | `COMPONENT_REGISTRY` 数组 | 追加 `newcompEntry as unknown as ComponentEntry` |
+| 5 | `types.ts` | `ProfileSet` 接口 | 追加 `newcomp_inst_count: number` |
+| 6 | `types.ts` | `ProfileSet` 接口 | 追加 `newcomp_profiles: import(...).NewCompProfile[]` |
+| 7 | `models.rs` | `EstaProfile` | 追加 `newcomp_*` 字段 |
+| 8 | `models.rs` | `ProfileSet` | 追加 `pub newcomp_inst_count: u16` + `pub newcomp_profiles: Vec<EstaProfile>` |
+| 9 | `commands.rs` | `default_profile()` | 追加 `newcomp_inst_count` + 默认 profile |
+| 10 | `commands.rs` | `save_profile()` json! 映射 | 追加所有 `newcomp_*` 条目 |
+| 11 | `commands.rs` | `save_profile()` ctx.insert | 追加 `"newcomp_inst_count"` |
+| 12 | `ESTA_Profile.c.j2` | 顶层结构体 | 追加 `.newcomp_inst_count` |
+| 13 | `ESTA_Profile.c.j2` | profile 循环 | 追加所有 `newcomp_*` 字段 |
+| 14 | `ESTA_Profile.c.j2` | 文件末尾 | 追加 `ToNEWCOMP_Config` + `ApplyNEWCOMP` |
+
+**对比 v1.0**：修改点从 22 个减少到 14 个，且 App.tsx 完全不需要修改。
 
 ### A.2 事件集成修改点（v1 简单计数型）
 
@@ -802,53 +506,47 @@ await api.saveProfile({
 | 方面 | 本规范 | INTEGRATION_SPEC.md |
 |------|------|------|
 | 覆盖范围 | profile-gui 内部（TS + Rust + Tera） | 全链路（C 核心 + Rust 后端 + TS 前端 + 模拟器） |
-| 组件集成 | 6 步骤（仅 profile-gui 侧） | 7 步骤（含 C 组件代码 + 主题注册 + 模拟器） |
+| 组件集成 | 7 步骤（仅 profile-gui 侧） | 7 步骤（含 C 组件代码 + 主题注册 + 模拟器） |
 | 事件集成 | 含 v1/v2 模式 + 扩展框架 | 不含（编写时事件系统尚未实现） |
-| App.tsx 模式 | 深入分析（标签索引、编辑器切换、验证、saveProfile） | 简要概述 |
+| App.tsx 模式 | 深入分析（注册表驱动原理） | 简要概述 |
 | 适用读者 | profile-gui 开发者 | 全栈开发者 |
 
 两份文档互补——本规范深入 profile-gui 细节，INTEGRATION_SPEC.md 覆盖完整数据流。添加新组件时建议先读 INTEGRATION_SPEC.md 了解全局，再按本规范操作 profile-gui 侧。
 
 ---
 
-## 附录 C：BARCHART 完整修改参考
+## 附录 C：BARCHART 完整修改参考（v2.0 注册表架构）
 
 以下列出 BARCHART 作为第二个组件集成到 profile-gui 时的所有实际修改，作为 `NEWCOMP` 的对照参考。
 
-### types.ts（+13 行）
+### bar.registry.ts（新建，65 行）
+
+包含：`BarChartProfile` 接口、`MAX_BAR_INST=4`、`BAR_THEME_OPTIONS`、`makeDefaultBar()`、`validateBar()`、`barEntry: ComponentEntry<BarChartProfile>`。
+
+### BarChartEditor.tsx（新建，约 120 行）
+
+4 个 fieldset：位置与尺寸 / 数据范围 / 柱体配置 / 显示选项。
+从 `bar.registry.ts` 导入 `BarChartProfile`、`BAR_THEME_OPTIONS`；从 `types.ts` 导入 `UI_FONT_SIZE_OPTIONS`。
+
+### componentRegistry.ts（+2 行）
 
 ```typescript
-// EstaProfile 追加：
-bar_x_origin: number; bar_y_origin: number; bar_x_width: number; bar_y_width: number;
-bar_display_num_min: number; bar_display_num_max: number;
-bar_count: number; bar_width: number; bar_spacing: number;
-bar_is_display_value: boolean; bar_is_display_axis: boolean;
-bar_theme_type: string;
-
-// ProfileSet 追加：
-bar_inst_count: number;
-
-// 常量：
-export const BAR_THEME_OPTIONS = [
-  ["BARCHART_THEME_DEFAULT", "Default"],
-  ["BARCHART_THEME_LIGHT", "Light"],
-] as const;
-export const MAX_BAR_INST = 2;
+import { barEntry } from "./bar.registry";
+// COMPONENT_REGISTRY 数组追加 barEntry as unknown as ComponentEntry
 ```
 
-### BarChartEditor.tsx（新建，115 行）
+### types.ts（+2 行）
 
-4 个 fieldset：位置与尺寸 / 数据与柱体 / 柱体布局 / 显示选项。见第 2.2 节模板。
+```typescript
+bar_inst_count: number;
+bar_profiles: import("./bar.registry").BarChartProfile[];
+```
 
-### App.tsx（8 处修改）
-
-见步骤 3a-3h 的模式，BARCHART 是这些模式的参考实现。
-
-### models.rs（+16 行）
+### models.rs（+13 行）
 
 ```rust
 // EstaProfile 追加 12 个 bar_* 字段
-// ProfileSet 追加 pub bar_inst_count: u16
+// ProfileSet 追加 pub bar_inst_count: u16 + pub bar_profiles: Vec<EstaProfile>
 ```
 
 ### commands.rs（+16 行）
@@ -859,3 +557,6 @@ json! 映射加 12 个 `"bar_xxx": p.bar_xxx`；ctx.insert 加 `"bar_inst_count"
 ### ESTA_Profile.c.j2（+28 行）
 
 顶层 `.bar_inst_count`；循环内 12 个 `.bar_*` 字段；末尾 `ToBARCHART_Config` + `ApplyBARCHART` 函数。
+
+
+---
