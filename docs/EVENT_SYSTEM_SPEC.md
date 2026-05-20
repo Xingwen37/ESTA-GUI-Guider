@@ -132,10 +132,11 @@ typedef enum {
     ESTA_ACTION_MENU_DOWN     = 6,
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
-    ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
+    ESTA_ACTION_FLAG_SET      = 9,   // 仅置位状态位，不推送事件（与 FLAG_CLEAR 对称）
     ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
     ESTA_ACTION_SEQUENCE      = 11,  // 序列：触发一组子动作
-    ESTA_ACTION_FLAG_CLEAR    = 12,  // 延迟：主动清除 Flag
+    ESTA_ACTION_FLAG_CLEAR    = 12,  // 清除 Flag 状态位
+    ESTA_ACTION_FLAG_SIGNAL   = 13,  // 置位状态位 + 推送 FLAG 事件
     ESTA_ACTION_CUSTOM        = 0xFF // 自定义：由用户注册的 handler
 } ESTA_ActionType;
 ```
@@ -150,7 +151,7 @@ typedef enum {
 | MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET, SEQUENCE, CUSTOM |
 | PAGE (4) | PAGE_NEXT, PAGE_PREV, SEQUENCE, CUSTOM |
 | GLOBAL (5) | THEME_TOGGLE, SEQUENCE, CUSTOM |
-| FLAG (6) | FLAG_SET, FLAG_CLEAR, SEQUENCE, CUSTOM |
+| FLAG (6) | FLAG_SET, FLAG_CLEAR, FLAG_SIGNAL, SEQUENCE, CUSTOM |
 
 > SEQUENCE 和 CUSTOM 对所有 target_type 均可用，因为实际目标由序列步骤或自定义 handler 内部决定。
 
@@ -368,10 +369,21 @@ uint8_t ESTA_FlagReadAll(void);         // 读取所有 flag 状态位（供 fla
 
 ### FLAG_SET action
 
-FLAG_SET 是延迟 action——handler 调用 `ESTA_FlagSignal`，置位状态位并推送 FLAG 事件：
+FLAG_SET 是纯状态写入——仅置位状态位，不推送事件，与 FLAG_CLEAR 对称：
 
 ```c
 static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    ESTA_FlagSet(ctx->target_inst);  // target_inst = flag_id
+    return true;
+}
+```
+
+FLAG_SIGNAL 置位状态位并推送 FLAG 事件，是最常用的 Flag 触发方式：
+
+```c
+static bool action_flag_signal(const ESTA_Event *evt, void *user_data) {
     (void)evt;
     App_BindingContext *ctx = (App_BindingContext *)user_data;
     ESTA_FlagSignal(ctx->target_inst);  // target_inst = flag_id
@@ -384,7 +396,8 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 | 类别 | Action | 行为 |
 |------|--------|------|
 | 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, MENU_* | handler 直接执行效果 |
-| 延迟 | FLAG_SET | handler 仅设置标志，效果由外部消费 |
+| 状态写入 | FLAG_SET, FLAG_CLEAR | 纯状态位操作，不产生事件 |
+| 通知 | FLAG_SIGNAL | 置位状态位 + 推送 FLAG 事件 |
 | 参数化 | TEXT_SET | handler 从字符串表取数据，写入目标组件 |
 | 序列 | SEQUENCE | handler 依次执行 Profile 中定义的子动作步骤 |
 | 自定义 | CUSTOM | handler 分发到用户注册的函数（运行时注册） |

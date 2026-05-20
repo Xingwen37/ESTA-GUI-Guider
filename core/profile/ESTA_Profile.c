@@ -231,10 +231,10 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 
-        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 9, .param = 0,
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 13, .param = 0,
           .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0,
+        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 13, .param = 0,
           .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
         { .trigger = 1, .source_id = 3, .trigger_id = 65535, .target_type = 5, .target_inst = 0, .action = 11, .param = 0,

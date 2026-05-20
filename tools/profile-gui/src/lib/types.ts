@@ -101,6 +101,7 @@ export const ACTION_TYPE_OPTIONS = [
   [10, "TEXT_SET"],
   [11, "SEQUENCE"],
   [12, "FLAG_CLEAR"],
+  [13, "FLAG_SIGNAL"],
   [255, "CUSTOM"],
 ] as const;
 
@@ -111,7 +112,7 @@ export const VALID_ACTIONS: Record<number, number[]> = {
   3: [5, 6, 7, 8, 10, 11, 255],
   4: [1, 2, 11, 255],
   5: [3, 11, 255],
-  6: [9, 12, 11, 255],
+  6: [9, 12, 13, 11, 255],
 };
 
 export const SOURCE_ANY = 0xFF;

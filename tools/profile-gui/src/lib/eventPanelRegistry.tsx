@@ -6,7 +6,6 @@ import type { WaveProfile } from "./wave.registry";
 import EventEditor from "../components/EventEditor";
 import StringTableEditor from "../components/StringTableEditor";
 import SequenceEditor from "../components/SequenceEditor";
-import FlagConfigEditor from "../components/FlagConfigEditor";
 import SoftTimerEditor from "../components/SoftTimerEditor";
 
 export interface EventPanelProps {
@@ -61,13 +60,6 @@ export const EVENT_PANELS: EventPanelEntry[] = [
         instCounts={instCounts}
         onChange={(sequences) => setData({ ...data, sequences, sequence_count: sequences.length })}
       />
-    ),
-  },
-  {
-    key: "flags",
-    label: "Flag Config",
-    Component: ({ data, setData }) => (
-      <FlagConfigEditor data={data} setData={setData} />
     ),
   },
   {

@@ -28,10 +28,11 @@ typedef enum {
     ESTA_ACTION_MENU_DOWN     = 6,
     ESTA_ACTION_MENU_ENTER    = 7,
     ESTA_ACTION_MENU_BACK     = 8,
-    ESTA_ACTION_FLAG_SET      = 9,
+    ESTA_ACTION_FLAG_SET      = 9,   /* 仅置位状态位，不推送事件（与 FLAG_CLEAR 对称） */
     ESTA_ACTION_TEXT_SET      = 10,
     ESTA_ACTION_SEQUENCE      = 11,
     ESTA_ACTION_FLAG_CLEAR    = 12,
+    ESTA_ACTION_FLAG_SIGNAL   = 13,  /* 置位状态位 + 推送 FLAG 事件 */
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 

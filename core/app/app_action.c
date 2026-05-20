@@ -110,6 +110,13 @@ static bool action_menu_back(const ESTA_Event *evt, void *user_data) {
 static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
     (void)evt;
     App_BindingContext *ctx = (App_BindingContext *)user_data;
+    ESTA_FlagSet(ctx->target_inst);
+    return true;
+}
+
+static bool action_flag_signal(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
     ESTA_FlagSignal(ctx->target_inst);
     return true;
 }
@@ -209,6 +216,7 @@ static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_FLAG_CLEAR]    = action_flag_clear,
     [ESTA_ACTION_TEXT_SET]      = action_text_set,
     [ESTA_ACTION_SEQUENCE]      = action_sequence,
+    [ESTA_ACTION_FLAG_SIGNAL]   = action_flag_signal,
 };
 
 #define ACTION_TABLE_SIZE (sizeof(g_action_table) / sizeof(g_action_table[0]))
