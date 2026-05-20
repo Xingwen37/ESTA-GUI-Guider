@@ -6,7 +6,8 @@ interface Props {
 }
 
 const FLAG_MODE_OPTIONS = [
-  [1, "AUTO_EVENT"],
+  [1, "MANUAL"],
+  [2, "AUTO_EVENT"],
 ] as const;
 
 const EVENT_TYPE_OPTIONS = [
@@ -38,7 +39,8 @@ export default function FlagConfigEditor({ data, setData }: Props) {
     data.flag_profiles ?? Array.from({ length: FLAG_MAX }, () => ({ ...DISABLED_FLAG }))
   );
 
-  const enabledCount = flags.filter((f) => f.mode !== 0).length;
+  const manualCount = flags.filter((f) => f.mode === 1).length;
+  const autoCount = flags.filter((f) => f.mode === 2).length;
   const availableIds = flags
     .map((f, i) => (f.mode === 0 ? i : -1))
     .filter((i) => i !== -1);
@@ -59,7 +61,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
   return (
     <div style={{ padding: 12 }}>
       <fieldset className="group-box">
-        <legend>Flag 配置 ({enabledCount}/{FLAG_MAX} 已启用)</legend>
+        <legend>Flag 配置 ({manualCount} MANUAL / {autoCount} AUTO_EVENT)</legend>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #444" }}>
@@ -74,6 +76,8 @@ export default function FlagConfigEditor({ data, setData }: Props) {
           <tbody>
             {flags.map((f, i) => {
               if (f.mode === 0) return null;
+              const isManual = f.mode === 1;
+              const dimStyle = isManual ? { opacity: 0.3, pointerEvents: "none" as const } : {};
               return (
                 <tr key={i} style={{ borderBottom: "1px solid #333" }}>
                   <td style={{ padding: "4px 6px", color: "#888" }}>#{i}</td>
@@ -87,7 +91,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
                       ))}
                     </select>
                   </td>
-                  <td style={{ padding: "4px 6px" }}>
+                  <td style={{ padding: "4px 6px", ...dimStyle }}>
                     <select
                       value={f.event_type}
                       onChange={(e) => update(i, { event_type: Number(e.target.value) })}
@@ -97,7 +101,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
                       ))}
                     </select>
                   </td>
-                  <td style={{ padding: "4px 6px" }}>
+                  <td style={{ padding: "4px 6px", ...dimStyle }}>
                     <input
                       type="number"
                       value={f.event_source}
@@ -107,7 +111,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
                       onChange={(e) => update(i, { event_source: Number(e.target.value) || 0 })}
                     />
                   </td>
-                  <td style={{ padding: "4px 6px" }}>
+                  <td style={{ padding: "4px 6px", ...dimStyle }}>
                     <input
                       type="number"
                       value={f.event_id}
@@ -132,7 +136,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
           </tbody>
         </table>
 
-        {enabledCount === 0 && (
+        {manualCount + autoCount === 0 && (
           <div style={{ color: "#999", padding: 12 }}>暂无已启用的 Flag，点击下方按钮添加</div>
         )}
 

@@ -9,8 +9,9 @@
 #define ESTA_FLAG_WAVE_REDRAW 0
 
 typedef enum {
-    ESTA_FLAG_MODE_MANUAL = 0,
-    ESTA_FLAG_MODE_AUTO_EVENT,
+    ESTA_FLAG_MODE_DISABLED = 0,
+    ESTA_FLAG_MODE_MANUAL = 1,
+    ESTA_FLAG_MODE_AUTO_EVENT = 2,
 } ESTA_FlagMode;
 
 typedef struct {

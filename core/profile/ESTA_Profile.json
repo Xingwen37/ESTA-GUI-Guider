@@ -5,84 +5,105 @@
   "bindings": [
     {
       "trigger": 1,
-      "source_id": 2,
+      "source_id": 1,
       "trigger_id": 65535,
       "target_type": 6,
       "target_inst": 0,
       "action": 9,
-      "param": 0
+      "param": 0,
+      "guard_and_mask": 0,
+      "guard_or_mask": 0,
+      "guard_inv_mask": 0
     },
     {
       "trigger": 1,
-      "source_id": 4,
+      "source_id": 2,
       "trigger_id": 65535,
       "target_type": 6,
-      "target_inst": 0,
-      "action": 12,
-      "param": 0
+      "target_inst": 1,
+      "action": 9,
+      "param": 0,
+      "guard_and_mask": 0,
+      "guard_or_mask": 0,
+      "guard_inv_mask": 0
     },
     {
-      "trigger": 6,
+      "trigger": 1,
+      "source_id": 3,
+      "trigger_id": 65535,
+      "target_type": 5,
+      "target_inst": 0,
+      "action": 11,
+      "param": 0,
+      "guard_and_mask": 0,
+      "guard_or_mask": 0,
+      "guard_inv_mask": 0
+    },
+    {
+      "trigger": 5,
       "source_id": 0,
       "trigger_id": 65535,
       "target_type": 0,
       "target_inst": 0,
       "action": 4,
-      "param": 0
-    },
-    {
-      "trigger": 1,
-      "source_id": 0,
-      "trigger_id": 65535,
-      "target_type": 0,
-      "target_inst": 0,
-      "action": 3,
-      "param": 0
+      "param": 0,
+      "guard_and_mask": 3,
+      "guard_or_mask": 0,
+      "guard_inv_mask": 0
     }
   ],
-  "string_count": 3,
-  "strings": [
-    {
-      "sub_addr": 6,
-      "text": "223"
-    },
-    {
-      "sub_addr": 8,
-      "text": "333"
-    },
-    {
-      "sub_addr": 0,
-      "text": "0.01V"
-    }
-  ],
+  "string_count": 0,
+  "strings": [],
   "sequence_count": 1,
   "sequences": [
     {
       "step_count": 2,
       "steps": [
         {
-          "action": 10,
-          "target_type": 3,
+          "action": 12,
+          "target_type": 6,
           "target_inst": 0,
           "param": 0
         },
         {
-          "action": 4,
-          "target_type": 0,
-          "target_inst": 0,
+          "action": 12,
+          "target_type": 6,
+          "target_inst": 1,
           "param": 0
         }
       ]
     }
   ],
-  "menu_inst_count": 1,
-  "wave_inst_count": 1,
+  "bar_profiles": [
+    {
+      "bar_count": 6,
+      "bar_spacing": 5,
+      "bar_width": 10,
+      "display_num_max": 100,
+      "display_num_min": 0,
+      "font_size": "ESTA_FONT_1608",
+      "is_display_axis": true,
+      "is_display_value": true,
+      "page": 0,
+      "theme_type": "BARCHART_THEME_DEFAULT",
+      "x_origin": 102,
+      "x_width": 93,
+      "y_origin": 336,
+      "y_width": 80
+    }
+  ],
   "flag_profiles": [
     {
       "event_id": 0,
       "event_source": 0,
-      "event_type": 6,
-      "mode": 2
+      "event_type": 1,
+      "mode": 1
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 1,
+      "mode": 1
     },
     {
       "event_id": 0,
@@ -119,14 +140,161 @@
       "event_source": 0,
       "event_type": 0,
       "mode": 0
-    },
+    }
+  ],
+  "flag_inst_count": 8,
+  "menu_profiles": [
+    {
+      "breadcrumb_height": 0,
+      "font_size": "ESTA_FONT_1608",
+      "is_fill_background": true,
+      "is_show_breadcrumb": false,
+      "is_show_frame": true,
+      "item_count": 8,
+      "item_height": 20,
+      "items": [
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Settings",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Display",
+          "parent_idx": 0
+        },
+        {
+          "event_id": 10,
+          "is_submenu": false,
+          "label": "Brightness",
+          "parent_idx": 1
+        },
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Background",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "defult",
+          "parent_idx": 3
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "light",
+          "parent_idx": 3
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "Item",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "Item",
+          "parent_idx": 255
+        }
+      ],
+      "page": 0,
+      "theme_type": "MENU_THEME_DEFAULT",
+      "x_origin": 0,
+      "x_width": 98,
+      "y_origin": 336,
+      "y_width": 80
+    }
+  ],
+  "table_profiles": [
+    {
+      "cells": [
+        [
+          {
+            "f32": 0,
+            "text": "Vpp",
+            "u32": 0
+          },
+          {
+            "f32": 0,
+            "text": "",
+            "u32": 1000
+          },
+          {
+            "f32": 0,
+            "text": "mV",
+            "u32": 0
+          }
+        ],
+        [
+          {
+            "f32": 0,
+            "text": "Fre",
+            "u32": 0
+          },
+          {
+            "f32": 0,
+            "text": "",
+            "u32": 1230
+          },
+          {
+            "f32": 0,
+            "text": "Hz",
+            "u32": 0
+          }
+        ]
+      ],
+      "col_count": 3,
+      "cols": [
+        {
+          "cell_type": "TABLE_CELL_TEXT",
+          "header": "Name",
+          "precision": 0,
+          "width": 0
+        },
+        {
+          "cell_type": "TABLE_CELL_UINT32",
+          "header": "Value",
+          "precision": 0,
+          "width": 0
+        },
+        {
+          "cell_type": "TABLE_CELL_TEXT",
+          "header": "Unit",
+          "precision": 0,
+          "width": 0
+        }
+      ],
+      "font_size": "ESTA_FONT_1608",
+      "is_fill_background": true,
+      "is_show_col_line": false,
+      "is_show_frame": true,
+      "is_show_header": false,
+      "is_show_row_line": false,
+      "page": 0,
+      "row_count": 2,
+      "row_height": 20,
+      "theme_type": "TABLE_THEME_LIGHT",
+      "x_origin": 0,
+      "x_width": 110,
+      "y_origin": 260,
+      "y_width": 72
+    }
+  ],
+  "timer_configs": [
     {
       "event_id": 0,
       "event_source": 0,
-      "event_type": 0,
-      "mode": 0
+      "event_type": 5,
+      "period_ms": 20
     }
   ],
+  "timer_count": 1,
+  "wave_inst_count": 1,
   "wave_profiles": [
     {
       "channel_mask": 15,
@@ -251,167 +419,7 @@
       "y_width": 256
     }
   ],
-  "flag_inst_count": 8,
   "bar_inst_count": 1,
-  "bar_profiles": [
-    {
-      "bar_count": 6,
-      "bar_spacing": 5,
-      "bar_width": 10,
-      "display_num_max": 100,
-      "display_num_min": 0,
-      "font_size": "ESTA_FONT_1608",
-      "is_display_axis": true,
-      "is_display_value": true,
-      "page": 0,
-      "theme_type": "BARCHART_THEME_DEFAULT",
-      "x_origin": 102,
-      "x_width": 93,
-      "y_origin": 336,
-      "y_width": 80
-    }
-  ],
-  "menu_profiles": [
-    {
-      "breadcrumb_height": 0,
-      "font_size": "ESTA_FONT_1608",
-      "is_fill_background": true,
-      "is_show_breadcrumb": false,
-      "is_show_frame": true,
-      "item_count": 8,
-      "item_height": 20,
-      "items": [
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Settings",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Display",
-          "parent_idx": 0
-        },
-        {
-          "event_id": 10,
-          "is_submenu": false,
-          "label": "Brightness",
-          "parent_idx": 1
-        },
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Background",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "defult",
-          "parent_idx": 3
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "light",
-          "parent_idx": 3
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "Item",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "Item",
-          "parent_idx": 255
-        }
-      ],
-      "page": 0,
-      "theme_type": "MENU_THEME_DEFAULT",
-      "x_origin": 0,
-      "x_width": 98,
-      "y_origin": 336,
-      "y_width": 80
-    }
-  ],
   "table_inst_count": 1,
-  "table_profiles": [
-    {
-      "cells": [
-        [
-          {
-            "f32": 0,
-            "text": "Vpp",
-            "u32": 0
-          },
-          {
-            "f32": 0,
-            "text": "",
-            "u32": 1000
-          },
-          {
-            "f32": 0,
-            "text": "mV",
-            "u32": 0
-          }
-        ],
-        [
-          {
-            "f32": 0,
-            "text": "Fre",
-            "u32": 0
-          },
-          {
-            "f32": 0,
-            "text": "",
-            "u32": 1230
-          },
-          {
-            "f32": 0,
-            "text": "Hz",
-            "u32": 0
-          }
-        ]
-      ],
-      "col_count": 3,
-      "cols": [
-        {
-          "cell_type": "TABLE_CELL_TEXT",
-          "header": "Name",
-          "precision": 0,
-          "width": 0
-        },
-        {
-          "cell_type": "TABLE_CELL_UINT32",
-          "header": "Value",
-          "precision": 0,
-          "width": 0
-        },
-        {
-          "cell_type": "TABLE_CELL_TEXT",
-          "header": "Unit",
-          "precision": 0,
-          "width": 0
-        }
-      ],
-      "font_size": "ESTA_FONT_1608",
-      "is_fill_background": true,
-      "is_show_col_line": false,
-      "is_show_frame": true,
-      "is_show_header": false,
-      "is_show_row_line": false,
-      "page": 0,
-      "row_count": 2,
-      "row_height": 20,
-      "theme_type": "TABLE_THEME_LIGHT",
-      "x_origin": 0,
-      "x_width": 110,
-      "y_origin": 260,
-      "y_width": 72
-    }
-  ]
+  "menu_inst_count": 1
 }
