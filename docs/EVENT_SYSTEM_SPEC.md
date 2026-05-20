@@ -135,7 +135,7 @@ typedef enum {
     ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
     ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
     ESTA_ACTION_SEQUENCE      = 11,  // 序列：触发一组子动作
-    ESTA_ACTION_FLAG_CLEAR    = 12,  // 延迟：主动清除 Flag，终止 LATCH 推送
+    ESTA_ACTION_FLAG_CLEAR    = 12,  // 延迟：主动清除 Flag
     ESTA_ACTION_CUSTOM        = 0xFF // 自定义：由用户注册的 handler
 } ESTA_ActionType;
 ```
@@ -321,20 +321,19 @@ Flag 是一种轻量级的内部信号机制，用于跨模块通信。支持三
 |------|:---:|------|
 | `ESTA_FLAG_MODE_MANUAL` | 0 | 手动模式：外部代码调用 `ESTA_FlagCheck()` 轮询消费，不会自动推送事件 |
 | `ESTA_FLAG_MODE_AUTO_EVENT` | 1 | 自动单次模式：`FlagPoll()` 推送一次转换事件后自动清除 flag |
-| `ESTA_FLAG_MODE_LATCH` | 2 | 锁存模式：`FlagPoll()` 每帧持续推送转换事件，**不清除** flag，直到 `ESTA_FlagClear()` 主动释放 |
 
 ### FlagConfig 结构体
 
 ```c
 typedef struct {
-    ESTA_FlagMode mode;        // MANUAL / AUTO_EVENT / LATCH
+    ESTA_FlagMode mode;        // MANUAL / AUTO_EVENT
     ESTA_EventType event_type; // FlagPoll 时转换的目标事件类型
     uint8_t event_source;      // 推送事件的 source 字段
     uint16_t event_id;         // 推送事件的 id 字段
 } ESTA_FlagConfig;
 ```
 
-`FlagPoll()` 遍历已注册的 flag：MANUAL 模式跳过；AUTO_EVENT 推送后自动清零；LATCH 推送后保持置位。
+`FlagPoll()` 遍历已注册的 flag：MANUAL 模式跳过；AUTO_EVENT 推送后自动清零。
 
 ### API
 
@@ -344,8 +343,8 @@ void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
 void ESTA_FlagSet(uint8_t flag_id);    // 设置 Flag 并自动推送 ESTA_EVENT_FLAG 事件
 bool ESTA_FlagCheck(uint8_t flag_id);  // 检查并清除（consume）
 bool ESTA_FlagPeek(uint8_t flag_id);   // 仅查看，不清除
-void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag（终止 LATCH 推送）
-void ESTA_FlagPoll(void);             // AUTO_EVENT / LATCH 模式转换
+void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag
+void ESTA_FlagPoll(void);             // AUTO_EVENT 模式转换
 ```
 
 ### Flag 作为触发条件
@@ -383,17 +382,6 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 ### 容量
 
 `ESTA_FLAG_MAX = 8`，Flag ID 范围 0~7。
-
-### LATCH 与 SoftTimer 对比
-
-LATCH 模式保留向后兼容，但推荐使用 SoftTimer 作为周期驱动：
-
-| 特性 | LATCH Flag | SoftTimer |
-|------|-----------|-----------|
-| 周期配置 | 隐式（每帧 `FlagPoll` 触发一次） | 显式 `period_ms` |
-| 占用 Flag 槽位 | 是（1 个 Flag） | 否 |
-| 依赖 Flag 状态位 | 是（需 `FlagClear` 停止） | 否 |
-| 语义清晰度 | 低（Flag 兼做状态存储和周期驱动） | 高（单一职责） |
 
 ## SoftTimer 系统（`core/event/soft_timer.h/.c`）
 
@@ -435,7 +423,7 @@ void ESTA_SoftTimerTick(uint16_t delta_ms);
 
 ### 典型用法：周期刷新波形
 
-配置一个 period_ms=20 的 TIMER 事件 timer，再配置 binding：`TIMER(source=0) → WAVE_REDRAW(inst=0)`，即可实现 50Hz 波形持续刷新，无需 LATCH Flag。
+配置一个 period_ms=20 的 TIMER 事件 timer，再配置 binding：`TIMER(source=0) → WAVE_REDRAW(inst=0)`，即可实现 50Hz 波形持续刷新。
 
 ## 字符串表系统
 
@@ -514,8 +502,8 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | 层 | 文件 | 职责 |
 |----|------|------|
 | C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体（含 flag_snapshot）、队列、Emit 函数 |
-| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT/LATCH 转换、FlagClear |
-| C SoftTimer | `core/event/soft_timer.h/.c` | 周期事件驱动（period_ms 配置，替代 LATCH 的周期职责） |
+| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT 转换、FlagClear |
+| C SoftTimer | `core/event/soft_timer.h/.c` | 周期事件驱动（period_ms 配置） |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents（guard 用 flag_snapshot） |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
 | C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |

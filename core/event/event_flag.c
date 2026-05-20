@@ -55,9 +55,7 @@ void ESTA_FlagPoll(void) {
     for (uint8_t i = 0; i < ESTA_FLAG_MAX; i++) {
         if (!s_registered[i]) continue;
         if (!s_flags[i]) continue;
-
-        bool is_latch = (s_config[i].mode == ESTA_FLAG_MODE_LATCH);
-        if (s_config[i].mode != ESTA_FLAG_MODE_AUTO_EVENT && !is_latch) continue;
+        if (s_config[i].mode != ESTA_FLAG_MODE_AUTO_EVENT) continue;
 
         ESTA_Event evt;
         evt.type = (uint8_t)s_config[i].event_type;
@@ -65,10 +63,7 @@ void ESTA_FlagPoll(void) {
         evt.id = s_config[i].event_id;
         evt.timestamp = ESTA_GET_TICK();
         ESTA_EventPush(&evt);
-
-        if (!is_latch) {
-            s_flags[i] = 0;
-        }
+        s_flags[i] = 0;
     }
 }
 

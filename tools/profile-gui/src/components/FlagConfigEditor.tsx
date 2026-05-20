@@ -7,7 +7,6 @@ interface Props {
 
 const FLAG_MODE_OPTIONS = [
   [1, "AUTO_EVENT"],
-  [2, "LATCH"],
 ] as const;
 
 const EVENT_TYPE_OPTIONS = [

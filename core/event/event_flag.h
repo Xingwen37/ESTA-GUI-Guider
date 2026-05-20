@@ -11,7 +11,6 @@
 typedef enum {
     ESTA_FLAG_MODE_MANUAL = 0,
     ESTA_FLAG_MODE_AUTO_EVENT,
-    ESTA_FLAG_MODE_LATCH,
 } ESTA_FlagMode;
 
 typedef struct {
