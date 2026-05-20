@@ -1,4 +1,5 @@
 #include "event/event.h"
+#include "event/event_flag.h"
 #include "infra/ui_base.h"
 
 #include <string.h>
@@ -20,6 +21,7 @@ bool ESTA_EventPush(const ESTA_Event *event) {
         return false;
     }
     g_event_queue[g_event_head] = *event;
+    g_event_queue[g_event_head].flag_snapshot = ESTA_FlagReadAll();
     g_event_head = next;
     return true;
 }

@@ -1,6 +1,5 @@
 #include "app/app_event.h"
 #include "app/app_action.h"
-#include "event/event_flag.h"
 #include <stddef.h>
 
 typedef struct {
@@ -56,7 +55,7 @@ void App_DispatchEvents(void) {
             {
                 const App_BindingContext *ctx = (const App_BindingContext *)g_subs[i].user_data;
                 if (ctx != NULL) {
-                    uint8_t flags = ESTA_FlagReadAll();
+                    uint8_t flags = evt.flag_snapshot;
                     if (ctx->guard_and_mask && (flags & ctx->guard_and_mask) != ctx->guard_and_mask) continue;
                     if (ctx->guard_or_mask  && (flags & ctx->guard_or_mask)  == 0)                   continue;
                     if (ctx->guard_inv_mask && (flags & ctx->guard_inv_mask) != 0)                   continue;
@@ -77,7 +76,7 @@ void App_DispatchEvents(void) {
                 {
                     const App_BindingContext *ctx = (const App_BindingContext *)g_subs[i].user_data;
                     if (ctx != NULL) {
-                        uint8_t flags = ESTA_FlagReadAll();
+                        uint8_t flags = evt.flag_snapshot;
                         if (ctx->guard_and_mask && (flags & ctx->guard_and_mask) != ctx->guard_and_mask) continue;
                         if (ctx->guard_or_mask  && (flags & ctx->guard_or_mask)  == 0)                   continue;
                         if (ctx->guard_inv_mask && (flags & ctx->guard_inv_mask) != 0)                   continue;

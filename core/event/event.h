@@ -22,6 +22,7 @@ typedef struct {
     uint8_t  source;     /* physical source: button index, encoder index, component inst */
     uint16_t id;         /* semantic ID: menu item event_id, timer_id, etc. */
     uint32_t timestamp;  /* system tick in ms, filled by ESTA_GET_TICK() */
+    uint8_t  flag_snapshot; /* Flag 状态快照（入队时由 ESTA_EventPush 自动填入） */
 } ESTA_Event;
 
 void        ESTA_EventInit(void);
