@@ -99,9 +99,9 @@ export default function SequenceEditor(props: Props) {
               <thead>
                 <tr style={{ borderBottom: "1px solid #444" }}>
                   <th style={{ textAlign: "left", padding: "3px 5px" }}>#</th>
-                  <th style={{ textAlign: "left", padding: "3px 5px" }}>Action</th>
                   <th style={{ textAlign: "left", padding: "3px 5px" }}>Target</th>
                   <th style={{ textAlign: "left", padding: "3px 5px" }}>Inst</th>
+                  <th style={{ textAlign: "left", padding: "3px 5px" }}>Action</th>
                   <th style={{ textAlign: "left", padding: "3px 5px" }}>Param</th>
                   <th style={{ width: 30 }}></th>
                 </tr>
@@ -113,14 +113,6 @@ export default function SequenceEditor(props: Props) {
                   return (
                     <tr key={stepIdx} style={{ borderBottom: "1px solid #333" }}>
                       <td style={{ padding: "3px 5px", color: "#888" }}>{stepIdx}</td>
-                      <td style={{ padding: "3px 5px" }}>
-                        <select value={step.action}
-                          onChange={(e) => updateStep(si, stepIdx, "action", Number(e.target.value))}>
-                          {STEP_ACTION_OPTIONS.map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
-                          ))}
-                        </select>
-                      </td>
                       <td style={{ padding: "3px 5px" }}>
                         <select value={step.target_type}
                           onChange={(e) => updateStep(si, stepIdx, "target_type", Number(e.target.value))}>
@@ -140,6 +132,14 @@ export default function SequenceEditor(props: Props) {
                             ))}
                           </select>
                         )}
+                      </td>
+                      <td style={{ padding: "3px 5px" }}>
+                        <select value={step.action}
+                          onChange={(e) => updateStep(si, stepIdx, "action", Number(e.target.value))}>
+                          {STEP_ACTION_OPTIONS.map(([val, label]) => (
+                            <option key={val} value={val}>{label}</option>
+                          ))}
+                        </select>
                       </td>
                       <td style={{ padding: "3px 5px" }}>
                         <input type="number" value={step.param} min={0} max={255}

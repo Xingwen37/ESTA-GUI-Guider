@@ -67,9 +67,9 @@ export default function FlagConfigEditor({ data, setData }: Props) {
             <tr style={{ borderBottom: "1px solid #444" }}>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Flag</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Mode</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Event Type</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Source</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>ID</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="Flag 置位后由 FlagPoll 推送到事件队列的事件类型（仅 AUTO_EVENT 模式有效）">Emit Type</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 source 字段值">Emit Source</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 id 字段值">Emit ID</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>

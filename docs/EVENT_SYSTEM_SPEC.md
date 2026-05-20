@@ -175,6 +175,8 @@ typedef enum {
 
 **快照语义**：guard 检查使用 `evt.flag_snapshot`（事件入队时的 Flag 状态快照），而非 dispatch 时的实时状态。快照由 `ESTA_EventPush` 在写入队列时自动填入，确保同一帧内多个事件的 guard 结果由各自入队时刻的 Flag 状态决定，与 dispatch 处理顺序无关。
 
+> **guard 状态存储推荐使用 MANUAL 模式 Flag**：MANUAL Flag 持久保持置位状态，能跨越多帧被事件快照捕获到。AUTO_EVENT Flag 在 FlagPoll 后立即清零，不适合作为 guard 条件。
+
 > 注意：`ESTA_FlagSet(flag_id)` 先置位 `s_flags[flag_id]`，再调用 `ESTA_EventPush`，因此快照会包含刚被 set 的 Flag——这是正确的语义（"此事件产生时 Flag 的状态"）。
 
 ```c
@@ -313,27 +315,52 @@ MCU 移植时，用户实现自己的绘制回调（从 ADC 缓冲区读取数�
 
 ## Flag 系统（`core/event/event_flag.h/.c`）
 
-Flag 是一种轻量级的内部信号机制，用于跨模块通信。支持三种消费模式。
+Flag 是一种轻量级的内部信号机制，用于跨模块通信和 guard 状态存储。支持三种模式。
 
 ### 模式
 
-| 模式 | 值 | 说明 |
-|------|:---:|------|
-| `ESTA_FLAG_MODE_MANUAL` | 0 | 手动模式：外部代码调用 `ESTA_FlagCheck()` 轮询消费，不会自动推送事件 |
-| `ESTA_FLAG_MODE_AUTO_EVENT` | 1 | 自动单次模式：`FlagPoll()` 推送一次转换事件后自动清除 flag |
+| 模式 | 值 | FlagPoll 行为 | 典型用途 |
+|------|:---:|--------------|---------|
+| `ESTA_FLAG_MODE_DISABLED` | 0 | 跳过 | 未配置的槽位（UI 中不显示） |
+| `ESTA_FLAG_MODE_MANUAL` | 1 | 跳过 | 状态位：持久保存，用于 guard 门控条件 |
+| `ESTA_FLAG_MODE_AUTO_EVENT` | 2 | 推送配置的事件后自动清零 | 事件桥接：将中断/回调信号转换为事件队列事件 |
+
+### MANUAL 与 AUTO_EVENT 的核心区别
+
+**MANUAL（状态位）**：Flag 被置位后持续保持为 1，直到 `ESTA_FlagClear()` 或 FLAG_CLEAR action 显式清除。`FlagPoll()` 完全忽略它。适合作为 guard 门控条件——因为状态稳定，能跨越多帧被 TIMER 事件的 `flag_snapshot` 捕获到。
+
+```
+按键1按下 → FLAG_SET(0) → s_flags[0]=1（持续保持）
+每帧 SoftTimer 推送 TIMER 事件 → flag_snapshot=0b01 → guard_and_mask=1 通过 → WAVE_REDRAW 执行
+按键3按下 → FLAG_CLEAR(0) → s_flags[0]=0 → 下一帧 guard 失败 → 停止刷新
+```
+
+**AUTO_EVENT（事件桥接）**：Flag 被置位后，下一帧 `FlagPoll()` 推送配置的事件并立即清零。适合将中断或异步回调桥接到事件系统，而无需在中断上下文中直接操作事件队列。
+
+```c
+// 中断上下文（不能直接操作事件队列）：
+void HAL_GPIO_EXTI_Callback(uint16_t pin) {
+    ESTA_FlagSet(2);  // 安全：只写一个 volatile 字节
+}
+// 主循环 FlagPoll() 自动将 Flag #2 转换为配置的事件推入队列
+```
+
+> **AUTO_EVENT 不适合做 guard**：它在 FlagPoll 后立即清零，下一帧的事件快照里就看不到它了。guard 状态存储应使用 MANUAL 模式。
 
 ### FlagConfig 结构体
 
 ```c
 typedef struct {
-    ESTA_FlagMode mode;        // MANUAL / AUTO_EVENT
-    ESTA_EventType event_type; // FlagPoll 时转换的目标事件类型
-    uint8_t event_source;      // 推送事件的 source 字段
-    uint16_t event_id;         // 推送事件的 id 字段
+    ESTA_FlagMode mode;        // DISABLED / MANUAL / AUTO_EVENT
+    ESTA_EventType event_type; // AUTO_EVENT 模式：FlagPoll 推送的事件类型（Emit Type）
+    uint8_t event_source;      // AUTO_EVENT 模式：推送事件的 source 字段（Emit Source）
+    uint16_t event_id;         // AUTO_EVENT 模式：推送事件的 id 字段（Emit ID）
 } ESTA_FlagConfig;
 ```
 
-`FlagPoll()` 遍历已注册的 flag：MANUAL 模式跳过；AUTO_EVENT 推送后自动清零。
+`event_type/event_source/event_id` 是**发出配置**，描述"Flag 触发时向队列推送什么事件"，而非过滤条件。MANUAL 模式下这三个字段无意义。AUTO_EVENT 可以推送任意类型的事件（不限于 FLAG 类型），从而复用已有的 binding，无需为每种信号单独写处理逻辑。
+
+`FlagPoll()` 遍历已注册的 flag：DISABLED 和 MANUAL 模式跳过；AUTO_EVENT 推送配置的事件后自动清零。
 
 ### API
 
@@ -343,8 +370,8 @@ void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
 void ESTA_FlagSet(uint8_t flag_id);    // 设置 Flag 并自动推送 ESTA_EVENT_FLAG 事件
 bool ESTA_FlagCheck(uint8_t flag_id);  // 检查并清除（consume）
 bool ESTA_FlagPeek(uint8_t flag_id);   // 仅查看，不清除
-void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag
-void ESTA_FlagPoll(void);             // AUTO_EVENT 模式转换
+void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag（FLAG_CLEAR action 调用此函数）
+void ESTA_FlagPoll(void);              // AUTO_EVENT 模式转换（每帧在 SoftTimerTick 之前调用）
 ```
 
 ### Flag 作为触发条件
@@ -394,11 +421,15 @@ SoftTimer 是独立的周期事件驱动模块，每个 timer 按配置的 `peri
 
 typedef struct {
     uint16_t period_ms;    // 触发周期（ms），0 = 禁用
-    uint8_t  event_type;   // ESTA_EventType
-    uint8_t  event_source;
-    uint16_t event_id;
+    uint8_t  event_type;   // 到期时推送的事件类型（Emit Type）
+    uint8_t  event_source; // 推送事件的 source 字段（Emit Source）
+    uint16_t event_id;     // 推送事件的 id 字段（Emit ID）
 } ESTA_SoftTimerConfig;
 ```
+
+`event_type/event_source/event_id` 是**发出配置**，描述"定时器到期时向队列推送什么事件"，而非过滤条件。SoftTimer 可以推送任意类型的事件，不限于 TIMER 类型——这使得它能直接驱动任何已有的 binding，无需为"定时触发"单独写一套 binding。
+
+例如配置 `event_type=BUTTON_PRESS, event_source=0`，即可每隔 `period_ms` 模拟一次 Button 0 按下，触发所有订阅该按钮的 binding（自动演示、屏保、自动翻页等场景）。
 
 ### API
 

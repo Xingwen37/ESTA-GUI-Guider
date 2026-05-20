@@ -41,9 +41,9 @@ export default function SoftTimerEditor({ data, setData }: Props) {
             <tr style={{ borderBottom: "1px solid #444" }}>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Timer</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Period (ms)</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Event Type</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Source</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>ID</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="定时器到期时推送到事件队列的事件类型">Emit Type</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 source 字段值">Emit Source</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 id 字段值">Emit ID</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
