@@ -6,6 +6,7 @@
 #include "ui/WAVE.h"
 #include "app/app_main.h"
 #include "event/event_flag.h"
+#include "event/soft_timer.h"
 #include "sim_scenario.h"
 #include "sim_feed.h"
 #include "sim_input.h"
@@ -77,6 +78,7 @@ int main(int argc, char *argv[])
         if (input.quit_requested) break;
 
         ESTA_FlagPoll();
+        ESTA_SoftTimerTick(SIM_TARGET_FRAME_MS);
         if (!SimFeed_Update(&g_app, &g_scenario)) break;
         App_MainTick(&g_app);
 

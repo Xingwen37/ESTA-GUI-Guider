@@ -231,13 +231,17 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 
-        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 9, .param = 0 },
+        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 9, .param = 0,
+          .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 1, .source_id = 4, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 12, .param = 0 },
+        { .trigger = 1, .source_id = 4, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 12, .param = 0,
+          .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 6, .source_id = 0, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0 },
+        { .trigger = 6, .source_id = 0, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0,
+          .guard_and_mask = 3, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 1, .source_id = 0, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 3, .param = 0 }
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0,
+          .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 }
 
     },
     .string_count = 3,
@@ -433,6 +437,11 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
     ESTA_EventInit();
     App_EventInit();
 
+    ESTA_SoftTimerInit();
+    for (uint8_t i = 0; i < profile_set->timer_count; i++) {
+        ESTA_SoftTimerRegister(i, &profile_set->timer_configs[i]);
+    }
+
     for (uint8_t i = 0; i < profile_set->flag_count; i++) {
         ESTA_FlagRegister(i, &profile_set->flag_configs[i]);
     }
@@ -447,9 +456,6 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
         g_binding_ctx[i].target_type = b->target_type;
         g_binding_ctx[i].target_inst = b->target_inst;
         g_binding_ctx[i].param = b->param;
-        g_binding_ctx[i].guard_and_mask = b->guard_and_mask;
-        g_binding_ctx[i].guard_or_mask  = b->guard_or_mask;
-        g_binding_ctx[i].guard_inv_mask = b->guard_inv_mask;
 
         App_Subscribe((ESTA_EventType)b->trigger,
                       b->source_id,
