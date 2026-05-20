@@ -1,5 +1,4 @@
 import type React from "react";
-import type { ProfileSet } from "./types";
 import BarChartEditor from "../components/BarChartEditor";
 import type { ComponentEntry } from "./componentRegistry";
 
@@ -55,8 +54,8 @@ function validateBar(profiles: BarChartProfile[], count: number): string | null 
 export const barEntry: ComponentEntry<BarChartProfile> = {
   key: "bar",
   label: "BARCHART",
-  countField: "bar_inst_count" as keyof ProfileSet,
-  profilesField: "bar_profiles" as keyof ProfileSet,
+  countField: "bar_inst_count" as string,
+  profilesField: "bar_profiles" as string,
   maxCount: MAX_BAR_INST,
   makeDefault: makeDefaultBar,
   validate: validateBar as ComponentEntry["validate"],

@@ -26,22 +26,15 @@ export interface ActionSequence {
 }
 
 export interface ProfileSet {
-  wave_inst_count: number;
-  bar_inst_count: number;
-  table_inst_count: number;
-  menu_inst_count: number;
   button_count: number;
   page_count: number;
   binding_count: number;
-  wave_profiles: import("./wave.registry").WaveProfile[];
-  bar_profiles: import("./bar.registry").BarChartProfile[];
-  table_profiles: import("./table.registry").TableProfile[];
-  menu_profiles: import("./menu.registry").MenuProfile[];
   bindings: EventBinding[];
   string_count: number;
   strings: StringEntry[];
   sequence_count: number;
   sequences: ActionSequence[];
+  [key: string]: unknown;
 }
 
 export const UI_FONT_SIZE_OPTIONS = [

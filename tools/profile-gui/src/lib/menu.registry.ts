@@ -1,5 +1,4 @@
 import type React from "react";
-import type { ProfileSet } from "./types";
 import MenuEditor from "../components/MenuEditor";
 import type { ComponentEntry } from "./componentRegistry";
 
@@ -79,8 +78,8 @@ function validateMenu(profiles: MenuProfile[], count: number): string | null {
 export const menuEntry: ComponentEntry<MenuProfile> = {
   key: "menu",
   label: "MENU",
-  countField: "menu_inst_count" as keyof ProfileSet,
-  profilesField: "menu_profiles" as keyof ProfileSet,
+  countField: "menu_inst_count" as string,
+  profilesField: "menu_profiles" as string,
   maxCount: MAX_MENU_INST,
   makeDefault: makeDefaultMenu,
   validate: validateMenu as ComponentEntry["validate"],

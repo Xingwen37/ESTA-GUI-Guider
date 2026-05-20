@@ -1,5 +1,4 @@
 import type React from "react";
-import type { ProfileSet } from "./types";
 import { waveEntry } from "./wave.registry";
 import { barEntry } from "./bar.registry";
 import { tableEntry } from "./table.registry";
@@ -8,8 +7,8 @@ import { menuEntry } from "./menu.registry";
 export interface ComponentEntry<P = unknown> {
   key: string;
   label: string;
-  countField: keyof ProfileSet;
-  profilesField: keyof ProfileSet;
+  countField: string;
+  profilesField: string;
   maxCount: number;
   makeDefault: () => P;
   validate: (profiles: P[], count: number) => string | null;

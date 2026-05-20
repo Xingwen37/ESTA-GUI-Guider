@@ -1,7 +1,5 @@
-import EventEditor from "./components/EventEditor";
-import StringTableEditor from "./components/StringTableEditor";
-import SequenceEditor from "./components/SequenceEditor";
 import { COMPONENT_REGISTRY } from "./lib/componentRegistry";
+import { EVENT_PANELS } from "./lib/eventPanelRegistry";
 import { useProfileState } from "./hooks/useProfileState";
 import { MAX_BUTTON_COUNT } from "./lib/types";
 
@@ -151,28 +149,14 @@ export default function App() {
       <div className="editor-scroll">
         {isEventTab ? (
           <>
-            <EventEditor
-              bindings={data.bindings ?? []}
-              buttonCount={data.button_count}
-              instCounts={instCounts}
-              menuProfiles={data.menu_profiles ?? []}
-              strings={data.strings ?? []}
-              sequences={data.sequences ?? []}
-              onChange={(bindings) => state.setData({ ...data, bindings, binding_count: bindings.length })}
-            />
-            <StringTableEditor
-              strings={data.strings ?? []}
-              bindings={data.bindings ?? []}
-              sequences={data.sequences ?? []}
-              tableProfiles={data.table_profiles ?? []}
-              menuProfiles={data.menu_profiles ?? []}
-              onChange={(strings) => state.setData({ ...data, strings, string_count: strings.length })}
-            />
-            <SequenceEditor
-              sequences={data.sequences ?? []}
-              instCounts={instCounts}
-              onChange={(sequences) => state.setData({ ...data, sequences, sequence_count: sequences.length })}
-            />
+            {EVENT_PANELS.map((panel) => (
+              <panel.Component
+                key={panel.key}
+                data={data}
+                instCounts={instCounts}
+                setData={state.setData}
+              />
+            ))}
           </>
         ) : totalComponentTabs === 0 ? (
           <div style={{ color: "#999", padding: 24 }}>请设置组件数量</div>

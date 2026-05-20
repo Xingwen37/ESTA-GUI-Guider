@@ -1,5 +1,4 @@
 import type React from "react";
-import type { ProfileSet } from "./types";
 import WaveEditor from "../components/WaveEditor";
 import type { ComponentEntry } from "./componentRegistry";
 
@@ -109,8 +108,8 @@ function validateWave(profiles: WaveProfile[], count: number): string | null {
 export const waveEntry: ComponentEntry<WaveProfile> = {
   key: "wave",
   label: "WAVE",
-  countField: "wave_inst_count" as keyof ProfileSet,
-  profilesField: "wave_profiles" as keyof ProfileSet,
+  countField: "wave_inst_count" as string,
+  profilesField: "wave_profiles" as string,
   maxCount: MAX_WAVE_INST,
   makeDefault: makeDefaultWave,
   validate: validateWave as ComponentEntry["validate"],

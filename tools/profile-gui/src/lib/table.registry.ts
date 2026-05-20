@@ -1,5 +1,4 @@
 import type React from "react";
-import type { ProfileSet } from "./types";
 import TableEditor from "../components/TableEditor";
 import type { ComponentEntry } from "./componentRegistry";
 
@@ -108,8 +107,8 @@ function validateTable(profiles: TableProfile[], count: number): string | null {
 export const tableEntry: ComponentEntry<TableProfile> = {
   key: "table",
   label: "TABLE",
-  countField: "table_inst_count" as keyof ProfileSet,
-  profilesField: "table_profiles" as keyof ProfileSet,
+  countField: "table_inst_count" as string,
+  profilesField: "table_profiles" as string,
   maxCount: MAX_TABLE_INST,
   makeDefault: makeDefaultTable,
   validate: validateTable as ComponentEntry["validate"],
