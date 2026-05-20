@@ -338,6 +338,9 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
         g_binding_ctx[i].target_type = b->target_type;
         g_binding_ctx[i].target_inst = b->target_inst;
         g_binding_ctx[i].param = b->param;
+        g_binding_ctx[i].guard_and_mask = b->guard_and_mask;
+        g_binding_ctx[i].guard_or_mask  = b->guard_or_mask;
+        g_binding_ctx[i].guard_inv_mask = b->guard_inv_mask;
 
         App_Subscribe((ESTA_EventType)b->trigger,
                       b->source_id,

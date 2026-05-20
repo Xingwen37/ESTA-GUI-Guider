@@ -231,27 +231,21 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     },
     .bindings = {
 
-        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 9, .param = 0,
+        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 9, .param = 0,
           .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 1, .source_id = 4, .trigger_id = 65535, .target_type = 6, .target_inst = 0, .action = 12, .param = 0,
+        { .trigger = 1, .source_id = 2, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0,
           .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 6, .source_id = 0, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0,
-          .guard_and_mask = 3, .guard_or_mask = 0, .guard_inv_mask = 0 },
+        { .trigger = 1, .source_id = 3, .trigger_id = 65535, .target_type = 5, .target_inst = 0, .action = 11, .param = 0,
+          .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 },
 
-        { .trigger = 1, .source_id = 1, .trigger_id = 65535, .target_type = 6, .target_inst = 1, .action = 9, .param = 0,
-          .guard_and_mask = 0, .guard_or_mask = 0, .guard_inv_mask = 0 }
+        { .trigger = 5, .source_id = 0, .trigger_id = 65535, .target_type = 0, .target_inst = 0, .action = 4, .param = 0,
+          .guard_and_mask = 3, .guard_or_mask = 0, .guard_inv_mask = 0 }
 
     },
-    .string_count = 3,
+    .string_count = 0,
     .strings = {
-
-        { .sub_addr = 6, .text = "223" },
-
-        { .sub_addr = 8, .text = "333" },
-
-        { .sub_addr = 0, .text = "0.01V" }
 
     },
     .sequence_count = 1,
@@ -261,9 +255,9 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
             .step_count = 2,
             .steps = {
 
-                { .action = 10, .target_type = 3, .target_inst = 0, .param = 0 },
+                { .action = 12, .target_type = 6, .target_inst = 0, .param = 0 },
 
-                { .action = 4, .target_type = 0, .target_inst = 0, .param = 0 }
+                { .action = 12, .target_type = 6, .target_inst = 1, .param = 0 }
 
             }
         }
@@ -272,11 +266,11 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .flag_count = 8,
     .flag_configs = {
 
-        { .mode = 2, .event_type = 6, .event_source = 0, .event_id = 0 },
+        { .mode = 1, .event_type = 6, .event_source = 0, .event_id = 0 },
 
         { .mode = 0, .event_type = 1, .event_source = 0, .event_id = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
+        { .mode = 1, .event_type = 6, .event_source = 0, .event_id = 0 },
 
         { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
 
@@ -287,6 +281,12 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
         { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
 
         { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 }
+
+    },
+    .timer_count = 1,
+    .timer_configs = {
+
+        { .period_ms = 20, .event_type = 5, .event_source = 0, .event_id = 0 }
 
     }
 };
@@ -456,6 +456,9 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
         g_binding_ctx[i].target_type = b->target_type;
         g_binding_ctx[i].target_inst = b->target_inst;
         g_binding_ctx[i].param = b->param;
+        g_binding_ctx[i].guard_and_mask = b->guard_and_mask;
+        g_binding_ctx[i].guard_or_mask  = b->guard_or_mask;
+        g_binding_ctx[i].guard_inv_mask = b->guard_inv_mask;
 
         App_Subscribe((ESTA_EventType)b->trigger,
                       b->source_id,
