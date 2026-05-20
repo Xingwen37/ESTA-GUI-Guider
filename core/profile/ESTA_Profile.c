@@ -266,21 +266,21 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .flag_count = 8,
     .flag_configs = {
 
-        { .mode = 1, .event_type = 1, .event_source = 0, .event_id = 0 },
+        { .mode = 1 },
 
-        { .mode = 1, .event_type = 1, .event_source = 0, .event_id = 0 },
+        { .mode = 1 },
 
-        { .mode = 0, .event_type = 1, .event_source = 0, .event_id = 0 },
+        { .mode = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
+        { .mode = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
+        { .mode = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
+        { .mode = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 },
+        { .mode = 0 },
 
-        { .mode = 0, .event_type = 0, .event_source = 0, .event_id = 0 }
+        { .mode = 0 }
 
     },
     .timer_count = 1,

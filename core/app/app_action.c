@@ -110,7 +110,7 @@ static bool action_menu_back(const ESTA_Event *evt, void *user_data) {
 static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
     (void)evt;
     App_BindingContext *ctx = (App_BindingContext *)user_data;
-    ESTA_FlagSet(ctx->target_inst);
+    ESTA_FlagSignal(ctx->target_inst);
     return true;
 }
 

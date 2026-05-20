@@ -9,7 +9,7 @@
 │  事件源                                                          │
 │  ├─ 外部输入：按钮按下/松开、编码器旋转                            │
 │  ├─ 内部事件：MENU 选中某项、定时器到期                            │
-│  └─ Flag 信号：ESTA_FlagSet() 自动推送 FLAG 事件                  │
+│  └─ Flag 信号：ESTA_FlagSignal() 置位状态位并推送 FLAG 事件         │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌─────────────────────────────────┐                             │
@@ -175,7 +175,7 @@ typedef enum {
 
 **快照语义**：guard 检查使用 `evt.flag_snapshot`（事件入队时的 Flag 状态快照），而非 dispatch 时的实时状态。快照由 `ESTA_EventPush` 在写入队列时自动填入，确保同一帧内多个事件的 guard 结果由各自入队时刻的 Flag 状态决定，与 dispatch 处理顺序无关。
 
-> **guard 状态存储推荐使用 MANUAL 模式 Flag**：MANUAL Flag 持久保持置位状态，能跨越多帧被事件快照捕获到。AUTO_EVENT Flag 在 FlagPoll 后立即清零，不适合作为 guard 条件。
+> **guard 状态存储推荐使用 MANUAL 模式 Flag**：MANUAL Flag 持久保持置位状态，能跨越多帧被事件快照捕获到。
 
 > 注意：`ESTA_FlagSet(flag_id)` 先置位 `s_flags[flag_id]`，再调用 `ESTA_EventPush`，因此快照会包含刚被 set 的 Flag——这是正确的语义（"此事件产生时 Flag 的状态"）。
 
@@ -315,68 +315,51 @@ MCU 移植时，用户实现自己的绘制回调（从 ADC 缓冲区读取数�
 
 ## Flag 系统（`core/event/event_flag.h/.c`）
 
-Flag 是一种轻量级的内部信号机制，用于跨模块通信和 guard 状态存储。支持三种模式。
+Flag 是一种轻量级的内部信号机制，用于跨模块通信和 guard 状态存储。支持两种模式。
 
 ### 模式
 
-| 模式 | 值 | FlagPoll 行为 | 典型用途 |
-|------|:---:|--------------|---------|
-| `ESTA_FLAG_MODE_DISABLED` | 0 | 跳过 | 未配置的槽位（UI 中不显示） |
-| `ESTA_FLAG_MODE_MANUAL` | 1 | 跳过 | 状态位：持久保存，用于 guard 门控条件 |
-| `ESTA_FLAG_MODE_AUTO_EVENT` | 2 | 推送配置的事件后自动清零 | 事件桥接：将中断/回调信号转换为事件队列事件 |
+| 模式 | 值 | 典型用途 |
+|------|:---:|---------|
+| `ESTA_FLAG_MODE_DISABLED` | 0 | 未配置的槽位（UI 中不显示） |
+| `ESTA_FLAG_MODE_MANUAL` | 1 | 状态位：持久保存，用于 guard 门控；`ESTA_FlagSignal()` 置位时同时推送 FLAG 事件供 binding 订阅 |
 
-### MANUAL 与 AUTO_EVENT 的核心区别
+### Flag 的双重角色
 
-**MANUAL（状态位）**：Flag 被置位后持续保持为 1，直到 `ESTA_FlagClear()` 或 FLAG_CLEAR action 显式清除。`FlagPoll()` 完全忽略它。适合作为 guard 门控条件——因为状态稳定，能跨越多帧被 TIMER 事件的 `flag_snapshot` 捕获到。
+MANUAL Flag 同时扮演两个角色：
+
+**状态位（guard 门控）**：Flag 被置位后持续保持为 1，直到 `ESTA_FlagClear()` 或 FLAG_CLEAR action 显式清除。状态稳定，能跨越多帧被 TIMER 事件的 `flag_snapshot` 捕获到，适合作为 guard 门控条件。
+
+**事件触发源**：`ESTA_FlagSignal()` 在置位状态位的同时，向事件队列推送一条 `ESTA_EVENT_FLAG` 事件（`source = flag_id`），binding 可直接订阅该事件。
 
 ```
-按键1按下 → FLAG_SET(0) → s_flags[0]=1（持续保持）
+按键1按下 → FLAG_SET(0) → FlagSignal(0) → s_flags[0]=1（持续保持）+ 推送 FLAG(source=0)
 每帧 SoftTimer 推送 TIMER 事件 → flag_snapshot=0b01 → guard_and_mask=1 通过 → WAVE_REDRAW 执行
 按键3按下 → FLAG_CLEAR(0) → s_flags[0]=0 → 下一帧 guard 失败 → 停止刷新
 ```
-
-**AUTO_EVENT（事件桥接）**：Flag 被置位后，下一帧 `FlagPoll()` 推送配置的事件并立即清零。适合将中断或异步回调桥接到事件系统，而无需在中断上下文中直接操作事件队列。
-
-```c
-// 中断上下文（不能直接操作事件队列）：
-void HAL_GPIO_EXTI_Callback(uint16_t pin) {
-    ESTA_FlagSet(2);  // 安全：只写一个 volatile 字节
-}
-// 主循环 FlagPoll() 自动将 Flag #2 转换为配置的事件推入队列
-```
-
-> **AUTO_EVENT 不适合做 guard**：它在 FlagPoll 后立即清零，下一帧的事件快照里就看不到它了。guard 状态存储应使用 MANUAL 模式。
 
 ### FlagConfig 结构体
 
 ```c
 typedef struct {
-    ESTA_FlagMode mode;        // DISABLED / MANUAL / AUTO_EVENT
-    ESTA_EventType event_type; // AUTO_EVENT 模式：FlagPoll 推送的事件类型（Emit Type）
-    uint8_t event_source;      // AUTO_EVENT 模式：推送事件的 source 字段（Emit Source）
-    uint16_t event_id;         // AUTO_EVENT 模式：推送事件的 id 字段（Emit ID）
+    ESTA_FlagMode mode;  // DISABLED(0) / MANUAL(1)
 } ESTA_FlagConfig;
 ```
-
-`event_type/event_source/event_id` 是**发出配置**，描述"Flag 触发时向队列推送什么事件"，而非过滤条件。MANUAL 模式下这三个字段无意义。AUTO_EVENT 可以推送任意类型的事件（不限于 FLAG 类型），从而复用已有的 binding，无需为每种信号单独写处理逻辑。
-
-`FlagPoll()` 遍历已注册的 flag：DISABLED 和 MANUAL 模式跳过；AUTO_EVENT 推送配置的事件后自动清零。
 
 ### API
 
 ```c
 void ESTA_FlagInit(void);
 void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
-void ESTA_FlagSet(uint8_t flag_id);    // 设置 Flag 并自动推送 ESTA_EVENT_FLAG 事件
-bool ESTA_FlagCheck(uint8_t flag_id);  // 检查并清除（consume）
-bool ESTA_FlagPeek(uint8_t flag_id);   // 仅查看，不清除
-void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag（FLAG_CLEAR action 调用此函数）
-void ESTA_FlagPoll(void);              // AUTO_EVENT 模式转换（每帧在 SoftTimerTick 之前调用）
+void ESTA_FlagSignal(uint8_t flag_id);  // 置位状态位 + 推送 FLAG 事件（FLAG_SET action 调用此函数）
+void ESTA_FlagSet(uint8_t flag_id);     // 仅置位状态位，不推送事件（纯状态写入）
+bool ESTA_FlagCheck(uint8_t flag_id);   // 检查并清除（consume）
+bool ESTA_FlagPeek(uint8_t flag_id);    // 仅查看，不清除
+void ESTA_FlagClear(uint8_t flag_id);   // 主动清除 flag（FLAG_CLEAR action 调用此函数）
+uint8_t ESTA_FlagReadAll(void);         // 读取所有 flag 状态位（供 flag_snapshot 使用）
 ```
 
-### Flag 作为触发条件
-
-`ESTA_FlagSet()` 在设置标志位的同时，自动向事件队列推送一条 `ESTA_EVENT_FLAG` 事件（`source = flag_id`）。这使得 Flag 可以作为事件绑定的触发条件：
+`ESTA_FlagSet` 与 `ESTA_FlagClear` 是对称的纯状态操作，不产生事件。`ESTA_FlagSignal` 是"通知系统"操作，置位状态位并推送事件。
 
 ```json
 { "trigger": 6, "source_id": 2, "trigger_id": 65535, "target_type": 4, "target_inst": 0, "action": 1 }
@@ -385,13 +368,13 @@ void ESTA_FlagPoll(void);              // AUTO_EVENT 模式转换（每帧在 So
 
 ### FLAG_SET action
 
-FLAG_SET 是延迟 action——handler 仅设置 Flag，实际效果由 Flag 的消费者决定：
+FLAG_SET 是延迟 action——handler 调用 `ESTA_FlagSignal`，置位状态位并推送 FLAG 事件：
 
 ```c
 static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
     (void)evt;
     App_BindingContext *ctx = (App_BindingContext *)user_data;
-    ESTA_FlagSet(ctx->target_inst);  // target_inst = flag_id
+    ESTA_FlagSignal(ctx->target_inst);  // target_inst = flag_id
     return true;
 }
 ```
@@ -533,7 +516,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | 层 | 文件 | 职责 |
 |----|------|------|
 | C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体（含 flag_snapshot）、队列、Emit 函数 |
-| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT 转换、FlagClear |
+| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/清除，FlagSignal 推送 FLAG 事件，FlagReadAll 供快照使用 |
 | C SoftTimer | `core/event/soft_timer.h/.c` | 周期事件驱动（period_ms 配置） |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents（guard 用 flag_snapshot） |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
@@ -541,7 +524,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence、FlagConfig、SoftTimerConfig |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
 | JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences + flag_profiles + timer_configs 数组 |
-| Rust 插件 | `src-tauri/src/plugins/flag.rs` | FlagConfig 模型 + FlagPlugin（默认值 + 模板上下文） |
+| Rust 插件 | `src-tauri/src/plugins/flag.rs` | FlagConfig 模型（仅 mode 字段）+ FlagPlugin（默认值 + 模板上下文） |
 | Rust 插件 | `src-tauri/src/plugins/soft_timer.rs` | SoftTimerConfig 模型 + SoftTimerPlugin（timer_count/timer_configs） |
 | Rust 命令 | `src-tauri/src/commands/profile_io.rs` | 模板数据构建（注册表驱动，无需修改） |
 | Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体 + FlagRegister + SoftTimerRegister 循环） |
@@ -549,7 +532,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（含 Guard 展开面板） |
 | React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器（sub_addr + text，含 WAVE 轴选择） |
 | React UI | `src/components/SequenceEditor.tsx` | 序列编辑器（序列列表 + 步骤列表） |
-| React UI | `src/components/FlagConfigEditor.tsx` | Flag 配置编辑器（8 行表：mode + event 参数） |
+| React UI | `src/components/FlagConfigEditor.tsx` | Flag 配置编辑器（8 槽位，按需启用/禁用，MANUAL 模式） |
 | React UI | `src/components/SoftTimerEditor.tsx` | SoftTimer 编辑器（timer 列表：period_ms + event 参数） |
 
 ## Action 序列系统（SEQUENCE）

@@ -5,26 +5,7 @@ interface Props {
   setData: (data: ProfileSet) => void;
 }
 
-const FLAG_MODE_OPTIONS = [
-  [1, "MANUAL"],
-  [2, "AUTO_EVENT"],
-] as const;
-
-const EVENT_TYPE_OPTIONS = [
-  [1, "BUTTON_PRESS"],
-  [2, "BUTTON_RELEASE"],
-  [3, "MENU_SELECT"],
-  [4, "ENCODER_ROTATE"],
-  [5, "TIMER"],
-  [6, "FLAG"],
-] as const;
-
-const DISABLED_FLAG: FlagConfig = {
-  mode: 0,
-  event_type: 1,
-  event_source: 0,
-  event_id: 0,
-};
+const DISABLED_FLAG: FlagConfig = { mode: 0 };
 
 const FLAG_MAX = 8;
 
@@ -39,8 +20,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
     data.flag_profiles ?? Array.from({ length: FLAG_MAX }, () => ({ ...DISABLED_FLAG }))
   );
 
-  const manualCount = flags.filter((f) => f.mode === 1).length;
-  const autoCount = flags.filter((f) => f.mode === 2).length;
+  const enabledCount = flags.filter((f) => f.mode !== 0).length;
   const availableIds = flags
     .map((f, i) => (f.mode === 0 ? i : -1))
     .filter((i) => i !== -1);
@@ -51,7 +31,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
   };
 
   const enable = (id: number) => {
-    update(id, { mode: 1, event_type: 1, event_source: 0, event_id: 0 });
+    update(id, { mode: 1 });
   };
 
   const disable = (id: number) => {
@@ -61,65 +41,23 @@ export default function FlagConfigEditor({ data, setData }: Props) {
   return (
     <div style={{ padding: 12 }}>
       <fieldset className="group-box">
-        <legend>Flag 配置 ({manualCount} MANUAL / {autoCount} AUTO_EVENT)</legend>
+        <legend>Flag 配置 ({enabledCount} / {FLAG_MAX} 已启用)</legend>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #444" }}>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Flag</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Mode</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }} title="Flag 置位后由 FlagPoll 推送到事件队列的事件类型（仅 AUTO_EVENT 模式有效）">Emit Type</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 source 字段值">Emit Source</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }} title="推送事件的 id 字段值">Emit ID</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }}>Flag ID</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }} title="MANUAL：状态位，可用于 guard 门控；FlagSignal 置位时同时推送 FLAG 事件供 binding 订阅">说明</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
             {flags.map((f, i) => {
               if (f.mode === 0) return null;
-              const isManual = f.mode === 1;
-              const dimStyle = isManual ? { opacity: 0.3, pointerEvents: "none" as const } : {};
               return (
                 <tr key={i} style={{ borderBottom: "1px solid #333" }}>
                   <td style={{ padding: "4px 6px", color: "#888" }}>#{i}</td>
-                  <td style={{ padding: "4px 6px" }}>
-                    <select
-                      value={f.mode}
-                      onChange={(e) => update(i, { mode: Number(e.target.value) })}
-                    >
-                      {FLAG_MODE_OPTIONS.map(([v, label]) => (
-                        <option key={v} value={v}>{label}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ padding: "4px 6px", ...dimStyle }}>
-                    <select
-                      value={f.event_type}
-                      onChange={(e) => update(i, { event_type: Number(e.target.value) })}
-                    >
-                      {EVENT_TYPE_OPTIONS.map(([v, label]) => (
-                        <option key={v} value={v}>{label}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ padding: "4px 6px", ...dimStyle }}>
-                    <input
-                      type="number"
-                      value={f.event_source}
-                      min={0}
-                      max={255}
-                      style={{ width: 50 }}
-                      onChange={(e) => update(i, { event_source: Number(e.target.value) || 0 })}
-                    />
-                  </td>
-                  <td style={{ padding: "4px 6px", ...dimStyle }}>
-                    <input
-                      type="number"
-                      value={f.event_id}
-                      min={0}
-                      max={65535}
-                      style={{ width: 60 }}
-                      onChange={(e) => update(i, { event_id: Number(e.target.value) || 0 })}
-                    />
+                  <td style={{ padding: "4px 6px", color: "#aaa", fontSize: 12 }}>
+                    MANUAL — 状态位 + FLAG 事件触发源
                   </td>
                   <td style={{ padding: "4px 6px", textAlign: "center" }}>
                     <button
@@ -136,7 +74,7 @@ export default function FlagConfigEditor({ data, setData }: Props) {
           </tbody>
         </table>
 
-        {manualCount + autoCount === 0 && (
+        {enabledCount === 0 && (
           <div style={{ color: "#999", padding: 12 }}>暂无已启用的 Flag，点击下方按钮添加</div>
         )}
 

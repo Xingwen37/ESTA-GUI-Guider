@@ -162,7 +162,7 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
     .flag_count = {{ flag_inst_count }},
     .flag_configs = {
 {% for f in flag_profiles %}
-        { .mode = {{ f.mode }}, .event_type = {{ f.event_type }}, .event_source = {{ f.event_source }}, .event_id = {{ f.event_id }} }{% if not loop.last %},{% endif %}
+        { .mode = {{ f.mode }} }{% if not loop.last %},{% endif %}
 {% endfor %}
     },
     .timer_count = {{ timer_count }},

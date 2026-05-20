@@ -77,7 +77,6 @@ int main(int argc, char *argv[])
         SimInputResult input = SimInput_Poll(profiles->button_count);
         if (input.quit_requested) break;
 
-        ESTA_FlagPoll();
         ESTA_SoftTimerTick(SIM_TARGET_FRAME_MS);
         if (!SimFeed_Update(&g_app, &g_scenario)) break;
         App_MainTick(&g_app);

@@ -30,9 +30,6 @@ export interface ActionSequence {
 
 export interface FlagConfig {
   mode: number;
-  event_type: number;
-  event_source: number;
-  event_id: number;
 }
 
 export interface SoftTimerConfig {
