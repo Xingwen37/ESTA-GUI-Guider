@@ -41,10 +41,11 @@
 ```c
 // core/event/event.h
 typedef struct {
-    uint8_t  type;       // ESTA_EventType 枚举值
-    uint8_t  source;     // 物理源：按钮索引、编码器索引、组件实例
-    uint16_t id;         // 语义 ID：菜单项 event_id、timer_id 等
-    uint32_t timestamp;  // 系统 tick (ms)
+    uint8_t  type;           // ESTA_EventType 枚举值
+    uint8_t  source;         // 物理源：按钮索引、编码器索引、组件实例
+    uint16_t id;             // 语义 ID：菜单项 event_id、timer_id 等
+    uint32_t timestamp;      // 系统 tick (ms)
+    uint8_t  flag_snapshot;  // Flag 状态快照（入队时由 ESTA_EventPush 自动填入）
 } ESTA_Event;
 ```
 
@@ -160,6 +161,22 @@ typedef enum {
 1. **Pass 1（精确匹配）**：`source_id != ANY` 的订阅，按 `type + source_id + event_id` 匹配。匹配成功且 handler 返回 true 则消费事件。
 2. **Pass 2（wildcard）**：`source_id == ANY` 的订阅，仅匹配 `type + event_id`。作为兜底处理。
 
+两轮匹配均在执行 handler 前检查 guard 条件（见下文 Guard 机制）。
+
+### Guard 机制
+
+每个 binding 可携带三个 guard 掩码，用于在 dispatch 时过滤不满足条件的事件：
+
+| 字段 | 语义 |
+|------|------|
+| `guard_and_mask` | 所有指定 Flag 必须置位（AND），0 = 不检查 |
+| `guard_or_mask` | 至少一个指定 Flag 必须置位（OR），0 = 不检查 |
+| `guard_inv_mask` | 所有指定 Flag 必须清零（AND-NOT），0 = 不检查 |
+
+**快照语义**：guard 检查使用 `evt.flag_snapshot`（事件入队时的 Flag 状态快照），而非 dispatch 时的实时状态。快照由 `ESTA_EventPush` 在写入队列时自动填入，确保同一帧内多个事件的 guard 结果由各自入队时刻的 Flag 状态决定，与 dispatch 处理顺序无关。
+
+> 注意：`ESTA_FlagSet(flag_id)` 先置位 `s_flags[flag_id]`，再调用 `ESTA_EventPush`，因此快照会包含刚被 set 的 Flag——这是正确的语义（"此事件产生时 Flag 的状态"）。
+
 ```c
 int App_Subscribe(ESTA_EventType type, uint8_t source_id, uint16_t event_id,
                   ESTA_EventHandler handler, void *user_data);
@@ -177,6 +194,9 @@ typedef struct {
     uint8_t target_type;  // ESTA_TargetType
     uint8_t target_inst;  // 目标实例索引
     uint8_t param;        // action 参数（TEXT_SET: 字符串表索引；SEQUENCE: 序列索引；CUSTOM: custom_id）
+    uint8_t guard_and_mask; // AND guard：所有指定 Flag 必须置位
+    uint8_t guard_or_mask;  // OR guard：至少一个指定 Flag 必须置位
+    uint8_t guard_inv_mask; // AND-NOT guard：所有指定 Flag 必须清零
 } App_BindingContext;
 ```
 
@@ -364,6 +384,59 @@ static bool action_flag_set(const ESTA_Event *evt, void *user_data) {
 
 `ESTA_FLAG_MAX = 8`，Flag ID 范围 0~7。
 
+### LATCH 与 SoftTimer 对比
+
+LATCH 模式保留向后兼容，但推荐使用 SoftTimer 作为周期驱动：
+
+| 特性 | LATCH Flag | SoftTimer |
+|------|-----------|-----------|
+| 周期配置 | 隐式（每帧 `FlagPoll` 触发一次） | 显式 `period_ms` |
+| 占用 Flag 槽位 | 是（1 个 Flag） | 否 |
+| 依赖 Flag 状态位 | 是（需 `FlagClear` 停止） | 否 |
+| 语义清晰度 | 低（Flag 兼做状态存储和周期驱动） | 高（单一职责） |
+
+## SoftTimer 系统（`core/event/soft_timer.h/.c`）
+
+SoftTimer 是独立的周期事件驱动模块，每个 timer 按配置的 `period_ms` 周期向事件队列推送事件。最多支持 4 个 timer（`ESTA_SOFT_TIMER_MAX`）。
+
+### 数据结构
+
+```c
+#define ESTA_SOFT_TIMER_MAX 4
+
+typedef struct {
+    uint16_t period_ms;    // 触发周期（ms），0 = 禁用
+    uint8_t  event_type;   // ESTA_EventType
+    uint8_t  event_source;
+    uint16_t event_id;
+} ESTA_SoftTimerConfig;
+```
+
+### API
+
+```c
+void ESTA_SoftTimerInit(void);
+void ESTA_SoftTimerRegister(uint8_t timer_id, const ESTA_SoftTimerConfig *config);
+void ESTA_SoftTimerTick(uint16_t delta_ms);
+```
+
+`ESTA_SoftTimerTick(delta_ms)` 在仿真器主循环每帧调用（`delta_ms = SIM_TARGET_FRAME_MS`）。MCU 移植时在主循环中以实际帧间隔调用。
+
+### Profile JSON 格式
+
+```json
+{
+  "timer_count": 1,
+  "timer_configs": [
+    { "period_ms": 20, "event_type": 5, "event_source": 0, "event_id": 0 }
+  ]
+}
+```
+
+### 典型用法：周期刷新波形
+
+配置一个 period_ms=20 的 TIMER 事件 timer，再配置 binding：`TIMER(source=0) → WAVE_REDRAW(inst=0)`，即可实现 50Hz 波形持续刷新，无需 LATCH Flag。
+
 ## 字符串表系统
 
 字符串表是 Profile 中的静态数据池，供 TEXT_SET action 引用。每个条目仅存储子地址和文本，目标组件信息由 binding（或 sequence 步骤）的 `target_type` / `target_inst` 决定，避免冗余并支持同一条目被不同 target 的 binding 复用。
@@ -440,22 +513,25 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 
 | 层 | 文件 | 职责 |
 |----|------|------|
-| C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体、队列、Emit 函数 |
+| C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体（含 flag_snapshot）、队列、Emit 函数 |
 | C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT/LATCH 转换、FlagClear |
-| C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents |
+| C SoftTimer | `core/event/soft_timer.h/.c` | 周期事件驱动（period_ms 配置，替代 LATCH 的周期职责） |
+| C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents（guard 用 flag_snapshot） |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
 | C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
-| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence、FlagConfig |
+| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence、FlagConfig、SoftTimerConfig |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
-| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences + flag_profiles 数组 |
+| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences + flag_profiles + timer_configs 数组 |
 | Rust 插件 | `src-tauri/src/plugins/flag.rs` | FlagConfig 模型 + FlagPlugin（默认值 + 模板上下文） |
+| Rust 插件 | `src-tauri/src/plugins/soft_timer.rs` | SoftTimerConfig 模型 + SoftTimerPlugin（timer_count/timer_configs） |
 | Rust 命令 | `src-tauri/src/commands/profile_io.rs` | 模板数据构建（注册表驱动，无需修改） |
-| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体 + FlagRegister 循环） |
-| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry、ActionStep、ActionSequence、FlagConfig 接口、常量、约束表 |
-| React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（param 列根据 action 类型切换 UI） |
+| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体 + FlagRegister + SoftTimerRegister 循环） |
+| TS 类型 | `src/lib/types.ts` | EventBinding（含 guard 字段）、FlagConfig、SoftTimerConfig 接口、常量、约束表 |
+| React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（含 Guard 展开面板） |
 | React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器（sub_addr + text，含 WAVE 轴选择） |
 | React UI | `src/components/SequenceEditor.tsx` | 序列编辑器（序列列表 + 步骤列表） |
 | React UI | `src/components/FlagConfigEditor.tsx` | Flag 配置编辑器（8 行表：mode + event 参数） |
+| React UI | `src/components/SoftTimerEditor.tsx` | SoftTimer 编辑器（timer 列表：period_ms + event 参数） |
 
 ## Action 序列系统（SEQUENCE）
 
