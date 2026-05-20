@@ -85,7 +85,7 @@ export const ACTION_TYPE_OPTIONS = [
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {
-  0: [3, 4, 11, 255],
+  0: [3, 4, 10, 11, 255],
   1: [3, 11, 255],
   2: [10, 11, 255],
   3: [5, 6, 7, 8, 10, 11, 255],

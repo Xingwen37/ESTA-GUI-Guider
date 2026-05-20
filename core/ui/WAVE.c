@@ -661,6 +661,16 @@ ESTA_StatusTypeDef WAVE_CurveClear(int OSCx) {
 *           WAVE_Config_TypeDef *WAVE_Init : 指向ESTA设置结构体的指针
 *  @return : enum ESTA_StatusTypeDef 为ESTA_OK则无问题，为ESTA_ERROR则有问题
 */
+ESTA_StatusTypeDef WAVE_UpdateRulerUnit(int OSCx, uint8_t axis, const char *unit) {
+    if (!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
+    if (axis > 1) return ESTA_ERROR;
+    if (axis == 0)
+        WAVE_CopyUnit(WAVE_PRIVATE_MEMBER(OSCx, ruler_unit_buff_y), unit);
+    else
+        WAVE_CopyUnit(WAVE_PRIVATE_MEMBER(OSCx, ruler_unit_buff_x), unit);
+    return WAVE_ReDraw(OSCx);
+}
+
 ESTA_StatusTypeDef WAVE_ReDraw(int OSCx) {
     if(!IS_VALID_WAVE_INST(OSCx)) return ESTA_ERROR;
     ESTA_RETURN_IF_ERROR(WAVE_FrameDisplay(OSCx));

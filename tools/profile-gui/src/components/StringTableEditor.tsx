@@ -4,6 +4,7 @@ import type { MenuProfile } from "../lib/menu.registry";
 import { MAX_MENU_ITEMS } from "../lib/menu.registry";
 import type { TableProfile } from "../lib/table.registry";
 import { MAX_TABLE_COLS, MAX_TABLE_ROWS } from "../lib/table.registry";
+import type { WaveProfile } from "../lib/wave.registry";
 
 interface Props {
   strings: StringEntry[];
@@ -11,6 +12,7 @@ interface Props {
   sequences: ActionSequence[];
   tableProfiles: TableProfile[];
   menuProfiles: MenuProfile[];
+  waveProfiles: WaveProfile[];
   onChange: (strings: StringEntry[]) => void;
 }
 
@@ -45,8 +47,16 @@ function getInitialText(
   sub_addr: number,
   target: { type: number; inst: number },
   tableProfiles: TableProfile[],
-  menuProfiles: MenuProfile[]
+  menuProfiles: MenuProfile[],
+  waveProfiles: WaveProfile[]
 ): string | null {
+  if (target.type === 0) {
+    const wp = waveProfiles[target.inst];
+    if (!wp) return null;
+    if (sub_addr === 0) return wp.ruler_unit_y || "(empty)";
+    if (sub_addr === 1) return wp.ruler_unit_x || "(empty)";
+    return null;
+  }
   if (target.type === 2) {
     const tp = tableProfiles[target.inst];
     if (!tp) return null;
@@ -68,10 +78,10 @@ function getInitialText(
   return null;
 }
 
-const TYPE_LABEL: Record<number, string> = { 2: "TABLE", 3: "MENU" };
+const TYPE_LABEL: Record<number, string> = { 0: "WAVE", 2: "TABLE", 3: "MENU" };
 
 export default function StringTableEditor(props: Props) {
-  const { strings, bindings, sequences, tableProfiles, menuProfiles, onChange } = props;
+  const { strings, bindings, sequences, tableProfiles, menuProfiles, waveProfiles, onChange } = props;
 
   const addEntry = () => {
     if (strings.length >= MAX_STRING_ENTRIES) return;
@@ -106,13 +116,22 @@ export default function StringTableEditor(props: Props) {
               const target = inferTarget(i, bindings, sequences);
               const typeLabel = target !== null ? (TYPE_LABEL[target.type] ?? "—") : "—";
               const initialText = target !== null
-                ? getInitialText(s.sub_addr, target, tableProfiles, menuProfiles)
+                ? getInitialText(s.sub_addr, target, tableProfiles, menuProfiles, waveProfiles)
                 : null;
               return (
                 <tr key={i} style={{ borderBottom: "1px solid #333" }}>
                   <td style={{ padding: "4px 6px", color: "#888" }}>{i}</td>
                   <td style={{ padding: "4px 6px" }}>
-                    {target?.type === 2 ? (
+                    {target?.type === 0 ? (
+                      <span>
+                        <select value={s.sub_addr} style={{ width: 60 }}
+                          onChange={(e) => updateEntry(i, "sub_addr", Number(e.target.value))}>
+                          <option value={0}>Y 轴单位</option>
+                          <option value={1}>X 轴单位</option>
+                        </select>
+                        <span style={{ color: "#888", marginLeft: 4, fontSize: 11 }}>= {s.sub_addr}</span>
+                      </span>
+                    ) : target?.type === 2 ? (
                       <span>
                         R<input type="number" value={Math.floor(s.sub_addr / MAX_TABLE_COLS)}
                           min={0} max={MAX_TABLE_ROWS - 1} style={{ width: 36 }}

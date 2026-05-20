@@ -2,6 +2,7 @@ import type React from "react";
 import type { ProfileSet } from "./types";
 import type { MenuProfile } from "./menu.registry";
 import type { TableProfile } from "./table.registry";
+import type { WaveProfile } from "./wave.registry";
 import EventEditor from "../components/EventEditor";
 import StringTableEditor from "../components/StringTableEditor";
 import SequenceEditor from "../components/SequenceEditor";
@@ -44,6 +45,7 @@ export const EVENT_PANELS: EventPanelEntry[] = [
         sequences={data.sequences ?? []}
         tableProfiles={(data["table_profiles"] as TableProfile[]) ?? []}
         menuProfiles={(data["menu_profiles"] as MenuProfile[]) ?? []}
+        waveProfiles={(data["wave_profiles"] as WaveProfile[]) ?? []}
         onChange={(strings) => setData({ ...data, strings, string_count: strings.length })}
       />
     ),

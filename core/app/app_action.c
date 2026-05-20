@@ -127,6 +127,10 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
     const ESTA_StringEntry_TypeDef *entry = &p->strings[str_idx];
 
     switch (ctx->target_type) {
+        case ESTA_TARGET_WAVE: {
+            WAVE_UpdateRulerUnit(ctx->target_inst, entry->sub_addr, entry->text);
+            return true;
+        }
         case ESTA_TARGET_TABLE: {
             uint8_t row = entry->sub_addr / TABLE_MAX_COLS;
             uint8_t col = entry->sub_addr % TABLE_MAX_COLS;
