@@ -35,6 +35,13 @@ export interface FlagConfig {
   event_id: number;
 }
 
+export interface SoftTimerConfig {
+  period_ms: number;
+  event_type: number;
+  event_source: number;
+  event_id: number;
+}
+
 export interface ProfileSet {
   button_count: number;
   page_count: number;
@@ -46,6 +53,8 @@ export interface ProfileSet {
   sequences: ActionSequence[];
   flag_inst_count: number;
   flag_profiles: FlagConfig[];
+  timer_count: number;
+  timer_configs: SoftTimerConfig[];
   [key: string]: unknown;
 }
 
@@ -61,6 +70,7 @@ export const MAX_STRING_ENTRIES = 16;
 export const MAX_STRING_LEN = 16;
 export const MAX_SEQUENCES = 4;
 export const MAX_SEQUENCE_STEPS = 4;
+export const MAX_SOFT_TIMERS = 4;
 
 export const TRIGGER_OPTIONS = [
   [1, "BUTTON_PRESS"],

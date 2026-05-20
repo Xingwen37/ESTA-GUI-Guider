@@ -7,6 +7,7 @@ import EventEditor from "../components/EventEditor";
 import StringTableEditor from "../components/StringTableEditor";
 import SequenceEditor from "../components/SequenceEditor";
 import FlagConfigEditor from "../components/FlagConfigEditor";
+import SoftTimerEditor from "../components/SoftTimerEditor";
 
 export interface EventPanelProps {
   data: ProfileSet;
@@ -67,6 +68,13 @@ export const EVENT_PANELS: EventPanelEntry[] = [
     label: "Flag Config",
     Component: ({ data, setData }) => (
       <FlagConfigEditor data={data} setData={setData} />
+    ),
+  },
+  {
+    key: "timers",
+    label: "Soft Timers",
+    Component: ({ data, setData }) => (
+      <SoftTimerEditor data={data} setData={setData} />
     ),
   },
 ];
