@@ -8,10 +8,7 @@ import {
 
 interface Props {
   sequences: ActionSequence[];
-  waveInstCount: number;
-  barInstCount: number;
-  tableInstCount: number;
-  menuInstCount: number;
+  instCounts: Record<string, number>;
   onChange: (sequences: ActionSequence[]) => void;
 }
 
@@ -29,15 +26,13 @@ const EMPTY_SEQUENCE: ActionSequence = {
 
 const STEP_ACTION_OPTIONS = ACTION_TYPE_OPTIONS.filter(([v]) => v !== 11);
 
-function getInstCount(targetType: number, props: Props): number {
-  switch (targetType) {
-    case 0: return props.waveInstCount;
-    case 1: return props.barInstCount;
-    case 2: return props.tableInstCount;
-    case 3: return props.menuInstCount;
-    case 6: return 8;
-    default: return 0;
+function getInstCount(targetType: number, instCounts: Record<string, number>): number {
+  const keys = ["wave", "bar", "table", "menu"];
+  if (targetType >= 0 && targetType < keys.length) {
+    return instCounts[keys[targetType]] ?? 0;
   }
+  if (targetType === 6) return 8;
+  return 0;
 }
 
 function isSingleton(targetType: number): boolean {
@@ -45,7 +40,7 @@ function isSingleton(targetType: number): boolean {
 }
 
 export default function SequenceEditor(props: Props) {
-  const { sequences, onChange } = props;
+  const { sequences, instCounts, onChange } = props;
 
   const addSequence = () => {
     if (sequences.length >= MAX_SEQUENCES) return;
@@ -114,7 +109,7 @@ export default function SequenceEditor(props: Props) {
               <tbody>
                 {seq.steps.map((step, stepIdx) => {
                   const singleton = isSingleton(step.target_type);
-                  const instCount = getInstCount(step.target_type, props);
+                  const instCount = getInstCount(step.target_type, instCounts);
                   return (
                     <tr key={stepIdx} style={{ borderBottom: "1px solid #333" }}>
                       <td style={{ padding: "3px 5px", color: "#888" }}>{stepIdx}</td>

@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import type { TableProfile, TableColProfile, TableCellProfile } from "../lib/types";
+import type { TableProfile, TableColProfile, TableCellProfile } from "../lib/table.registry";
 import {
   MAX_TABLE_ROWS,
   MAX_TABLE_COLS,
   MAX_TABLE_STRING_LEN,
   TABLE_CELL_TYPE_OPTIONS,
   TABLE_THEME_OPTIONS,
-  UI_FONT_SIZE_OPTIONS,
-} from "../lib/types";
+} from "../lib/table.registry";
+import { UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 interface Props {
   profile: TableProfile;

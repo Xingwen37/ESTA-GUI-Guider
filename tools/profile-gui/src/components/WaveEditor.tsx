@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
-import type { WaveProfile, WaveRulerLabel } from "../lib/types";
+import type { WaveProfile, WaveRulerLabel } from "../lib/wave.registry";
 import {
   MAX_WAVE_CHANNEL,
   MAX_RULER_X_NUM,
   MAX_RULER_Y_NUM,
-  UI_FONT_SIZE_OPTIONS,
   WAVE_THEME_OPTIONS,
-} from "../lib/types";
+} from "../lib/wave.registry";
+import { UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 interface Props {
   profile: WaveProfile;

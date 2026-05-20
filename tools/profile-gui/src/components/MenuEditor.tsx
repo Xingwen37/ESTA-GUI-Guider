@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { MenuProfile, MenuItemProfile } from "../lib/types";
+import type { MenuProfile, MenuItemProfile } from "../lib/menu.registry";
 import {
   MAX_MENU_ITEMS,
   MAX_MENU_STRING_LEN,
   MAX_MENU_DEPTH,
   MENU_THEME_OPTIONS,
-  UI_FONT_SIZE_OPTIONS,
-} from "../lib/types";
+} from "../lib/menu.registry";
+import { UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 // --- Tree data model ---
 

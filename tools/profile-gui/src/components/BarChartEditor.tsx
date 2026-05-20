@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
-import type { BarChartProfile } from "../lib/types";
-import { BAR_THEME_OPTIONS, UI_FONT_SIZE_OPTIONS } from "../lib/types";
+import type { BarChartProfile } from "../lib/bar.registry";
+import { BAR_THEME_OPTIONS } from "../lib/bar.registry";
+import { UI_FONT_SIZE_OPTIONS } from "../lib/types";
 
 interface Props {
   profile: BarChartProfile;

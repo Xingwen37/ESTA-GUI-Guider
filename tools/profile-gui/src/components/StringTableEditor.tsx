@@ -1,11 +1,9 @@
-import type { ActionSequence, EventBinding, MenuProfile, StringEntry, TableProfile } from "../lib/types";
-import {
-  MAX_STRING_ENTRIES,
-  MAX_STRING_LEN,
-  MAX_TABLE_COLS,
-  MAX_TABLE_ROWS,
-  MAX_MENU_ITEMS,
-} from "../lib/types";
+import type { ActionSequence, EventBinding, StringEntry } from "../lib/types";
+import { MAX_STRING_ENTRIES, MAX_STRING_LEN } from "../lib/types";
+import type { MenuProfile } from "../lib/menu.registry";
+import { MAX_MENU_ITEMS } from "../lib/menu.registry";
+import type { TableProfile } from "../lib/table.registry";
+import { MAX_TABLE_COLS, MAX_TABLE_ROWS } from "../lib/table.registry";
 
 interface Props {
   strings: StringEntry[];

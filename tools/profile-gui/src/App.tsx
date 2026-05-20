@@ -33,6 +33,10 @@ export default function App() {
   const activeSafeTab = Math.min(activeTab, totalComponentTabs);
   const isEventTab = activeSafeTab === totalComponentTabs;
 
+  const instCounts = Object.fromEntries(
+    COMPONENT_REGISTRY.map((e) => [e.key, (data[e.countField] as number) ?? 0])
+  );
+
   let activeEntry = COMPONENT_REGISTRY[0];
   let profileIndex = 0;
   let tabOffset = 0;
@@ -150,10 +154,7 @@ export default function App() {
             <EventEditor
               bindings={data.bindings ?? []}
               buttonCount={data.button_count}
-              waveInstCount={data.wave_inst_count}
-              barInstCount={data.bar_inst_count}
-              tableInstCount={data.table_inst_count}
-              menuInstCount={data.menu_inst_count}
+              instCounts={instCounts}
               menuProfiles={data.menu_profiles ?? []}
               strings={data.strings ?? []}
               sequences={data.sequences ?? []}
@@ -169,10 +170,7 @@ export default function App() {
             />
             <SequenceEditor
               sequences={data.sequences ?? []}
-              waveInstCount={data.wave_inst_count}
-              barInstCount={data.bar_inst_count}
-              tableInstCount={data.table_inst_count}
-              menuInstCount={data.menu_inst_count}
+              instCounts={instCounts}
               onChange={(sequences) => state.setData({ ...data, sequences, sequence_count: sequences.length })}
             />
           </>

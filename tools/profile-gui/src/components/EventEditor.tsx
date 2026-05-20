@@ -1,4 +1,5 @@
-import type { ActionSequence, EventBinding, MenuProfile, StringEntry } from "../lib/types";
+import type { ActionSequence, EventBinding, StringEntry } from "../lib/types";
+import type { MenuProfile } from "../lib/menu.registry";
 import {
   TRIGGER_OPTIONS,
   TARGET_TYPE_OPTIONS,
@@ -13,10 +14,7 @@ import {
 interface Props {
   bindings: EventBinding[];
   buttonCount: number;
-  waveInstCount: number;
-  barInstCount: number;
-  tableInstCount: number;
-  menuInstCount: number;
+  instCounts: Record<string, number>;
   menuProfiles: MenuProfile[];
   strings: StringEntry[];
   sequences: ActionSequence[];
@@ -33,15 +31,13 @@ const EMPTY_BINDING: EventBinding = {
   param: 0,
 };
 
-function getInstCount(targetType: number, props: Props): number {
-  switch (targetType) {
-    case 0: return props.waveInstCount;
-    case 1: return props.barInstCount;
-    case 2: return props.tableInstCount;
-    case 3: return props.menuInstCount;
-    case 6: return 8; // FLAG_MAX
-    default: return 0;
+function getInstCount(targetType: number, instCounts: Record<string, number>): number {
+  const keys = ["wave", "bar", "table", "menu"];
+  if (targetType >= 0 && targetType < keys.length) {
+    return instCounts[keys[targetType]] ?? 0;
   }
+  if (targetType === 6) return 8; // FLAG_MAX
+  return 0;
 }
 
 function isSingletonTarget(targetType: number): boolean {
@@ -53,7 +49,7 @@ function isButtonTrigger(trigger: number): boolean {
 }
 
 export default function EventEditor(props: Props) {
-  const { bindings, buttonCount, menuProfiles, strings, sequences, onChange } = props;
+  const { bindings, buttonCount, instCounts, menuProfiles, strings, sequences, onChange } = props;
 
   const addBinding = () => {
     if (bindings.length >= MAX_BINDINGS) return;
@@ -113,7 +109,7 @@ export default function EventEditor(props: Props) {
           <tbody>
             {bindings.map((b, i) => {
               const validActions = VALID_ACTIONS[b.target_type] || [];
-              const instCount = getInstCount(b.target_type, props);
+              const instCount = getInstCount(b.target_type, instCounts);
               const singleton = isSingletonTarget(b.target_type);
               const isButton = isButtonTrigger(b.trigger);
               const isMenuSelect = b.trigger === 3;
@@ -142,7 +138,7 @@ export default function EventEditor(props: Props) {
                     ) : isMenuSelect ? (
                       <select value={b.source_id}
                         onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
-                        {Array.from({ length: props.menuInstCount }, (_, k) => (
+                        {Array.from({ length: instCounts["menu"] ?? 0 }, (_, k) => (
                           <option key={k} value={k}>MENU #{k}</option>
                         ))}
                       </select>
