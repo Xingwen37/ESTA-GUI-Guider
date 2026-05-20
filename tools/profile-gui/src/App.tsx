@@ -1,4 +1,5 @@
-import { COMPONENT_REGISTRY } from "./lib/componentRegistry";
+import { useState } from "react";
+import { COMPONENT_REGISTRY, type ComponentEntry } from "./lib/componentRegistry";
 import { EVENT_PANELS } from "./lib/eventPanelRegistry";
 import { useProfileState } from "./hooks/useProfileState";
 import { MAX_BUTTON_COUNT } from "./lib/types";
@@ -12,6 +13,8 @@ export default function App() {
     handleGenerate, handleBuildRun, handlePreview, handleAutoLayout,
     setCount, deleteItem, updateProfile, setButtonCount,
   } = state;
+
+  const [confirmDelete, setConfirmDelete] = useState<{ entry: ComponentEntry; idx: number } | null>(null);
 
   if (!data) {
     return (
@@ -109,7 +112,7 @@ export default function App() {
               onClick={() => setActiveTab(offset + i)}
             >
               {entry.label}{i}
-              <span className="tab-close" onClick={(e) => { e.stopPropagation(); deleteItem(entry, i); }}>×</span>
+              <span className="tab-close" onClick={(e) => { e.stopPropagation(); setConfirmDelete({ entry, idx: i }); }}>×</span>
             </button>
           ));
           const sep = ei > 0 && prevCount > 0 && count > 0
@@ -167,6 +170,51 @@ export default function App() {
           />
         )}
       </div>
+
+      {confirmDelete && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
+          }}
+          onClick={() => setConfirmDelete(null)}
+        >
+          <div
+            style={{
+              background: "#252526", border: "1px solid #555", borderRadius: 6,
+              padding: "20px 28px", minWidth: 300, textAlign: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: 14, color: "#ccc", marginBottom: 20 }}>
+              确定删除此组件吗？
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                style={{
+                  background: "#3c3c3c", border: "1px solid #555", color: "#ccc",
+                  borderRadius: 4, padding: "6px 24px", cursor: "pointer", fontSize: 13,
+                }}
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  deleteItem(confirmDelete.entry, confirmDelete.idx);
+                  setConfirmDelete(null);
+                }}
+                style={{
+                  background: "#a33", border: "1px solid #c44", color: "#fff",
+                  borderRadius: 4, padding: "6px 24px", cursor: "pointer", fontSize: 13,
+                }}
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
