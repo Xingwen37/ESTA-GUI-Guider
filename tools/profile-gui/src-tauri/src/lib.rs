@@ -34,6 +34,7 @@ pub fn run() {
     registry.register(Box::new(plugins::table::TablePlugin));
     registry.register(Box::new(plugins::menu::MenuPlugin));
     registry.register(Box::new(plugins::flag::FlagPlugin));
+    registry.register(Box::new(plugins::soft_timer::SoftTimerPlugin));
 
     tauri::Builder::default()
         .manage(AppState {

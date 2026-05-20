@@ -164,6 +164,12 @@ static const ESTA_ProfileSet_TypeDef g_default_profiles = {
 {% for f in flag_profiles %}
         { .mode = {{ f.mode }}, .event_type = {{ f.event_type }}, .event_source = {{ f.event_source }}, .event_id = {{ f.event_id }} }{% if not loop.last %},{% endif %}
 {% endfor %}
+    },
+    .timer_count = {{ timer_count }},
+    .timer_configs = {
+{% for t in timer_configs %}
+        { .period_ms = {{ t.period_ms }}, .event_type = {{ t.event_type }}, .event_source = {{ t.event_source }}, .event_id = {{ t.event_id }} }{% if not loop.last %},{% endif %}
+{% endfor %}
     }
 };
 
@@ -312,6 +318,11 @@ ESTA_StatusTypeDef ESTA_Profile_ApplyEvents(const ESTA_ProfileSet_TypeDef *profi
     if (profile_set == NULL) return ESTA_ERROR;
     ESTA_EventInit();
     App_EventInit();
+
+    ESTA_SoftTimerInit();
+    for (uint8_t i = 0; i < profile_set->timer_count; i++) {
+        ESTA_SoftTimerRegister(i, &profile_set->timer_configs[i]);
+    }
 
     for (uint8_t i = 0; i < profile_set->flag_count; i++) {
         ESTA_FlagRegister(i, &profile_set->flag_configs[i]);
