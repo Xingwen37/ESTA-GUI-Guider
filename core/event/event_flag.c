@@ -45,18 +45,37 @@ bool ESTA_FlagPeek(uint8_t flag_id) {
     return s_flags[flag_id] != 0;
 }
 
+void ESTA_FlagClear(uint8_t flag_id) {
+    if (flag_id < ESTA_FLAG_MAX) {
+        s_flags[flag_id] = 0;
+    }
+}
+
 void ESTA_FlagPoll(void) {
     for (uint8_t i = 0; i < ESTA_FLAG_MAX; i++) {
         if (!s_registered[i]) continue;
-        if (s_config[i].mode != ESTA_FLAG_MODE_AUTO_EVENT) continue;
         if (!s_flags[i]) continue;
 
-        s_flags[i] = 0;
+        bool is_latch = (s_config[i].mode == ESTA_FLAG_MODE_LATCH);
+        if (s_config[i].mode != ESTA_FLAG_MODE_AUTO_EVENT && !is_latch) continue;
+
         ESTA_Event evt;
         evt.type = (uint8_t)s_config[i].event_type;
         evt.source = s_config[i].event_source;
         evt.id = s_config[i].event_id;
         evt.timestamp = ESTA_GET_TICK();
         ESTA_EventPush(&evt);
+
+        if (!is_latch) {
+            s_flags[i] = 0;
+        }
     }
+}
+
+uint8_t ESTA_FlagReadAll(void) {
+    uint8_t result = 0;
+    for (uint8_t i = 0; i < ESTA_FLAG_MAX; i++) {
+        if (s_flags[i]) result |= (uint8_t)(1u << i);
+    }
+    return result;
 }

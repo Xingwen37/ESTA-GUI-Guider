@@ -31,6 +31,7 @@ typedef enum {
     ESTA_ACTION_FLAG_SET      = 9,
     ESTA_ACTION_TEXT_SET      = 10,
     ESTA_ACTION_SEQUENCE      = 11,
+    ESTA_ACTION_FLAG_CLEAR    = 12,
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 
@@ -42,6 +43,9 @@ typedef struct {
     uint8_t  target_inst;  /* target instance (0 for PAGE/GLOBAL) */
     uint8_t  action;       /* ESTA_ActionType */
     uint8_t  param;        /* action parameter (TEXT_SET: string table index) */
+    uint8_t  guard_and_mask; /* all these Flags must be set (AND), 0 = no check */
+    uint8_t  guard_or_mask;  /* at least one of these Flags must be set (OR), 0 = no check */
+    uint8_t  guard_inv_mask; /* all these Flags must be clear (AND-NOT), 0 = no check */
 } ESTA_EventBinding_TypeDef;
 
 typedef struct {
@@ -49,6 +53,9 @@ typedef struct {
     uint8_t target_type;
     uint8_t target_inst;
     uint8_t param;
+    uint8_t guard_and_mask;
+    uint8_t guard_or_mask;
+    uint8_t guard_inv_mask;
 } App_BindingContext;
 
 ESTA_EventHandler App_ActionGetHandler(ESTA_ActionType action);

@@ -11,6 +11,7 @@
 typedef enum {
     ESTA_FLAG_MODE_MANUAL = 0,
     ESTA_FLAG_MODE_AUTO_EVENT,
+    ESTA_FLAG_MODE_LATCH,
 } ESTA_FlagMode;
 
 typedef struct {
@@ -25,6 +26,8 @@ void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
 void ESTA_FlagSet(uint8_t flag_id);
 bool ESTA_FlagCheck(uint8_t flag_id);
 bool ESTA_FlagPeek(uint8_t flag_id);
+void ESTA_FlagClear(uint8_t flag_id);
 void ESTA_FlagPoll(void);
+uint8_t ESTA_FlagReadAll(void);
 
 #endif

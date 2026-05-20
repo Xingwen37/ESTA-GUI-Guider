@@ -56,6 +56,8 @@
 | `src-tauri/src/commands/profile_io.rs` | load/save（注册表驱动，无组件硬编码） |
 | `src-tauri/src/commands/build.rs` | build/run/preview 命令 |
 | `src-tauri/templates/ESTA_Profile.c.j2` | Tera 模板 |
+| `src/lib/eventPanelRegistry.tsx` | EVENT 标签页面板注册表（4 面板：Bindings / String Table / Sequences / Flag Config） |
+| `src/components/FlagConfigEditor.tsx` | Flag 配置编辑器（EVENT 页第 4 面板） |
 
 ### 1.3 涉及文件总览
 
@@ -108,6 +110,29 @@ bar_profiles: BarChartProfile[]; // BarChartProfile 定义在 bar.registry.ts
 **命名一致性**：C 层 `snake_case` → Rust 层 `snake_case` → TS 层 `snake_case`。
 
 **Rust 后端插件化存储**：`ProfileSet.components` 为 `HashMap<String, serde_json::Value>`，通过 `#[serde(flatten)]` 保持 JSON 平铺格式不变。`fill_template_context()` 内部将 Value 反序列化为类型化模型进行模板转换，确保类型安全。
+
+### 1.6 EVENT 标签页面板布局
+
+EVENT 标签页不再依赖 COMPONENT_REGISTRY（后者仅用于可视化组件标签）。其内部面板由 `src/lib/eventPanelRegistry.tsx` 中的 `EVENT_PANELS` 数组驱动，当前共 4 个面板：
+
+| # | key | label | 组件 |
+|:---:|------|------|------|
+| 1 | `bindings` | Event Bindings | `EventEditor` |
+| 2 | `strings` | String Table | `StringTableEditor` |
+| 3 | `sequences` | Action Sequences | `SequenceEditor` |
+| 4 | `flags` | Flag Config | `FlagConfigEditor` |
+
+所有面板同时渲染（非标签页切换），每个面板接收 `{ data, instCounts, setData }`。新增非组件面板只需在该文件中追加一个 entry，无需修改 App.tsx。
+
+### 1.7 非组件插件（以 Flag 为例）
+
+插件架构同样适用于非可视化配置项（如 Flag）。此类插件：
+
+- 实现 `ComponentPlugin` trait，通过 `set_defaults()` 提供默认值，`fill_template_context()` 提供模板变量
+- 在 `lib.rs` 中注册，参与 load / save 流程
+- 在模板 `ESTA_Profile.c.j2` 中添加对应的结构体初始化和初始化代码
+- **不需要**创建 `xxx.registry.ts` 或加入 `COMPONENT_REGISTRY`（不由 App.tsx 标签页驱动）
+- 前端通过 `ProfileSet` 的 `[key: string]: unknown` 索引签名直接访问数据（如 `data.flag_profiles`）
 
 ---
 

@@ -33,6 +33,7 @@ pub fn run() {
     registry.register(Box::new(plugins::bar::BarChartPlugin));
     registry.register(Box::new(plugins::table::TablePlugin));
     registry.register(Box::new(plugins::menu::MenuPlugin));
+    registry.register(Box::new(plugins::flag::FlagPlugin));
 
     tauri::Builder::default()
         .manage(AppState {

@@ -1,4 +1,6 @@
 #include "app/app_event.h"
+#include "app/app_action.h"
+#include "event/event_flag.h"
 #include <stddef.h>
 
 typedef struct {
@@ -51,6 +53,15 @@ void App_DispatchEvents(void) {
             if (g_subs[i].source_id == APP_SOURCE_ANY) continue;
             if (g_subs[i].source_id != evt.source) continue;
             if (g_subs[i].event_id != APP_TRIGGER_ID_ANY && g_subs[i].event_id != evt.id) continue;
+            {
+                const App_BindingContext *ctx = (const App_BindingContext *)g_subs[i].user_data;
+                if (ctx != NULL) {
+                    uint8_t flags = ESTA_FlagReadAll();
+                    if (ctx->guard_and_mask && (flags & ctx->guard_and_mask) != ctx->guard_and_mask) continue;
+                    if (ctx->guard_or_mask  && (flags & ctx->guard_or_mask)  == 0)                   continue;
+                    if (ctx->guard_inv_mask && (flags & ctx->guard_inv_mask) != 0)                   continue;
+                }
+            }
             if (g_subs[i].handler(&evt, g_subs[i].user_data)) {
                 consumed = true;
                 break;
@@ -63,6 +74,15 @@ void App_DispatchEvents(void) {
                 if (g_subs[i].type != evt.type) continue;
                 if (g_subs[i].source_id != APP_SOURCE_ANY) continue;
                 if (g_subs[i].event_id != APP_TRIGGER_ID_ANY && g_subs[i].event_id != evt.id) continue;
+                {
+                    const App_BindingContext *ctx = (const App_BindingContext *)g_subs[i].user_data;
+                    if (ctx != NULL) {
+                        uint8_t flags = ESTA_FlagReadAll();
+                        if (ctx->guard_and_mask && (flags & ctx->guard_and_mask) != ctx->guard_and_mask) continue;
+                        if (ctx->guard_or_mask  && (flags & ctx->guard_or_mask)  == 0)                   continue;
+                        if (ctx->guard_inv_mask && (flags & ctx->guard_inv_mask) != 0)                   continue;
+                    }
+                }
                 g_subs[i].handler(&evt, g_subs[i].user_data);
                 break;
             }

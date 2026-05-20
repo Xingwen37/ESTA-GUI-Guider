@@ -1,75 +1,221 @@
 {
-  "wave_inst_count": 1,
-  "bar_inst_count": 1,
-  "table_inst_count": 1,
-  "menu_inst_count": 1,
   "button_count": 6,
   "page_count": 1,
-  "binding_count": 2,
+  "binding_count": 4,
+  "bindings": [
+    {
+      "trigger": 1,
+      "source_id": 2,
+      "trigger_id": 65535,
+      "target_type": 6,
+      "target_inst": 0,
+      "action": 9,
+      "param": 0
+    },
+    {
+      "trigger": 1,
+      "source_id": 4,
+      "trigger_id": 65535,
+      "target_type": 6,
+      "target_inst": 0,
+      "action": 12,
+      "param": 0
+    },
+    {
+      "trigger": 6,
+      "source_id": 0,
+      "trigger_id": 65535,
+      "target_type": 0,
+      "target_inst": 0,
+      "action": 4,
+      "param": 0
+    },
+    {
+      "trigger": 1,
+      "source_id": 0,
+      "trigger_id": 65535,
+      "target_type": 0,
+      "target_inst": 0,
+      "action": 3,
+      "param": 0
+    }
+  ],
+  "string_count": 3,
+  "strings": [
+    {
+      "sub_addr": 6,
+      "text": "223"
+    },
+    {
+      "sub_addr": 8,
+      "text": "333"
+    },
+    {
+      "sub_addr": 0,
+      "text": "0.01V"
+    }
+  ],
+  "sequence_count": 1,
+  "sequences": [
+    {
+      "step_count": 2,
+      "steps": [
+        {
+          "action": 10,
+          "target_type": 3,
+          "target_inst": 0,
+          "param": 0
+        },
+        {
+          "action": 4,
+          "target_type": 0,
+          "target_inst": 0,
+          "param": 0
+        }
+      ]
+    }
+  ],
+  "menu_inst_count": 1,
+  "wave_inst_count": 1,
+  "flag_profiles": [
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 6,
+      "mode": 2
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 1,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    }
+  ],
   "wave_profiles": [
     {
-      "x_origin": 0,
-      "y_origin": 0,
-      "x_width": 400,
-      "y_width": 256,
-      "display_num_min": 0,
-      "display_num_max": 256,
-      "x_scale": 2,
-      "channel_num": 4,
       "channel_mask": 15,
+      "channel_num": 4,
+      "display_num_max": 256,
+      "display_num_min": 0,
+      "is_auto_clear": true,
+      "is_display_ruler_x": true,
       "is_display_ruler_y": true,
-      "ruler_y": [
-        0,
-        32,
-        64,
-        96,
-        128,
-        160,
-        192,
-        224,
-        256,
-        0,
-        0
+      "is_use_batch_draw": false,
+      "page": 0,
+      "ruler_count_x": 11,
+      "ruler_count_y": 9,
+      "ruler_font_size": "ESTA_FONT_1206",
+      "ruler_full_value_x": 100,
+      "ruler_label_x": [
+        {
+          "value": 0
+        },
+        {
+          "value": 10
+        },
+        {
+          "value": 20
+        },
+        {
+          "value": 30
+        },
+        {
+          "value": 40
+        },
+        {
+          "value": 50
+        },
+        {
+          "value": 60
+        },
+        {
+          "value": 70
+        },
+        {
+          "value": 80
+        },
+        {
+          "value": 90
+        },
+        {
+          "value": 100
+        }
       ],
       "ruler_label_y": [
         {
-          "value": -4.0
+          "value": -4
         },
         {
-          "value": -3.0
+          "value": -3
         },
         {
-          "value": -2.0
+          "value": -2
         },
         {
-          "value": -1.0
+          "value": -1
         },
         {
-          "value": 0.0
+          "value": 0
         },
         {
-          "value": 1.0
+          "value": 1
         },
         {
-          "value": 2.0
+          "value": 2
         },
         {
-          "value": 3.0
+          "value": 3
         },
         {
-          "value": 4.0
+          "value": 4
         },
         {
-          "value": 0.0
+          "value": 0
         },
         {
-          "value": 0.0
+          "value": 0
         }
       ],
-      "ruler_unit_y": "0.1V",
+      "ruler_precision_x": 0,
       "ruler_precision_y": 0,
-      "ruler_count_y": 9,
-      "is_display_ruler_x": true,
+      "ruler_unit_x": "ms",
+      "ruler_unit_y": "0.1V",
       "ruler_x": [
         0,
         10,
@@ -83,248 +229,189 @@
         90,
         100
       ],
-      "ruler_label_x": [
-        {
-          "value": 0.0
-        },
-        {
-          "value": 1.0
-        },
-        {
-          "value": 2.0
-        },
-        {
-          "value": 3.0
-        },
-        {
-          "value": 4.0
-        },
-        {
-          "value": 5.0
-        },
-        {
-          "value": 6.0
-        },
-        {
-          "value": 7.0
-        },
-        {
-          "value": 8.0
-        },
-        {
-          "value": 9.0
-        },
-        {
-          "value": 10.0
-        }
+      "ruler_y": [
+        0,
+        32,
+        64,
+        96,
+        128,
+        160,
+        192,
+        224,
+        256,
+        0,
+        0
       ],
-      "ruler_unit_x": "ms",
-      "ruler_precision_x": 0,
-      "ruler_count_x": 11,
       "ruler_zero_value_x": 0,
-      "ruler_full_value_x": 100,
-      "ruler_font_size": "ESTA_FONT_1206",
       "theme_type": "WAVE_THEME_DEFAULT",
-      "is_auto_clear": true,
-      "is_use_batch_draw": false,
-      "page": 0
+      "x_origin": 0,
+      "x_scale": 2,
+      "x_width": 400,
+      "y_origin": 0,
+      "y_width": 256
     }
   ],
+  "flag_inst_count": 8,
+  "bar_inst_count": 1,
   "bar_profiles": [
     {
-      "x_origin": 102,
-      "y_origin": 336,
-      "x_width": 93,
-      "y_width": 80,
-      "display_num_min": 0,
-      "display_num_max": 100,
       "bar_count": 6,
-      "bar_width": 10,
       "bar_spacing": 5,
-      "is_display_value": true,
+      "bar_width": 10,
+      "display_num_max": 100,
+      "display_num_min": 0,
+      "font_size": "ESTA_FONT_1608",
       "is_display_axis": true,
-      "font_size": "ESTA_FONT_1608",
+      "is_display_value": true,
+      "page": 0,
       "theme_type": "BARCHART_THEME_DEFAULT",
-      "page": 0
-    }
-  ],
-  "table_profiles": [
-    {
-      "x_origin": 0,
-      "y_origin": 260,
-      "x_width": 110,
-      "y_width": 72,
-      "row_count": 2,
-      "col_count": 3,
-      "row_height": 20,
-      "is_show_header": false,
-      "is_show_frame": true,
-      "is_show_row_line": false,
-      "is_show_col_line": false,
-      "is_fill_background": true,
-      "font_size": "ESTA_FONT_1608",
-      "theme_type": "TABLE_THEME_LIGHT",
-      "cols": [
-        {
-          "header": "Name",
-          "cell_type": "TABLE_CELL_TEXT",
-          "width": 0,
-          "precision": 0
-        },
-        {
-          "header": "Value",
-          "cell_type": "TABLE_CELL_UINT32",
-          "width": 0,
-          "precision": 0
-        },
-        {
-          "header": "Unit",
-          "cell_type": "TABLE_CELL_TEXT",
-          "width": 0,
-          "precision": 0
-        }
-      ],
-      "cells": [
-        [
-          {
-            "text": "Vpp",
-            "u32": 0,
-            "f32": 0.0
-          },
-          {
-            "text": "",
-            "u32": 1000,
-            "f32": 0.0
-          },
-          {
-            "text": "mV",
-            "u32": 0,
-            "f32": 0.0
-          }
-        ],
-        [
-          {
-            "text": "Fre",
-            "u32": 0,
-            "f32": 0.0
-          },
-          {
-            "text": "",
-            "u32": 1230,
-            "f32": 0.0
-          },
-          {
-            "text": "Hz",
-            "u32": 0,
-            "f32": 0.0
-          }
-        ]
-      ],
-      "page": 0
+      "x_origin": 102,
+      "x_width": 93,
+      "y_origin": 336,
+      "y_width": 80
     }
   ],
   "menu_profiles": [
     {
-      "x_origin": 0,
-      "y_origin": 336,
-      "x_width": 98,
-      "y_width": 80,
+      "breadcrumb_height": 0,
+      "font_size": "ESTA_FONT_1608",
+      "is_fill_background": true,
+      "is_show_breadcrumb": false,
+      "is_show_frame": true,
       "item_count": 8,
       "item_height": 20,
-      "breadcrumb_height": 0,
-      "is_show_frame": true,
-      "is_show_breadcrumb": false,
-      "is_fill_background": true,
-      "font_size": "ESTA_FONT_1608",
-      "theme_type": "MENU_THEME_DEFAULT",
       "items": [
         {
+          "event_id": 0,
+          "is_submenu": true,
           "label": "Settings",
-          "parent_idx": 255,
-          "is_submenu": true,
-          "event_id": 0
+          "parent_idx": 255
         },
         {
+          "event_id": 0,
+          "is_submenu": true,
           "label": "Display",
-          "parent_idx": 0,
-          "is_submenu": true,
-          "event_id": 0
+          "parent_idx": 0
         },
         {
+          "event_id": 10,
+          "is_submenu": false,
           "label": "Brightness",
-          "parent_idx": 1,
-          "is_submenu": false,
-          "event_id": 10
+          "parent_idx": 1
         },
         {
-          "label": "Background",
-          "parent_idx": 255,
+          "event_id": 0,
           "is_submenu": true,
-          "event_id": 0
+          "label": "Background",
+          "parent_idx": 255
         },
         {
+          "event_id": 0,
+          "is_submenu": false,
           "label": "defult",
-          "parent_idx": 3,
-          "is_submenu": false,
-          "event_id": 0
+          "parent_idx": 3
         },
         {
+          "event_id": 0,
+          "is_submenu": false,
           "label": "light",
-          "parent_idx": 3,
-          "is_submenu": false,
-          "event_id": 0
+          "parent_idx": 3
         },
         {
-          "label": "Item",
-          "parent_idx": 255,
+          "event_id": 0,
           "is_submenu": false,
-          "event_id": 0
+          "label": "Item",
+          "parent_idx": 255
         },
         {
-          "label": "Item",
-          "parent_idx": 255,
+          "event_id": 0,
           "is_submenu": false,
-          "event_id": 0
+          "label": "Item",
+          "parent_idx": 255
         }
       ],
-      "page": 0
+      "page": 0,
+      "theme_type": "MENU_THEME_DEFAULT",
+      "x_origin": 0,
+      "x_width": 98,
+      "y_origin": 336,
+      "y_width": 80
     }
   ],
-  "bindings": [
+  "table_inst_count": 1,
+  "table_profiles": [
     {
-      "trigger": 1,
-      "source_id": 0,
-      "trigger_id": 65535,
-      "target_type": 2,
-      "target_inst": 0,
-      "action": 10,
-      "param": 1
-    },
-    {
-      "trigger": 1,
-      "source_id": 1,
-      "trigger_id": 65535,
-      "target_type": 3,
-      "target_inst": 0,
-      "action": 10,
-      "param": 0
+      "cells": [
+        [
+          {
+            "f32": 0,
+            "text": "Vpp",
+            "u32": 0
+          },
+          {
+            "f32": 0,
+            "text": "",
+            "u32": 1000
+          },
+          {
+            "f32": 0,
+            "text": "mV",
+            "u32": 0
+          }
+        ],
+        [
+          {
+            "f32": 0,
+            "text": "Fre",
+            "u32": 0
+          },
+          {
+            "f32": 0,
+            "text": "",
+            "u32": 1230
+          },
+          {
+            "f32": 0,
+            "text": "Hz",
+            "u32": 0
+          }
+        ]
+      ],
+      "col_count": 3,
+      "cols": [
+        {
+          "cell_type": "TABLE_CELL_TEXT",
+          "header": "Name",
+          "precision": 0,
+          "width": 0
+        },
+        {
+          "cell_type": "TABLE_CELL_UINT32",
+          "header": "Value",
+          "precision": 0,
+          "width": 0
+        },
+        {
+          "cell_type": "TABLE_CELL_TEXT",
+          "header": "Unit",
+          "precision": 0,
+          "width": 0
+        }
+      ],
+      "font_size": "ESTA_FONT_1608",
+      "is_fill_background": true,
+      "is_show_col_line": false,
+      "is_show_frame": true,
+      "is_show_header": false,
+      "is_show_row_line": false,
+      "page": 0,
+      "row_count": 2,
+      "row_height": 20,
+      "theme_type": "TABLE_THEME_LIGHT",
+      "x_origin": 0,
+      "x_width": 110,
+      "y_origin": 260,
+      "y_width": 72
     }
-  ],
-  "string_count": 3,
-  "strings": [
-    {
-      "sub_addr": 3,
-      "text": "223"
-    },
-    {
-      "sub_addr": 8,
-      "text": "333"
-    },
-    {
-      "sub_addr": 0,
-      "text": "112"
-    }
-  ],
-  "sequence_count": 0,
-  "sequences": []
+  ]
 }

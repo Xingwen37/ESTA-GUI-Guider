@@ -21,6 +21,12 @@ pub struct EventBinding {
     pub action: u8,
     #[serde(default)]
     pub param: u8,
+    #[serde(default)]
+    pub guard_and_mask: u8,
+    #[serde(default)]
+    pub guard_or_mask: u8,
+    #[serde(default)]
+    pub guard_inv_mask: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

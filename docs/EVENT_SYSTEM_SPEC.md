@@ -134,6 +134,7 @@ typedef enum {
     ESTA_ACTION_FLAG_SET      = 9,   // 延迟：设置 Flag，由外部消费
     ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
     ESTA_ACTION_SEQUENCE      = 11,  // 序列：触发一组子动作
+    ESTA_ACTION_FLAG_CLEAR    = 12,  // 延迟：主动清除 Flag，终止 LATCH 推送
     ESTA_ACTION_CUSTOM        = 0xFF // 自定义：由用户注册的 handler
 } ESTA_ActionType;
 ```
@@ -148,7 +149,7 @@ typedef enum {
 | MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET, SEQUENCE, CUSTOM |
 | PAGE (4) | PAGE_NEXT, PAGE_PREV, SEQUENCE, CUSTOM |
 | GLOBAL (5) | THEME_TOGGLE, SEQUENCE, CUSTOM |
-| FLAG (6) | FLAG_SET, SEQUENCE, CUSTOM |
+| FLAG (6) | FLAG_SET, FLAG_CLEAR, SEQUENCE, CUSTOM |
 
 > SEQUENCE 和 CUSTOM 对所有 target_type 均可用，因为实际目标由序列步骤或自定义 handler 内部决定。
 
@@ -229,9 +230,10 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 ### 初始化流程
 
 `App_MainInit()` → `ESTA_Profile_ApplyEvents(profiles, state)`：
-1. 遍历 `bindings[]` 数组
-2. 为每条 binding 创建 `App_BindingContext`（静态数组 `g_binding_ctx[]`）
-3. 调用 `App_Subscribe(trigger, source_id, trigger_id, handler, &ctx)`
+1. 遍历 `flag_configs[]` 数组，为每个 flag 调用 `ESTA_FlagRegister(i, &config)`
+2. 遍历 `bindings[]` 数组
+3. 为每条 binding 创建 `App_BindingContext`（静态数组 `g_binding_ctx[]`）
+4. 调用 `App_Subscribe(trigger, source_id, trigger_id, handler, &ctx)`
 
 ## 仿真器键盘映射
 
@@ -291,14 +293,28 @@ MCU 移植时，用户实现自己的绘制回调（从 ADC 缓冲区读取数�
 
 ## Flag 系统（`core/event/event_flag.h/.c`）
 
-Flag 是一种轻量级的内部信号机制，用于跨模块通信。支持两种消费模式：
+Flag 是一种轻量级的内部信号机制，用于跨模块通信。支持三种消费模式。
 
 ### 模式
 
-| 模式 | 说明 |
-|------|------|
-| `ESTA_FLAG_MODE_MANUAL` | 手动模式：外部代码调用 `ESTA_FlagCheck()` 轮询消费 |
-| `ESTA_FLAG_MODE_AUTO_EVENT` | 自动模式：`ESTA_FlagPoll()` 将 Flag 转换为配置的事件类型推入队列 |
+| 模式 | 值 | 说明 |
+|------|:---:|------|
+| `ESTA_FLAG_MODE_MANUAL` | 0 | 手动模式：外部代码调用 `ESTA_FlagCheck()` 轮询消费，不会自动推送事件 |
+| `ESTA_FLAG_MODE_AUTO_EVENT` | 1 | 自动单次模式：`FlagPoll()` 推送一次转换事件后自动清除 flag |
+| `ESTA_FLAG_MODE_LATCH` | 2 | 锁存模式：`FlagPoll()` 每帧持续推送转换事件，**不清除** flag，直到 `ESTA_FlagClear()` 主动释放 |
+
+### FlagConfig 结构体
+
+```c
+typedef struct {
+    ESTA_FlagMode mode;        // MANUAL / AUTO_EVENT / LATCH
+    ESTA_EventType event_type; // FlagPoll 时转换的目标事件类型
+    uint8_t event_source;      // 推送事件的 source 字段
+    uint16_t event_id;         // 推送事件的 id 字段
+} ESTA_FlagConfig;
+```
+
+`FlagPoll()` 遍历已注册的 flag：MANUAL 模式跳过；AUTO_EVENT 推送后自动清零；LATCH 推送后保持置位。
 
 ### API
 
@@ -308,7 +324,8 @@ void ESTA_FlagRegister(uint8_t flag_id, const ESTA_FlagConfig *config);
 void ESTA_FlagSet(uint8_t flag_id);    // 设置 Flag 并自动推送 ESTA_EVENT_FLAG 事件
 bool ESTA_FlagCheck(uint8_t flag_id);  // 检查并清除（consume）
 bool ESTA_FlagPeek(uint8_t flag_id);   // 仅查看，不清除
-void ESTA_FlagPoll(void);             // AUTO_EVENT 模式转换
+void ESTA_FlagClear(uint8_t flag_id);  // 主动清除 flag（终止 LATCH 推送）
+void ESTA_FlagPoll(void);             // AUTO_EVENT / LATCH 模式转换
 ```
 
 ### Flag 作为触发条件
@@ -415,6 +432,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 
 | target_type | sub_addr 含义 | 计算方式 |
 |-------------|--------------|---------|
+| WAVE (0) | 轴选择 | `0` = Y 轴单位字符串, `1` = X 轴单位字符串 |
 | TABLE (2) | 单元格位置 | `row * TABLE_MAX_COLS + col` |
 | MENU (3) | 菜单项索引 | `item_idx`（0~31） |
 
@@ -423,20 +441,21 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | 层 | 文件 | 职责 |
 |----|------|------|
 | C 事件队列 | `core/event/event.h/.c` | ESTA_Event 结构体、队列、Emit 函数 |
-| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT 转换 |
+| C Flag 系统 | `core/event/event_flag.h/.c` | Flag 设置/检查/轮询、AUTO_EVENT/LATCH 转换、FlagClear |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
 | C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
-| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence |
+| C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence、FlagConfig |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
-| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences 数组 |
-| Rust 模型 | `src-tauri/src/models.rs` | EventBinding、StringEntry、ActionStep、ActionSequence struct |
+| JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences + flag_profiles 数组 |
+| Rust 插件 | `src-tauri/src/plugins/flag.rs` | FlagConfig 模型 + FlagPlugin（默认值 + 模板上下文） |
 | Rust 命令 | `src-tauri/src/commands/profile_io.rs` | 模板数据构建（注册表驱动，无需修改） |
-| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体） |
-| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry、ActionStep、ActionSequence 接口、常量、约束表 |
+| Tera 模板 | `src-tauri/templates/ESTA_Profile.c.j2` | C 代码生成（含 ApplyEvents 函数体 + FlagRegister 循环） |
+| TS 类型 | `src/lib/types.ts` | EventBinding、StringEntry、ActionStep、ActionSequence、FlagConfig 接口、常量、约束表 |
 | React UI | `src/components/EventEditor.tsx` | 事件绑定编辑器（param 列根据 action 类型切换 UI） |
-| React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器（sub_addr + text） |
+| React UI | `src/components/StringTableEditor.tsx` | 字符串表编辑器（sub_addr + text，含 WAVE 轴选择） |
 | React UI | `src/components/SequenceEditor.tsx` | 序列编辑器（序列列表 + 步骤列表） |
+| React UI | `src/components/FlagConfigEditor.tsx` | Flag 配置编辑器（8 行表：mode + event 参数） |
 
 ## Action 序列系统（SEQUENCE）
 

@@ -9,6 +9,7 @@
 #include "ui/TABLE.h"
 #include "ui/MENU.h"
 #include "event/event.h"
+#include "event/event_flag.h"
 #include "app/app_action.h"
 
 #define ESTA_PROFILE_MAX_WAVE_INST 4
@@ -150,6 +151,8 @@ typedef struct {
     ESTA_StringEntry_TypeDef strings[ESTA_MAX_STRING_ENTRIES];
     uint8_t sequence_count;
     ESTA_ActionSequence_TypeDef sequences[ESTA_MAX_SEQUENCES];
+    uint8_t flag_count;
+    ESTA_FlagConfig flag_configs[ESTA_FLAG_MAX];
 } ESTA_ProfileSet_TypeDef;
 
 const ESTA_ProfileSet_TypeDef *ESTA_Profile_GetDefault(void);

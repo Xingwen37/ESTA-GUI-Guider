@@ -6,6 +6,9 @@ export interface EventBinding {
   target_inst: number;
   action: number;
   param: number;
+  guard_and_mask: number;
+  guard_or_mask: number;
+  guard_inv_mask: number;
 }
 
 export interface StringEntry {
@@ -25,6 +28,13 @@ export interface ActionSequence {
   steps: ActionStep[];
 }
 
+export interface FlagConfig {
+  mode: number;
+  event_type: number;
+  event_source: number;
+  event_id: number;
+}
+
 export interface ProfileSet {
   button_count: number;
   page_count: number;
@@ -34,6 +44,8 @@ export interface ProfileSet {
   strings: StringEntry[];
   sequence_count: number;
   sequences: ActionSequence[];
+  flag_inst_count: number;
+  flag_profiles: FlagConfig[];
   [key: string]: unknown;
 }
 
@@ -81,6 +93,7 @@ export const ACTION_TYPE_OPTIONS = [
   [9, "FLAG_SET"],
   [10, "TEXT_SET"],
   [11, "SEQUENCE"],
+  [12, "FLAG_CLEAR"],
   [255, "CUSTOM"],
 ] as const;
 
@@ -91,7 +104,7 @@ export const VALID_ACTIONS: Record<number, number[]> = {
   3: [5, 6, 7, 8, 10, 11, 255],
   4: [1, 2, 11, 255],
   5: [3, 11, 255],
-  6: [9, 11, 255],
+  6: [9, 12, 11, 255],
 };
 
 export const SOURCE_ANY = 0xFF;

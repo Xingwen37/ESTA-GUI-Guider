@@ -25,6 +25,9 @@ pub fn save_profile_internal(
                 "trigger": b.trigger, "source_id": b.source_id, "trigger_id": b.trigger_id,
                 "target_type": b.target_type, "target_inst": b.target_inst,
                 "action": b.action, "param": b.param,
+                "guard_and_mask": b.guard_and_mask,
+                "guard_or_mask": b.guard_or_mask,
+                "guard_inv_mask": b.guard_inv_mask,
             })
         })
         .collect();
