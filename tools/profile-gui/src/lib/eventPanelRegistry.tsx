@@ -28,6 +28,7 @@ export const EVENT_PANELS: EventPanelEntry[] = [
       <EventEditor
         bindings={data.bindings ?? []}
         buttonCount={data.button_count}
+        timerCount={data.timer_count ?? 0}
         instCounts={instCounts}
         menuProfiles={(data["menu_profiles"] as MenuProfile[]) ?? []}
         strings={data.strings ?? []}

@@ -15,6 +15,7 @@ import {
 interface Props {
   bindings: EventBinding[];
   buttonCount: number;
+  timerCount: number;
   instCounts: Record<string, number>;
   menuProfiles: MenuProfile[];
   strings: StringEntry[];
@@ -72,7 +73,7 @@ function isButtonTrigger(trigger: number): boolean {
 }
 
 export default function EventEditor(props: Props) {
-  const { bindings, buttonCount, instCounts, menuProfiles, strings, sequences, onChange } = props;
+  const { bindings, buttonCount, timerCount, instCounts, menuProfiles, strings, sequences, onChange } = props;
   const [expandedGuards, setExpandedGuards] = useState<Set<number>>(new Set());
 
   const toggleGuardExpand = (idx: number) => {
@@ -154,6 +155,8 @@ export default function EventEditor(props: Props) {
               const singleton = isSingletonTarget(b.target_type);
               const isButton = isButtonTrigger(b.trigger);
               const isMenuSelect = b.trigger === 3;
+              const isEncoderTrigger = b.trigger === 4;
+              const isTimerTrigger = b.trigger === 5;
               const isFlagTrigger = b.trigger === 6;
               const menuItems = isMenuSelect ? getMenuItemOptions(b.source_id) : [];
               const hasGuard = !!(b.guard_and_mask || b.guard_or_mask || b.guard_inv_mask);
@@ -167,14 +170,28 @@ export default function EventEditor(props: Props) {
                           onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
                           <option value={SOURCE_ANY}>ANY</option>
                           {Array.from({ length: buttonCount }, (_, k) => (
-                            <option key={k} value={k}>Button {k}</option>
+                            <option key={k} value={k}>Button #{k}</option>
                           ))}
                         </select>
                       ) : isMenuSelect ? (
                         <select value={b.source_id}
                           onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
                           {Array.from({ length: instCounts["menu"] ?? 0 }, (_, k) => (
-                            <option key={k} value={k}>MENU #{k}</option>
+                            <option key={k} value={k}>Menu #{k}</option>
+                          ))}
+                        </select>
+                      ) : isEncoderTrigger ? (
+                        <select value={b.source_id}
+                          onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
+                          <option value={SOURCE_ANY}>ANY</option>
+                          <option value={0}>Encoder #0</option>
+                        </select>
+                      ) : isTimerTrigger ? (
+                        <select value={b.source_id}
+                          onChange={(e) => updateBinding(i, "source_id", Number(e.target.value))}>
+                          <option value={SOURCE_ANY}>ANY</option>
+                          {Array.from({ length: timerCount }, (_, k) => (
+                            <option key={k} value={k}>Timer #{k}</option>
                           ))}
                         </select>
                       ) : isFlagTrigger ? (
