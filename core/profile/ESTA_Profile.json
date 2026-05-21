@@ -21,7 +21,7 @@
       "trigger_id": 65535,
       "target_type": 6,
       "target_inst": 1,
-      "action": 13,
+      "action": 9,
       "param": 0,
       "guard_and_mask": 0,
       "guard_or_mask": 0,
@@ -74,142 +74,16 @@
       ]
     }
   ],
-  "bar_profiles": [
+  "table_inst_count": 1,
+  "timer_configs": [
     {
-      "bar_count": 6,
-      "bar_spacing": 5,
-      "bar_width": 10,
-      "display_num_max": 100,
-      "display_num_min": 0,
-      "font_size": "ESTA_FONT_1608",
-      "is_display_axis": true,
-      "is_display_value": true,
-      "page": 0,
-      "theme_type": "BARCHART_THEME_DEFAULT",
-      "x_origin": 102,
-      "x_width": 93,
-      "y_origin": 336,
-      "y_width": 80
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 5,
+      "period_ms": 20
     }
   ],
-  "flag_profiles": [
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 1,
-      "mode": 1
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 1,
-      "mode": 1
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 1,
-      "mode": 0
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 0,
-      "mode": 0
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 0,
-      "mode": 0
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 0,
-      "mode": 0
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 0,
-      "mode": 0
-    },
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 0,
-      "mode": 0
-    }
-  ],
-  "flag_inst_count": 8,
-  "menu_profiles": [
-    {
-      "breadcrumb_height": 0,
-      "font_size": "ESTA_FONT_1608",
-      "is_fill_background": true,
-      "is_show_breadcrumb": false,
-      "is_show_frame": true,
-      "item_count": 8,
-      "item_height": 20,
-      "items": [
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Settings",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Display",
-          "parent_idx": 0
-        },
-        {
-          "event_id": 10,
-          "is_submenu": false,
-          "label": "Brightness",
-          "parent_idx": 1
-        },
-        {
-          "event_id": 0,
-          "is_submenu": true,
-          "label": "Background",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "defult",
-          "parent_idx": 3
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "light",
-          "parent_idx": 3
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "Item",
-          "parent_idx": 255
-        },
-        {
-          "event_id": 0,
-          "is_submenu": false,
-          "label": "Item",
-          "parent_idx": 255
-        }
-      ],
-      "page": 0,
-      "theme_type": "MENU_THEME_DEFAULT",
-      "x_origin": 0,
-      "x_width": 98,
-      "y_origin": 336,
-      "y_width": 80
-    }
-  ],
+  "timer_count": 1,
   "table_profiles": [
     {
       "cells": [
@@ -285,16 +159,7 @@
       "y_width": 72
     }
   ],
-  "timer_configs": [
-    {
-      "event_id": 0,
-      "event_source": 0,
-      "event_type": 5,
-      "period_ms": 20
-    }
-  ],
-  "timer_count": 1,
-  "wave_inst_count": 1,
+  "bar_inst_count": 1,
   "wave_profiles": [
     {
       "channel_mask": 15,
@@ -419,7 +284,142 @@
       "y_width": 256
     }
   ],
-  "bar_inst_count": 1,
-  "table_inst_count": 1,
-  "menu_inst_count": 1
+  "bar_profiles": [
+    {
+      "bar_count": 6,
+      "bar_spacing": 5,
+      "bar_width": 10,
+      "display_num_max": 100,
+      "display_num_min": 0,
+      "font_size": "ESTA_FONT_1608",
+      "is_display_axis": true,
+      "is_display_value": true,
+      "page": 0,
+      "theme_type": "BARCHART_THEME_DEFAULT",
+      "x_origin": 102,
+      "x_width": 93,
+      "y_origin": 336,
+      "y_width": 80
+    }
+  ],
+  "menu_inst_count": 1,
+  "wave_inst_count": 1,
+  "flag_inst_count": 8,
+  "menu_profiles": [
+    {
+      "breadcrumb_height": 0,
+      "font_size": "ESTA_FONT_1608",
+      "is_fill_background": true,
+      "is_show_breadcrumb": false,
+      "is_show_frame": true,
+      "item_count": 8,
+      "item_height": 20,
+      "items": [
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Settings",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Display",
+          "parent_idx": 0
+        },
+        {
+          "event_id": 10,
+          "is_submenu": false,
+          "label": "Brightness",
+          "parent_idx": 1
+        },
+        {
+          "event_id": 0,
+          "is_submenu": true,
+          "label": "Background",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "defult",
+          "parent_idx": 3
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "light",
+          "parent_idx": 3
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "Item",
+          "parent_idx": 255
+        },
+        {
+          "event_id": 0,
+          "is_submenu": false,
+          "label": "Item",
+          "parent_idx": 255
+        }
+      ],
+      "page": 0,
+      "theme_type": "MENU_THEME_DEFAULT",
+      "x_origin": 0,
+      "x_width": 98,
+      "y_origin": 336,
+      "y_width": 80
+    }
+  ],
+  "flag_profiles": [
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 1,
+      "mode": 1
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 1,
+      "mode": 1
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 1,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    },
+    {
+      "event_id": 0,
+      "event_source": 0,
+      "event_type": 0,
+      "mode": 0
+    }
+  ]
 }

@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 /* 模拟屏幕的分辨率定义 */
-#define SIMULATOR_SCREEN_WIDTH  800
+#define SIMULATOR_SCREEN_WIDTH  400
 #define SIMULATOR_SCREEN_HEIGHT 480
 
 /* 供 main() 调用的系统级函数 */

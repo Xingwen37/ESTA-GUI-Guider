@@ -38,3 +38,8 @@ gen/
 
 # 7. AI 工具目录
 .claude/
+.codex/
+CLAUDE.md
+AGENTS.md
+.rtk/
+docs/superpowers/
