@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
     SimFeed_Init(&g_app, &g_scenario);
     g_app.wave_redraw_fn = (App_WaveRedrawFn)SimFeed_RedrawWaveInst;
     g_app.wave_redraw_ctx = NULL;
+    g_app.bar_redraw_fn = (App_BarRedrawFn)SimFeed_RedrawBarInst;
+    g_app.bar_redraw_ctx = NULL;
 
     while (true) {
         uint32_t frame_start = SDL_GetTicks();

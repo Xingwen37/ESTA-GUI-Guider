@@ -102,12 +102,13 @@ export const ACTION_TYPE_OPTIONS = [
   [11, "RUN_SEQUENCE"],
   [12, "FLAG_CLEAR"],
   [13, "FLAG_SIGNAL"],
+  [14, "BARCHART_REDRAW"],
   [255, "CALL_CUSTOM"],
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {
   0: [3, 4, 10, 11, 255],
-  1: [3, 11, 255],
+  1: [3, 14, 11, 255],
   2: [10, 11, 255],
   3: [5, 6, 7, 8, 10, 11, 255],
   4: [1, 2, 11, 255],

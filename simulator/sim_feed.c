@@ -54,10 +54,15 @@ static void sim_feed_barchart(App_MainState *app, SimScenarioRuntime *scenario) 
     uint8_t active = App_GetActivePage(&app->page_state);
     for (int i = 0; i < app->bar_inst_count; i++) {
         if (app->page_state.profiles->bar_profiles[i].page != active) continue;
-        if (SimScenario_BARCHART_GetData(scenario, s_data_bar[i], s_bar_count[i])) {
-            BARCHART_UpdateAll(BARCHART_INST(i), s_data_bar[i], s_bar_count[i]);
-        }
+        SimScenario_BARCHART_GetData(scenario, s_data_bar[i], s_bar_count[i]);
+        BARCHART_UpdateAll(BARCHART_INST(i), s_data_bar[i], s_bar_count[i]);
     }
+}
+
+void SimFeed_RedrawBarInst(int inst, void *ctx) {
+    (void)ctx;
+    if (inst < 0 || inst >= SIM_SCENARIO_BARCHART_COUNT) return;
+    BARCHART_ReDraw(BARCHART_INST(inst));
 }
 
 static void sim_feed_table(App_MainState *app, SimScenarioRuntime *scenario) {

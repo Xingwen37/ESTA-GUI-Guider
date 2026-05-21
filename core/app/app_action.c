@@ -2,6 +2,7 @@
 #include "app/app_main.h"
 #include "profile/ESTA_Profile.h"
 #include "ui/WAVE.h"
+#include "ui/BARCHART.h"
 #include "ui/MENU.h"
 #include "ui/TABLE.h"
 #include "event/event_flag.h"
@@ -56,6 +57,15 @@ static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
     App_MainState *s = (App_MainState *)ctx->app;
     if (s == NULL || s->wave_redraw_fn == NULL) return false;
     s->wave_redraw_fn(ctx->target_inst, s->wave_redraw_ctx);
+    return true;
+}
+
+static bool action_barchart_redraw(const ESTA_Event *evt, void *user_data) {
+    (void)evt;
+    App_BindingContext *ctx = (App_BindingContext *)user_data;
+    App_MainState *s = (App_MainState *)ctx->app;
+    if (s == NULL || s->bar_redraw_fn == NULL) return false;
+    s->bar_redraw_fn(ctx->target_inst, s->bar_redraw_ctx);
     return true;
 }
 
@@ -216,7 +226,8 @@ static const ESTA_EventHandler g_action_table[] = {
     [ESTA_ACTION_FLAG_CLEAR]    = action_flag_clear,
     [ESTA_ACTION_TEXT_SET]      = action_text_set,
     [ESTA_ACTION_SEQUENCE]      = action_sequence,
-    [ESTA_ACTION_FLAG_SIGNAL]   = action_flag_signal,
+    [ESTA_ACTION_FLAG_SIGNAL]       = action_flag_signal,
+    [ESTA_ACTION_BARCHART_REDRAW]   = action_barchart_redraw,
 };
 
 #define ACTION_TABLE_SIZE (sizeof(g_action_table) / sizeof(g_action_table[0]))

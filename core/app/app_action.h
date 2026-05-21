@@ -33,6 +33,7 @@ typedef enum {
     ESTA_ACTION_SEQUENCE      = 11,
     ESTA_ACTION_FLAG_CLEAR    = 12,
     ESTA_ACTION_FLAG_SIGNAL   = 13,  /* 置位状态位 + 推送 FLAG 事件 */
+    ESTA_ACTION_BARCHART_REDRAW = 14,
     ESTA_ACTION_CUSTOM        = 0xFF
 } ESTA_ActionType;
 

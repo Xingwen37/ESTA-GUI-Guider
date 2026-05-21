@@ -5,6 +5,7 @@
 #include "app/app_event.h"
 
 typedef void (*App_WaveRedrawFn)(int inst, void *ctx);
+typedef void (*App_BarRedrawFn)(int inst, void *ctx);
 
 typedef struct {
     App_PageState page_state;
@@ -14,6 +15,8 @@ typedef struct {
     int menu_inst_count;
     App_WaveRedrawFn wave_redraw_fn;
     void *wave_redraw_ctx;
+    App_BarRedrawFn bar_redraw_fn;
+    void *bar_redraw_ctx;
 } App_MainState;
 
 void App_MainInit(App_MainState *state, uint16_t screen_w, uint16_t screen_h);

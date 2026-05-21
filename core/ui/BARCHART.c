@@ -471,8 +471,5 @@ ESTA_StatusTypeDef BARCHART_UpdateAll(int inst, const uint16_t *new_values, uint
     for (int i = 0; i < count; i++) {
         BARCHART_PRIVATE_MEMBER_ARRAY(inst, data_buff, i) = new_values[i];
     }
-
-    ESTA_RETURN_IF_ERROR(BARCHART_Clear(inst));
-    ESTA_RETURN_IF_ERROR(BARCHART_BarDisplay(inst));
     return ESTA_OK;
 }

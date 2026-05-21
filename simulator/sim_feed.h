@@ -8,5 +8,6 @@ void SimFeed_Init(App_MainState *app, SimScenarioRuntime *scenario);
 bool SimFeed_Update(App_MainState *app, SimScenarioRuntime *scenario);
 void SimFeed_Tick(SimScenarioRuntime *scenario);
 void SimFeed_RedrawWaveInst(int inst, void *ctx);
+void SimFeed_RedrawBarInst(int inst, void *ctx);
 
 #endif
