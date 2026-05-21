@@ -137,8 +137,8 @@ export default function EventEditor(props: Props) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #444" }}>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Source</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Trigger</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }}>Source</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Trigger ID</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Target</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Inst</th>
@@ -164,6 +164,14 @@ export default function EventEditor(props: Props) {
               return (
                 <React.Fragment key={i}>
                   <tr style={{ borderBottom: "1px solid #333" }}>
+                    <td style={{ padding: "4px 6px" }}>
+                      <select value={b.trigger}
+                        onChange={(e) => updateBinding(i, "trigger", Number(e.target.value))}>
+                        {TRIGGER_OPTIONS.map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td style={{ padding: "4px 6px" }}>
                       {isButton ? (
                         <select value={b.source_id}
@@ -207,14 +215,6 @@ export default function EventEditor(props: Props) {
                           style={{ width: 50 }}
                           onChange={(e) => updateBinding(i, "source_id", Number(e.target.value) || 0)} />
                       )}
-                    </td>
-                    <td style={{ padding: "4px 6px" }}>
-                      <select value={b.trigger}
-                        onChange={(e) => updateBinding(i, "trigger", Number(e.target.value))}>
-                        {TRIGGER_OPTIONS.map(([val, label]) => (
-                          <option key={val} value={val}>{label}</option>
-                        ))}
-                      </select>
                     </td>
                     <td style={{ padding: "4px 6px" }}>
                       {isMenuSelect ? (
