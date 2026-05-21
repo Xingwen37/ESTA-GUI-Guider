@@ -343,9 +343,11 @@ function PropertiesPanel({
 interface Props {
   profile: MenuProfile;
   onChange: (p: MenuProfile) => void;
+  instIndex?: number;
+  onAutoAssign?: (instIndex: number, idMap: Record<number, number>) => void;
 }
 
-export default function MenuEditor({ profile, onChange }: Props) {
+export default function MenuEditor({ profile, onChange, instIndex, onAutoAssign }: Props) {
   const [roots, setRoots] = useState<TreeNode[]>(() => flatToTree(profile.items.slice(0, profile.item_count)));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
@@ -475,6 +477,41 @@ export default function MenuEditor({ profile, onChange }: Props) {
     });
   };
 
+  const handleAutoAssignEventIds = () => {
+    const idMap: Record<number, number> = {};
+    let counter = 1;
+
+    function collectIds(nodes: TreeNode[]) {
+      for (const node of nodes) {
+        if (!node.is_submenu) {
+          idMap[node.event_id] = counter++;
+        } else {
+          collectIds(node.children);
+        }
+      }
+    }
+    collectIds(roots);
+
+    const next = cloneTree(roots);
+    let c = 1;
+    function applyIds(nodes: TreeNode[]) {
+      for (const node of nodes) {
+        if (!node.is_submenu) {
+          node.event_id = c++;
+        } else {
+          applyIds(node.children);
+        }
+      }
+    }
+    applyIds(next);
+
+    updateRoots(next);
+
+    if (onAutoAssign != null && instIndex != null) {
+      onAutoAssign(instIndex, idMap);
+    }
+  };
+
   const selectedNode = selectedId ? findNode(roots, selectedId) : null;
 
   const set = (key: keyof MenuProfile, value: unknown) =>
@@ -517,7 +554,13 @@ export default function MenuEditor({ profile, onChange }: Props) {
 
       {/* Tree editor */}
       <fieldset className="group-box">
-        <legend>Menu Items ({countNodes(roots)}/{MAX_MENU_ITEMS})</legend>
+        <legend>
+          Menu Items ({countNodes(roots)}/{MAX_MENU_ITEMS})
+          <button onClick={handleAutoAssignEventIds} type="button"
+            style={{ marginLeft: 10, fontSize: 11, padding: "1px 6px", cursor: "pointer" }}>
+            自动分配 Event ID
+          </button>
+        </legend>
         <div className="menu-tree-layout">
           <div className="menu-tree-panel">
             {roots.map((node) => (

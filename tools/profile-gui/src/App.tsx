@@ -167,6 +167,8 @@ export default function App() {
           <activeEntry.Editor
             profile={currentProfile}
             onChange={(p: unknown) => updateProfile(activeEntry, profileIndex, p)}
+            instIndex={profileIndex}
+            onAutoAssign={state.remapMenuEventIds}
           />
         )}
       </div>

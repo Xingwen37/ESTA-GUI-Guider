@@ -185,6 +185,19 @@ export function useProfileState() {
     setData({ ...data, button_count: Math.max(0, Math.min(MAX_BUTTON_COUNT, count)) });
   }, [data]);
 
+  const remapMenuEventIds = useCallback((menuInstIdx: number, idMap: Record<number, number>) => {
+    if (!data) return;
+    const updatedBindings = (data.bindings ?? []).map((b) => {
+      if (b.trigger !== 3) return b;
+      if (b.source_id !== menuInstIdx) return b;
+      if (b.trigger_id === 0xFFFF) return b;
+      const newId = idMap[b.trigger_id];
+      if (newId == null) return b;
+      return { ...b, trigger_id: newId };
+    });
+    setData({ ...data, bindings: updatedBindings });
+  }, [data]);
+
   return {
     data, setData,
     activeTab, setActiveTab,
@@ -203,5 +216,6 @@ export function useProfileState() {
     deleteItem,
     updateProfile,
     setButtonCount,
+    remapMenuEventIds,
   };
 }

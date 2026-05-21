@@ -12,7 +12,12 @@ export interface ComponentEntry<P = unknown> {
   maxCount: number;
   makeDefault: () => P;
   validate: (profiles: P[], count: number) => string | null;
-  Editor: React.ComponentType<{ profile: P; onChange: (p: P) => void }>;
+  Editor: React.ComponentType<{
+    profile: P;
+    onChange: (p: P) => void;
+    instIndex?: number;
+    onAutoAssign?: (instIndex: number, idMap: Record<number, number>) => void;
+  }>;
 }
 
 export const COMPONENT_REGISTRY: ComponentEntry[] = [
