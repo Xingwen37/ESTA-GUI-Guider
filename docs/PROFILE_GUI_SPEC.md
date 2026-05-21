@@ -252,6 +252,7 @@ export default function NewCompEditor({ profile, onChange }: Props) {
 
 **关键规则**：
 - Props 固定为 `{ profile: NewCompProfile; onChange: (p: NewCompProfile) => void }`（每组件独立类型）
+- 可选 props `instIndex?: number` 和 `onAutoAssign?: (instIndex: number, newItems: unknown[], idMap: Record<number, number>) => void` 由 App.tsx 传入，供需要回写父状态的 Editor 使用（如 MenuEditor 的"自动分配 Event ID"功能）；普通 Editor 忽略即可
 - 从 `newcomp.registry.ts` 导入类型和常量，从 `types.ts` 导入 `UI_FONT_SIZE_OPTIONS`
 - 布局使用 `fieldset.group-box` > `legend` + `div.form-row` > `label` + 控件
 

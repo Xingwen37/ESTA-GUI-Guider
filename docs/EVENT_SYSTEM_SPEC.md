@@ -136,8 +136,9 @@ typedef enum {
     ESTA_ACTION_TEXT_SET      = 10,  // 参数化：写入字符串表中的预定义文本
     ESTA_ACTION_SEQUENCE      = 11,  // 序列：触发一组子动作
     ESTA_ACTION_FLAG_CLEAR    = 12,  // 清除 Flag 状态位
-    ESTA_ACTION_FLAG_SIGNAL   = 13,  // 置位状态位 + 推送 FLAG 事件
-    ESTA_ACTION_CUSTOM        = 0xFF // 自定义：由用户注册的 handler
+    ESTA_ACTION_FLAG_SIGNAL         = 13,  // 置位状态位 + 推送 FLAG 事件
+    ESTA_ACTION_BARCHART_REDRAW     = 14,  // 即时：通过回调直接绘制柱形图
+    ESTA_ACTION_CUSTOM              = 0xFF // 自定义：由用户注册的 handler
 } ESTA_ActionType;
 ```
 
@@ -146,7 +147,7 @@ typedef enum {
 | target_type | 可用 action |
 |-------------|------------|
 | WAVE (0) | THEME_TOGGLE, WAVE_REDRAW, SEQUENCE, CUSTOM |
-| BARCHART (1) | THEME_TOGGLE, SEQUENCE, CUSTOM |
+| BARCHART (1) | THEME_TOGGLE, BARCHART_REDRAW, SEQUENCE, CUSTOM |
 | TABLE (2) | TEXT_SET, SEQUENCE, CUSTOM |
 | MENU (3) | MENU_UP, MENU_DOWN, MENU_ENTER, MENU_BACK, TEXT_SET, SEQUENCE, CUSTOM |
 | PAGE (4) | PAGE_NEXT, PAGE_PREV, SEQUENCE, CUSTOM |
@@ -271,37 +272,42 @@ static bool action_theme_toggle(const ESTA_Event *evt, void *user_data) {
 | 4 | Button 4 | MENU #0 BACK |
 | 5~9 | Button 5~9 | （未绑定） |
 
-## 波形触发模式（回调架构）
+## 回调驱动的即时 Redraw 模式
 
-WAVE_REDRAW 是即时 action——handler 通过回调函数直接执行绘制，而非设置标志位等待轮询。
+WAVE_REDRAW 和 BARCHART_REDRAW 均为即时 action——handler 通过回调函数直接执行绘制，而非设置标志位等待轮询。两者遵循相同的架构模式。
 
 数据流模型：
 ```
-SimFeed 每帧采样 → 写入通道缓冲区（模拟 ADC 连续采集）
+SimFeed 每帧采样 → 写入数据缓冲区（模拟 ADC / 传感器连续采集）
                     ↓ 不绘制
-WAVE_REDRAW handler → 调用 wave_redraw_fn(inst, ctx) → 读取缓冲区并绘制一帧
+WAVE_REDRAW / BARCHART_REDRAW handler → 调用 redraw_fn(inst, ctx) → 读取缓冲区并绘制一帧
 ```
+
+> `BARCHART_UpdateAll` 现为纯数据写入（不触发绘制）；`BARCHART_ReDraw` 通过 `bar_redraw_fn` 回调由事件驱动调用。
 
 `App_MainState` 中的回调字段：
 ```c
 typedef void (*App_WaveRedrawFn)(int inst, void *ctx);
+typedef void (*App_BarRedrawFn)(int inst, void *ctx);
 
 typedef struct {
     App_PageState page_state;
     int wave_inst_count, bar_inst_count, table_inst_count, menu_inst_count;
-    App_WaveRedrawFn wave_redraw_fn;  // 平台注册的绘制回调
+    App_WaveRedrawFn wave_redraw_fn;  // 平台注册的波形绘制回调
     void *wave_redraw_ctx;
+    App_BarRedrawFn  bar_redraw_fn;   // 平台注册的柱形图绘制回调
+    void *bar_redraw_ctx;
 } App_MainState;
 ```
 
-Handler 实现：
+Handler 实现（以 BARCHART_REDRAW 为例）：
 ```c
-static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
+static bool action_barchart_redraw(const ESTA_Event *evt, void *user_data) {
     (void)evt;
     App_BindingContext *ctx = (App_BindingContext *)user_data;
     App_MainState *s = (App_MainState *)ctx->app;
-    if (s == NULL || s->wave_redraw_fn == NULL) return false;
-    s->wave_redraw_fn(ctx->target_inst, s->wave_redraw_ctx);
+    if (s == NULL || s->bar_redraw_fn == NULL) return false;
+    s->bar_redraw_fn(ctx->target_inst, s->bar_redraw_ctx);
     return true;
 }
 ```
@@ -310,9 +316,11 @@ static bool action_wave_redraw(const ESTA_Event *evt, void *user_data) {
 ```c
 g_app.wave_redraw_fn = (App_WaveRedrawFn)SimFeed_RedrawWaveInst;
 g_app.wave_redraw_ctx = NULL;
+g_app.bar_redraw_fn  = (App_BarRedrawFn)SimFeed_RedrawBarInst;
+g_app.bar_redraw_ctx = NULL;
 ```
 
-MCU 移植时，用户实现自己的绘制回调（从 ADC 缓冲区读取数据并调用 `WAVE_CurveDrawBatch`）。
+MCU 移植时，用户实现自己的绘制回调（从数据缓冲区读取并调用对应组件的 ReDraw / CurveDrawBatch）。
 
 ## Flag 系统（`core/event/event_flag.h/.c`）
 
@@ -395,7 +403,7 @@ static bool action_flag_signal(const ESTA_Event *evt, void *user_data) {
 
 | 类别 | Action | 行为 |
 |------|--------|------|
-| 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, MENU_* | handler 直接执行效果 |
+| 即时 | PAGE_NEXT/PREV, THEME_TOGGLE, WAVE_REDRAW, BARCHART_REDRAW, MENU_* | handler 直接执行效果 |
 | 状态写入 | FLAG_SET, FLAG_CLEAR | 纯状态位操作，不产生事件 |
 | 通知 | FLAG_SIGNAL | 置位状态位 + 推送 FLAG 事件 |
 | 参数化 | TEXT_SET | handler 从字符串表取数据，写入目标组件 |
@@ -533,7 +541,7 @@ static bool action_text_set(const ESTA_Event *evt, void *user_data) {
 | C SoftTimer | `core/event/soft_timer.h/.c` | 周期事件驱动（period_ms 配置） |
 | C 订阅分发 | `core/app/app_event.h/.c` | App_Subscribe、App_DispatchEvents（guard 用 flag_snapshot） |
 | C Action 注册 | `core/app/app_action.h/.c` | 枚举、handler 实现、g_action_table、自定义 action 注册 |
-| C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn 回调） |
+| C 应用骨架 | `core/app/app_main.h/.c` | App_MainState（含 wave_redraw_fn / bar_redraw_fn 回调） |
 | C Profile 绑定 | `core/profile/ESTA_Profile.h/.c` | ApplyEvents、g_binding_ctx、StringEntry、ActionSequence、FlagConfig、SoftTimerConfig |
 | C MENU 导航 | `core/ui/MENU.h/.c` | MENU_NavUp/Down/Enter/Back、MENU_UpdateItemLabel |
 | JSON 数据 | `core/profile/ESTA_Profile.json` | bindings + strings + sequences + flag_profiles + timer_configs 数组 |
