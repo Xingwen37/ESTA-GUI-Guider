@@ -16,7 +16,7 @@ export interface ComponentEntry<P = unknown> {
     profile: P;
     onChange: (p: P) => void;
     instIndex?: number;
-    onAutoAssign?: (instIndex: number, idMap: Record<number, number>) => void;
+    onAutoAssign?: (instIndex: number, newItems: unknown[], idMap: Record<number, number>) => void;
   }>;
 }
 

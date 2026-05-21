@@ -344,7 +344,7 @@ interface Props {
   profile: MenuProfile;
   onChange: (p: MenuProfile) => void;
   instIndex?: number;
-  onAutoAssign?: (instIndex: number, idMap: Record<number, number>) => void;
+  onAutoAssign?: (instIndex: number, newItems: unknown[], idMap: Record<number, number>) => void;
 }
 
 export default function MenuEditor({ profile, onChange, instIndex, onAutoAssign }: Props) {
@@ -505,10 +505,10 @@ export default function MenuEditor({ profile, onChange, instIndex, onAutoAssign 
     }
     applyIds(next);
 
-    updateRoots(next);
+    setRoots(next);
 
     if (onAutoAssign != null && instIndex != null) {
-      onAutoAssign(instIndex, idMap);
+      onAutoAssign(instIndex, treeToFlat(next) as unknown[], idMap);
     }
   };
 

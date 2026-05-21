@@ -185,8 +185,12 @@ export function useProfileState() {
     setData({ ...data, button_count: Math.max(0, Math.min(MAX_BUTTON_COUNT, count)) });
   }, [data]);
 
-  const remapMenuEventIds = useCallback((menuInstIdx: number, idMap: Record<number, number>) => {
+  const remapMenuEventIds = useCallback((menuInstIdx: number, newItems: unknown[], idMap: Record<number, number>) => {
     if (!data) return;
+    const profiles = [...((data["menu_profiles"] as unknown[]) ?? [])];
+    const existing = (profiles[menuInstIdx] ?? {}) as Record<string, unknown>;
+    profiles[menuInstIdx] = { ...existing, items: newItems, item_count: newItems.length };
+
     const updatedBindings = (data.bindings ?? []).map((b) => {
       if (b.trigger !== 3) return b;
       if (b.source_id !== menuInstIdx) return b;
@@ -195,7 +199,8 @@ export function useProfileState() {
       if (newId == null) return b;
       return { ...b, trigger_id: newId };
     });
-    setData({ ...data, bindings: updatedBindings });
+
+    setData({ ...data, menu_profiles: profiles, bindings: updatedBindings });
   }, [data]);
 
   return {
