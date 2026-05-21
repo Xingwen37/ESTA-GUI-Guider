@@ -138,7 +138,7 @@ export default function EventEditor(props: Props) {
             <tr style={{ borderBottom: "1px solid #444" }}>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Source</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Trigger</th>
-              <th style={{ textAlign: "left", padding: "4px 6px" }}>Event ID</th>
+              <th style={{ textAlign: "left", padding: "4px 6px" }}>Trigger ID</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Target</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Inst</th>
               <th style={{ textAlign: "left", padding: "4px 6px" }}>Action</th>
@@ -305,7 +305,7 @@ export default function EventEditor(props: Props) {
                     <tr style={{ background: "#1a1a2e" }}>
                       <td colSpan={9} style={{ padding: "6px 16px 8px" }}>
                         {(["guard_and_mask", "guard_or_mask", "guard_inv_mask"] as const).map((field, fi) => {
-                          const labels = ["AND", " OR", "INV"];
+                          const labels = ["AND", "OR ", "NOT"];
                           return (
                             <div key={field} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: fi < 2 ? 4 : 0 }}>
                               <span style={{ width: 28, color: "#aaa", fontSize: 11, fontFamily: "monospace" }}>{labels[fi]}:</span>

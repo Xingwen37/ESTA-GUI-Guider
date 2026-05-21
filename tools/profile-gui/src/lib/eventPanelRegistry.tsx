@@ -58,6 +58,7 @@ export const EVENT_PANELS: EventPanelEntry[] = [
       <SequenceEditor
         sequences={data.sequences ?? []}
         instCounts={instCounts}
+        strings={data.strings ?? []}
         onChange={(sequences) => setData({ ...data, sequences, sequence_count: sequences.length })}
       />
     ),

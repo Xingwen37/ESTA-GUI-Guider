@@ -74,8 +74,8 @@ export const TRIGGER_OPTIONS = [
   [2, "BUTTON_RELEASE"],
   [3, "MENU_SELECT"],
   [4, "ENCODER_ROTATE"],
-  [5, "TIMER"],
-  [6, "FLAG"],
+  [5, "TIMER_TICK"],
+  [6, "FLAG_RAISED"],
 ] as const;
 
 export const TARGET_TYPE_OPTIONS = [
@@ -84,13 +84,13 @@ export const TARGET_TYPE_OPTIONS = [
   [2, "TABLE"],
   [3, "MENU"],
   [4, "PAGE"],
-  [5, "GLOBAL"],
+  [5, "SYSTEM"],
   [6, "FLAG"],
 ] as const;
 
 export const ACTION_TYPE_OPTIONS = [
   [1, "PAGE_NEXT"],
-  [2, "PAGE_PREV"],
+  [2, "PAGE_BACK"],
   [3, "THEME_TOGGLE"],
   [4, "WAVE_REDRAW"],
   [5, "MENU_UP"],
@@ -99,10 +99,10 @@ export const ACTION_TYPE_OPTIONS = [
   [8, "MENU_BACK"],
   [9, "FLAG_SET"],
   [10, "TEXT_SET"],
-  [11, "SEQUENCE"],
+  [11, "RUN_SEQUENCE"],
   [12, "FLAG_CLEAR"],
   [13, "FLAG_SIGNAL"],
-  [255, "CUSTOM"],
+  [255, "CALL_CUSTOM"],
 ] as const;
 
 export const VALID_ACTIONS: Record<number, number[]> = {

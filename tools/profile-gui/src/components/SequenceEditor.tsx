@@ -1,4 +1,4 @@
-import type { ActionSequence, ActionStep } from "../lib/types";
+import type { ActionSequence, ActionStep, StringEntry } from "../lib/types";
 import {
   TARGET_TYPE_OPTIONS,
   ACTION_TYPE_OPTIONS,
@@ -9,6 +9,7 @@ import {
 interface Props {
   sequences: ActionSequence[];
   instCounts: Record<string, number>;
+  strings: StringEntry[];
   onChange: (sequences: ActionSequence[]) => void;
 }
 
@@ -40,7 +41,7 @@ function isSingleton(targetType: number): boolean {
 }
 
 export default function SequenceEditor(props: Props) {
-  const { sequences, instCounts, onChange } = props;
+  const { sequences, instCounts, strings, onChange } = props;
 
   const addSequence = () => {
     if (sequences.length >= MAX_SEQUENCES) return;
@@ -142,9 +143,23 @@ export default function SequenceEditor(props: Props) {
                         </select>
                       </td>
                       <td style={{ padding: "3px 5px" }}>
-                        <input type="number" value={step.param} min={0} max={255}
-                          style={{ width: 46 }}
-                          onChange={(e) => updateStep(si, stepIdx, "param", Number(e.target.value) || 0)} />
+                        {step.action === 10 ? (
+                          <select value={step.param}
+                            onChange={(e) => updateStep(si, stepIdx, "param", Number(e.target.value))}>
+                            {strings.length === 0
+                              ? <option value={0}>(none)</option>
+                              : strings.map((s, ki) => (
+                                  <option key={ki} value={ki}>#{ki}: "{s.text}"</option>
+                                ))
+                            }
+                          </select>
+                        ) : step.action === 255 ? (
+                          <input type="number" value={step.param} min={0} max={7}
+                            style={{ width: 46 }} title="Custom ID (0~7)"
+                            onChange={(e) => updateStep(si, stepIdx, "param", Math.min(7, Number(e.target.value) || 0))} />
+                        ) : (
+                          <span style={{ color: "#888" }}>—</span>
+                        )}
                       </td>
                       <td style={{ padding: "3px 5px", textAlign: "center" }}>
                         <button onClick={() => removeStep(si, stepIdx)} title="删除步骤"
